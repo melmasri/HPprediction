@@ -38,9 +38,10 @@ rW<-function(m, U,y){
 	rgamma(length(alpha),shape = alpha + tol.err, scale = 1/beta)
 }
 
-rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1){
+rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1, wEta){
     a = a_w # 0.2 #shape parameter of a Gamma prior
     b = b_w  # 1 # Scale paramter of a Gamma prior
+    if(wEta) eta = 1
     w.old = w.old^(1/eta)
     epsilon = rnorm(length(w.old), 0, sd = w_sd) # 0.2 for regular 0.12 tested with AdaptiveMCMC
     w.prop = w.old +  -2*(w.old + epsilon <=0)*epsilon + epsilon
@@ -48,7 +49,7 @@ rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1){
     ratio = pmin(1, exp(likeli))
     u = 1*(runif(length(w.old))<=ratio)
 
-    w =  u*w.prop^eta + (1-u)*w.old^eta
+    u*w.prop^eta + (1-u)*w.old^eta
 }
 
 rY<-function(w0,w_star, U0,m_r){
@@ -58,18 +59,19 @@ rY<-function(w0,w_star, U0,m_r){
     rgamma(nrow(U0), shape = a_y + m_r, scale = 1/beta)
 }
 
-rYmc<-function(y.old, w,eta=1, pdist, mr, U){
+rYmc<-function(y.old, w,eta=1, pdist, mr, U, y_sd, yEta){
     a = a_y# shape parameter of a Gamma prior
     b = b_y# Scale paramter of a Gamma prior
+    if(yEta) eta=1
     y.old = y.old^(1/eta)
-    epsilon = rnorm(length(y.old), 0, sd = 0.6) # 0.2 for regular MH 0.6 tested with Adaptive MCMC
+    epsilon = rnorm(length(y.old), 0, sd = y_sd) # 0.2 for regular MH 0.6 tested with Adaptive MCMC
     y.prop = y.old +  -2*(y.old + epsilon <=0)*epsilon + epsilon
     
     likeli = (eta*mr+a-1)*log(y.prop/y.old) - (y.prop^eta - y.old^eta)*((U*pdist)%*%w) - (y.prop - y.old)*b
 
     ratio = pmin(1, exp(likeli));ratio
     u = 1*(runif(length(y.old))<=ratio)
-    y = u*y.prop^eta + (1-u)*y.old^eta
+    u*y.prop^eta + (1-u)*y.old^eta
 }
 
 rGumble.single<-function(mu, beta=1){
@@ -88,15 +90,15 @@ rGumble<-function(w, y,beta = 1){
 	 log(l)	 -  log(-log(unif +exp(-l)*(1-unif)  ))
  }
 
-rEta<-function(eta.old, dist , pdist,Z, y, w, U,md, eta_sd =0.01){
+rEta<-function(eta.old, dist , pdist,Z, y, w, U,md, eta_sd =0.01, wEta, yEta){
     ## A function that generates the prior for the power of distance
     ## eta.old = peta[i];y=y0[,i+1];w= w0[,i+1];U= U0
     pdist.old = (dist^eta.old)%*%Z  +  md^eta.old
     ## for (t in 1:5){
     epsilon = rnorm(1, 0, sd = eta_sd) # Tested to be 0.005 with Adaptive MCMC
     eta.prop = eta.old + if( eta.old + epsilon <=0) -1*epsilon else epsilon
-    w.new= w^(eta.prop/eta.old)
-    y.new =y#^(eta.prop/eta.old)
+    if(wEta) w.new= w^(eta.prop/eta.old) else w.new = w
+    if(yEta) y.new =y^(eta.prop/eta.old) else y.new = y
 	## w.new =w # when eta is 1.
         pdist.new = (dist^eta.prop)%*%Z + md^eta.prop
         likli = sum(log((pdist.new/pdist.old)^Z )) - sum(U*(outer(y.new,w.new)*pdist.new - pdist.old*outer(y,w)))
@@ -146,7 +148,7 @@ rL<-function(Z,m, Y, sumY, l){
     
 }
 
-gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH=FALSE){
+gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH=FALSE, wEta = TRUE, yEta =FALSE){
 	## A one step update in a Gibbs sampler.
 	## ## initialize
     ## Z = 1*(comCross>0); slice =5 ;dist= phy_dist;
@@ -229,14 +231,14 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
                 U0 <-rExp2(pdist*outer(y0[,i],w0[,i]), L1[i], Z, Z0)
             
             if(wMH)
-                w0[,i+1] <-rWmc(w0[,i], y0[,i],peta[i], pdist, m_c, U0, w_sd =w_sd) else 
+                w0[,i+1] <-rWmc(w0[,i], y0[,i],peta[i], pdist, m_c, U0, w_sd =w_sd, wEta) else 
             rW(m_c, U0,y0[,i])
 
             ##w_star <- rgamma(1, shape=a, scale = 1/(tau  + sum(y0[,i])))  #What is left of the mass G(\theta)*
             w_star<-0
             ## Updating col parameter
             ##if(missing(y))
-            if(yMH) y0[,i+1] <-rYmc(y0[,i], w0[,i+1],peta[i], pdist, m_r, U0) else 
+            if(yMH) y0[,i+1] <-rYmc(y0[,i], w0[,i+1],peta[i], pdist, m_r, U0,y_sd,yEta) else 
             y0[,i+1]<-rY(w0=w0[,i+1], w_star = w_star, U0 =U0*pdist, m_r) # 0.01406 seconds
 
             if(!missing(eta)){  # 0.38804 seconds, 0.27028  for optim by itself, 0.11 seconds for what is left
@@ -247,11 +249,11 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
                 ## new.eta = nlm(rEtaIn, peta[i],gradtol=1e-2, stepmax = 0.5,steptol = 1e-4)
                 ## petashoot[i+1]<-new.eta$par
                 ## petashoot[i+1]<-new.eta$estimate
-                new.eta = rEta(peta[i],dist,pdist,Z,y0[,i+1], w0[,i+1], U0,min_dist, eta_sd=eta_sd)
+                new.eta = rEta(peta[i],dist,pdist,Z,y0[,i+1], w0[,i+1], U0,min_dist, eta_sd=eta_sd, wEta, yEta)
                 peta[i+1] = new.eta$eta
-                if(wMH)
+                if(wMH & wEta)
                     w0[,i+1]=w0[,i+1]^(peta[i+1]/peta[i])
-                if(yMH)
+                if(yMH & yEta)
                     y0[,i+1]=y0[,i+1]^(peta[i+1]/peta[i])
                 pdist = new.eta$dist
             }
@@ -272,7 +274,8 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     etashoot = if(!missing(eta)) petashoot[throw.out] else NULL
     if(!missing(eta)){
         eta = peta[throw.out]
-        w0 = w0^eta 
+        if(wEta) w0 = w0^eta
+        if(yEta) y0 = y0^eta
     }else eta = NULL
     L = if(uncertain) t(data.frame(l1 = L1[throw.out], l0 = L0[throw.out])) else NULL
     param_phy = list(w_star  =w_star, w = w0, y = y0, burn_in = burn_in - max(-throw.out), throw.out = max(-throw.out),eta = eta, L=L, etashoot = etashoot)

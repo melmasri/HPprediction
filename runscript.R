@@ -78,9 +78,7 @@ if(is.null(run_script) | is.null(subDir)){
 
 title = paste0(dataset,' ',subset,' all data')
 source('library.R')
-##source('gen.yEta.R')
 source('gen.R')
-## source('gen.wEta.R')
 ##Creating directory
 
 reportFile <- "report.txt"

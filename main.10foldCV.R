@@ -10,6 +10,7 @@
 ## Global Variable
 SAVE_PARAM = TRUE
 ## DATAFILENAME = 'comEID-PS.RData'
+## DATAFILENAME = 'comGMPD.RData'
 ## print(DATAFILENAME)
 ## source('library.R')
 ## source('gen.R')
@@ -41,6 +42,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist){
         b_e = 1
         eta_sd = 0.022
         w_sd = 0.15
+        y_sd = 0.15
     }
     if(dataset =='eid'){
         a_w = 0.5
@@ -51,15 +53,17 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist){
         b_e = 1
         eta_sd = 0.003
         w_sd = 0.15
+        y_sd
     }
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    ## dist  = com_paCross%*%t(com_paCross)
-    ## dist  = 1-1/dist
-    ## dist[is.infinite(dist)]<-0
-    ## dist = dist + 1e-4
-    ## diag(dist)<-0
-    param_phy = gibbs_one(com_paCross,slice=8 ,dist= dist, eta=1, wMH = TRUE)
+    dist  = com_paCross%*%t(com_paCross)
+    dist  = 1-1/dist
+    dist[is.infinite(dist)]<-0
+    dist = dist + 1e-4
+    diag(dist)<-0
+
+    param_phy = gibbs_one(com_paCross,slice=8 ,dist= dist, eta=1, wMH = TRUE,yMH=T)
     aux = getMean(param_phy)
     P = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
