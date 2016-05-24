@@ -35,9 +35,11 @@ raffinity<-function(n, m1, m2 , hyper){
 	rgamma(n,shape = a + m1, rate = b + m2)
 }
 
-raffinity.MH<-function(old, affin2, eta , m, Ud, sig=0.1, paramEta, hyper){
-    a= hyper[1];b = hyper[2]
+raffinity.MH<-function(old, eta , m, Ud, sig=0.1, paramEta, hyper){
+    a = hyper[1]
+    b = hyper[2]
     if(!paramEta) eta = 1
+    old= old^(1/eta)
     epsilon = rnorm(length(old), 0, sd = sig) 
     new = old +  -2*(old + epsilon <=0)*epsilon + epsilon    
 
@@ -51,27 +53,23 @@ raffinity.MH<-function(old, affin2, eta , m, Ud, sig=0.1, paramEta, hyper){
 rHyper<-function(old,y, w, eta, U, pdist, mr, mc, type='host'){
     new = old*exp(rnorm(length(old), 0, sd = 0.1 ))
     new[2]<-1
-#    new[2]=1
     if(type=='host'){
-        u =  rowSums(t(t(U)*w)*pdist)
-        ##         r = sum(lgamma(old[1]+ mr)-lgamma(new[1]+ mr)) +
-        ##             sum((new[1]+ mr)*log(new[2] + u) - (old[1]+ mr)*log(old[2] + u))+
-        ##                 + (new[1]-old[1])*sum(log(y)) - (new[2]-old[2])*sum(y)
+        u = (U*pdist)%*%w
         r = length(y)*(new[1]*log(new[2]) - lgamma(new[1]) )  +
             sum(lgamma(mr+new[1]) - (mr + new[1]*log(new[2] + u))) +
                 -(length(y)*(old[1]*log(old[2]) - lgamma(old[1]))  +
                       sum(lgamma(mr+old[1]) - (mr + old[1]*log(old[2] + u))))
     }
-
+    
     if(type=='parasite'){
-        u =  colSums(U*y*pdist)
-        ## r = sum((new[1] + mc)*log(new[2]+ u)  - (old[1]+ mc)*log(old[2]+ u))+
-        ##     - sum(lgamma(new[1]+ mc) - lgamma(old[1]+mc)) + 
-        ##         (new[1]-old[1])*sum(log(w)) - (new[2]-old[2])*sum(w)
+        u =  y%*%(U*pdist)
         r = length(w)*(new[1]*log(new[2]) - lgamma(new[1]) )  +
             sum(lgamma(mc+new[1]) - (mc + new[1]*log(new[2] + u))) +
-                -(length(w)*(old[1]*log(old[2]) - lgamma(old[1]))  +
-                      sum(lgamma(mc+old[1]) - (mc + old[1]*log(old[2] + u))))
+            -(length(w)*(old[1]*log(old[2]) - lgamma(old[1]))  +
+                  sum(lgamma(mc+old[1]) - (mc + old[1]*log(old[2] + u))))
+        ##   r = ncol(U)*(new[1]*log(new[2]) - old[1]*log(old[2]) +
+        ##                      lgamma(new[1])-lgamma(old[1]) )+
+        ##                          (new[1]- old[1])*sum(log(w)) - (new[2]-old[2])*sum(w)
     }
     ratio = min(1, exp(r));ratio
     u = 1*(runif(1)<=ratio)
@@ -89,13 +87,13 @@ rEta<-function(eta.old, dist , pdist,Z, y, w, U,md, eta_sd =0.01, wEta, yEta, hy
     if(wEta) w.new= w^(eta.prop/eta.old) else w.new = w
     if(yEta) y.new =y^(eta.prop/eta.old) else y.new = y
 	## w.new =w # when eta is 1.
-        pdist.new = (dist^eta.prop)%*%Z + md^eta.prop
-        likli = sum(log((pdist.new/pdist.old)^Z )) - sum(U*(outer(y.new,w.new)*pdist.new - pdist.old*outer(y,w)))
-    prior = dgamma(eta.prop, shape=a, scale=b, log=TRUE) - dgamma(eta.old, shape = a,scale = b, log=TRUE)
+    pdist.new = (dist^eta.prop)%*%Z + md^eta.prop
+    likli = sum(log((pdist.new/pdist.old)^Z )) - sum(U*(outer(y.new,w.new)*pdist.new - pdist.old*outer(y,w)))
+    prior = log(eta.old) - log(eta.prop)
+    #prior = dgamma(eta.prop, shape=a, scale=b, log=TRUE) - dgamma(eta.old, shape = a,scale = b, log=TRUE)
     ratio = min(1, exp(likli + prior));ratio
     u = (runif(1)<=ratio)
     if(u) { eta.old  = eta.prop;pdist.old = pdist.new }
-    ##}
     list (eta=eta.old, dist=pdist.old)
 }
 
@@ -122,13 +120,11 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50 ){
     batch = (floor(i/batch.size)-1)*batch.size + 2
     if(!is.null(dim(param))){
         pvar= apply(param[,batch:i],1,sd)
-        ac = 1-rowMeans(1*abs(param[,batch:i]- param[,batch:i-1])<pvar/20)
-
+        ac = 1-rowMeans(1*abs(param[,batch:i]- param[,batch:i-1])<=pvar/20)
     }else{
         pvar= sd(param[batch:i])/20
-        ac = 1-mean(1*abs(param[batch:i]- param[batch:i-1])<pvar)
+        ac = 1-mean(1*abs(param[batch:i]- param[batch:i-1])<=pvar)
     }
-    #print(summary(ac))
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
@@ -147,7 +143,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     throw.out.slice = floor(0.2*slice)
     throw.out = throw.out.slice*ncol(Z)
     print(sprintf("Run for %i slices, and %i burn ins",slice, burn_in))
-    print(sprintf("Settings: uncertain=%s, wmH=%s,yMH=%s,wEta=%s,yEta=%s .",uncertain, wMH, yMH,wEta,yEta))
+    print(sprintf("Settings: uncertain=%s, wMH=%s,yMH=%s,wEta=%s,yEta=%s .",uncertain, wMH, yMH,wEta,yEta))
     print(dim(Z))
     ## Hyper parameters
     a_w = 1;b_w = 1; a_y = 1; b_y = 1; a_e = 1;b_e = 1
@@ -167,6 +163,8 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     beta= 0.05
     ls = floor(log(sqrt((n_w*colMeans(Z)*(1-colMeans(Z)))))/beta)
     lsy = floor(log(sqrt((n_y*rowMeans(Z)*(1-rowMeans(Z)))))/beta)
+    ls = apply(Z, 2, function(r) floor(log(tol.err + sd(r))/beta))
+    lsy = apply(Z, 1, function(r) floor(log(tol.err + sd(r))/beta))
     lseta = -100
     batch.size = 50
     w_sd = exp(beta*ls)
@@ -179,7 +177,6 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     if(!missing(y)) y0<-matrix( y, nrow= n_y, ncol =burn_in) else
     y0<-matrix(1,nrow= n_y, ncol =burn_in)
     w0<-matrix(1, nrow= n_w, ncol =burn_in)
-	w_star = 0
 	Z0 <- Z==0
 	mc <- colSums(1*(Z>0))
 	mr <- rowSums(1*(Z>0))
@@ -192,7 +189,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     tryCatch(
         
         for (i in 1:(burn_in-1)){
-        #for (i in 1:200){
+            ## for (i in 1:200){
             if((i%%batch.size==0) & (i < 0.8*burn_in)){
                 if(wMH){
                     ls  = AdaptiveSigma(w0, ls, i)
@@ -210,36 +207,24 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
             
             ## Updatting latent scores
             if(!uncertain){
-                U0<- rExp(pdist*outer(y0[,i],w0[,i]))  
-                U0[Z0]<-1 # 0.03162  seconds
-                #U0<- rExp(pdist*outer(y0,w0))  
+                U0<- rExp(pdist*outer(y0[,i],w0[,i]))
+                U0[Z0]<-1
             }else
                 U0 <-rExp2(pdist*outer(y0[,i],w0[,i]), g0[i], Z, Z0)
             
             ## Updating parasite parameters
-            ## if(wMH)
-            ##     w0[,i+1]<-rWmc(w0[,i], y0[,i],peta[i],
-            ##                    pdist, mc, U0, w_sd =w_sd, wEta, c(a_w, b_w)) else 
-            ## w0[,i+1]<-raffinity(n_w, mc, colSums((U0*y0[,i])*pdist) ,c(a_w, b_w))
-            if(wMH)
-                w0[,i+1]<-raffinity.MH(w0[,i],y0[,i],peta[i],mc,(y0[,i]%*%(U0*pdist)),
-                                       sig=w_sd, wEta, c(a_w, b_w)) else
-            w0[,i+1]<-raffinity(n_w, mc, colSums((U0*y0[,i])*pdist) ,c(a_w, b_w))
-            ##w_star <- rgamma(1, shape=a, scale = 1/(tau  + sum(y0[,i])))  #What is left of the mass G(\theta)*
-            w_star<-0
+            if(wMH){
+                w0[,i+1]<-raffinity.MH(w0[,i],peta[i],mc,y0[,i]%*%(U0*pdist),
+                                       sig=w_sd, wEta, c(a_w, b_w))
+            }else
+                w0[,i+1]<-raffinity(n_w, mc, y0[,i]%*%(U0*pdist) ,c(a_w, b_w))
+            
             ## Updating host parameters
-            ##            if(missing(y))
             if(yMH)
-                y0[,i+1]<-raffinity.MH(y0[,i],w0[,i+1],peta[i],mr, (U0*pdist)%*%w0[,i+1],
+                y0[,i+1]<-raffinity.MH(y0[,i],peta[i],mr, (U0*pdist)%*%w0[,i+1],
                                        sig=y_sd, yEta, c(a_y, b_y)) else
-            y0[,i+1]<-raffinity(n_y, mr,rowSums(t(t(U0)*w0[,i+1])*pdist) ,c(a_y, b_y))
-            
-            ## if(yMH)
-            ##     y0[,i+1] <-rYmc(y0[,i], w0[,i+1],peta[i],
-            ##                     pdist, mr, U0,y_sd,yEta,c(a_y, b_y)) else
-            ## y0[,i+1]<-raffinity(n_y, mr, rowSums(t(t(U0)*w0[,i+1])*pdist) ,c(a_y, b_y))
+            y0[,i+1]<-raffinity(n_y, mr, (U0*pdist)%*%w0[,i+1] ,c(a_y, b_y))
 
-            
             ## updating eta
             if(!missing(eta)){  
                 new.eta = rEta(peta[i],dist,pdist,Z,y0[,i+1],
@@ -250,6 +235,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
                 if(yMH & yEta)
                     y0[,i+1]=y0[,i+1]^(peta[i+1]/peta[i])
                 pdist = new.eta$dist
+                if(i%%100==0) print(peta[i+1])
             }
 
             ## Uncertainty variable
@@ -258,7 +244,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
             }
             
             ## Updating Hyper parameters
-            if(!yEta){
+            if(!yEta ){
                 new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
                     peta[i+1],U0, pdist, mr, mc, type='host')
                 a_y = new[1]
@@ -275,6 +261,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
                 hh[3,i+1]<-a_w
                 hh[4,i+1]<-b_w
             }
+            if(i%%100==0) print(c(a_y, a_w))
         }
             
        ,warning = function(w)
@@ -284,7 +271,6 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
         finally = print("Done!"))
     ## throwing out the burn_in stage.(approx 30%)
     if(throw.out==0) throw.out = c(1:burn_in) else throw.out = -c(1:throw.out)
-    w_star = w_star[throw.out]
     #w0 = w0[,throw.out]
     ## y0 = if(!missing(y)) y0[,throw.out] else y
     ## w0 = if(!missing(w)) w0[,throw.out] else w
@@ -294,27 +280,27 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
         if(yEta) y0 = y0^(1/eta)
     }else eta = NULL
     g = if(uncertain) t(data.frame(g = g0[throw.out])) else NULL
-    param_phy = list(w_star  =w_star, w = w0, y = y0, burn_in = burn_in - max(-throw.out), throw.out = max(-throw.out),eta = eta, g=g, hh=hh)
+    param_phy = list(w = w0, y = y0, burn_in = burn_in - max(-throw.out), throw.out = max(-throw.out),eta = eta, g=g, hh=hh)
     param_phy
 }
 ##################################################
 ##################################################
 ## old functions
 
-## rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1, wEta, hyper){
-##     a= hyper[1]
-##     b = hyper[2]
-##     if(!wEta) eta = 1
-##     w.old = w.old^(1/eta)
-##     epsilon = rnorm(length(w.old), 0, sd = w_sd) # 0.2 for regular 0.12 tested with AdaptiveMCMC
-##     w.prop = w.old +  -2*(w.old + epsilon <=0)*epsilon + epsilon
-##     likeli = (eta*mc+a-1)*log(w.prop/w.old) - (y%*%(U*pdist))*(w.prop^eta - w.old^eta) - (w.prop - w.old)*b
-## #    prior = dgamma(w.prop, shape=a, rate=b, log=TRUE) - dgamma(w.old, shape = a,rate = b, log=TRUE)
-##     ratio = pmin(1, exp(likeli))
-##     u = 1*(runif(length(w.old))<=ratio)
+rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1, wEta, hyper){
+    a= hyper[1]
+    b = hyper[2]
+    if(!wEta) eta = 1
+    w.old = w.old^(1/eta)
+    epsilon = rnorm(length(w.old), 0, sd = w_sd) # 0.2 for regular 0.12 tested with AdaptiveMCMC
+    w.prop = w.old +  -2*(w.old + epsilon <=0)*epsilon + epsilon
+    likeli = (eta*mc+a-1)*log(w.prop/w.old) - (y%*%(U*pdist))*(w.prop^eta - w.old^eta) - (w.prop - w.old)*b
+                                        #    prior = dgamma(w.prop, shape=a, rate=b, log=TRUE) - dgamma(w.old, shape = a,rate = b, log=TRUE)
+    ratio = pmin(1, exp(likeli))
+    u = 1*(runif(length(w.old))<=ratio)
     
-##     u*w.prop^eta + (1-u)*w.old^eta
-## }
+    u*w.prop^eta + (1-u)*w.old^eta
+}
 
 ## rYmc<-function(y.old, w,eta=1, pdist, mr, U, y_sd, yEta, hyper){
 ##     ##a = a_y# shape parameter of a Gamma prior
