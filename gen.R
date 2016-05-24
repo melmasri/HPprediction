@@ -169,7 +169,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     batch.size = 50
     w_sd = exp(beta*ls)
     y_sd = exp(beta*lsy)
-    eta_sd = exp(beta*lseta)
+    eta_sd = 0.025 #exp(beta*lseta)
 
     ## Variable holders
     g0<-rep(0.5, burn_in)
@@ -199,10 +199,10 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
                     lsy = AdaptiveSigma(y0, lsy, i)
                     y_sd = exp(beta*lsy)
                 }
-                if(!missing(eta) & !missing(dist)){
-                    lseta = AdaptiveSigma(peta, lseta, i)
-                    eta_sd = exp(beta*lseta)
-                }
+                ## if(!missing(eta) & !missing(dist)){
+                ##     lseta = AdaptiveSigma(peta, lseta, i)
+                ##     eta_sd = exp(beta*lseta)
+                ## }
             }
             
             ## Updatting latent scores
@@ -272,8 +272,8 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     ## throwing out the burn_in stage.(approx 30%)
     if(throw.out==0) throw.out = c(1:burn_in) else throw.out = -c(1:throw.out)
     #w0 = w0[,throw.out]
-    ## y0 = if(!missing(y)) y0[,throw.out] else y
-    ## w0 = if(!missing(w)) w0[,throw.out] else w
+    y0 = if(missing(y)) y0[,throw.out] else y
+    w0 = if(missing(w)) w0[,throw.out] else w
     if(!missing(eta)){
         eta = peta[throw.out]
         if(wEta) w0 = w0^(1/eta)

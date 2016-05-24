@@ -10,7 +10,8 @@ dim(phy_dist)
 
 ## Removing
 ## rows with less than 2 interactions
-aux = which(rowSums(1*(com>0))<2)
+min.no= 1
+aux = which(rowSums(1*(com>0))<min.no)
 if(length(aux)>0){
     com = com[-aux, ]
     phy_dist = phy_dist[-aux,]
@@ -18,14 +19,17 @@ if(length(aux)>0){
 }
 dim(com)
 #empty columns
-aux = which(colSums(1*(com>0))<2)
+aux = which(colSums(1*(com>0))<min.no)
 if(length(aux)>0)
     com = com[, -aux]
 dim(com)
 
 aux = which(rowSums(1*(com>0))==0);aux  #should be none
+if(length(aux)>0){ com = com[-aux,]}
 aux = which(colSums(1*(com>0))==0);aux #should be none
 com=lof(com)
+
+dim(com)
 
 range( phy_dist)/(max(phy_dist)+1e-2)
 phy_dist= phy_dist/(max(phy_dist)+1e-2)
