@@ -45,9 +45,10 @@ source('load_phyDistance.R')
 dim(com)
 dim(phy_dist)
 
+min.no= 1
 ## Removing
 ## rows with less than 1 interactions
-aux = which(rowSums(1*(com>0))<2)
+aux = which(rowSums(1*(com>0))<min.no)
 if(length(aux)>0){
     com = com[-aux, ]
     phy_dist = phy_dist[-aux,]
@@ -56,7 +57,7 @@ if(length(aux)>0){
 dim(com)
 
 ##empty columns
-aux = which(colSums(1*(com>0))<2)
+aux = which(colSums(1*(com>0))<min.no)
 if(length(aux)>0){
     com = com[, -aux]
 }
@@ -78,7 +79,7 @@ range( phy_dist)/(max(phy_dist)+1e-2)
 phy_dist= phy_dist/(max(phy_dist)+1e-2)
 plot_Z(1*(com>0))
 
-save(com, phy_dist, file='comEID-PS.RData')
+save(com, phy_dist, file='comEID-PS.single.RData')
 ## > dim(com)
 ## [1] 391 757
 
@@ -94,7 +95,7 @@ dim(phy_dist)
 
 ## Removing
 ## rows with less than 2 interactions
-aux = which(rowSums(1*(com>0))<2)
+aux = which(rowSums(1*(com>0))<min.no)
 if(length(aux)>0){
     com = com[-aux, ]
     phy_dist = phy_dist[-aux,]
@@ -102,7 +103,7 @@ if(length(aux)>0){
 }
 dim(com)
 #empty columns
-aux = which(colSums(1*(com>0))<2)
+aux = which(colSums(1*(com>0))<min.no)
 if(length(aux)>0)
     com = com[, -aux]
 dim(com)
@@ -128,7 +129,7 @@ dim(phy_dist)
 
 ## Removing
 ## rows with less than 1 interactions
-aux = which(rowSums(1*(com>0))<2)
+aux = which(rowSums(1*(com>0))<min.no)
 if(length(aux)>0){
     com = com[-aux, ]
     phy_dist = phy_dist[-aux,]
@@ -137,7 +138,7 @@ if(length(aux)>0){
 dim(com)
 
 ##empty columns
-aux = which(colSums(1*(com>0))<2)
+aux = which(colSums(1*(com>0))<min.no)
 if(length(aux)>0){
     com = com[, -aux]
 }
