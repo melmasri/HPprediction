@@ -43,7 +43,13 @@ if(dataset =='eid')
 ## source('library.R')
 ## source('gen.R')
 
-param_phy = gibbs_one(Z=1*(com>0),slice=10,dist=phy_dist,eta=1, uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper)
+## y = rgamma(100, shape=2, rate=3)
+## w = rgamma(500, shape=0.5, rate=0.5)
+## z = 1*(runif(100*500)<=1-exp(-outer(y,w)))
+## com=z
+## SIMPLERHO=TRUE
+
+param_phy = gibbs_one(Z=1*(com>0),slice=25,dist = phy_dist, eta=1,uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper)
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

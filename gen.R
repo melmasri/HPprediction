@@ -60,16 +60,12 @@ rHyper<-function(old,y, w, eta, U, pdist, mr, mc, type='host', sig = 0.1){
                 -(length(y)*(old[1]*log(old[2]) - lgamma(old[1]))  +
                       sum(lgamma(mr+old[1]) - (mr + old[1]*log(old[2] + u))))
     }
-    
     if(type=='parasite'){
         u =  y%*%(U*pdist)
         r = length(w)*(new[1]*log(new[2]) - lgamma(new[1]) )  +
             sum(lgamma(mc+new[1]) - (mc + new[1]*log(new[2] + u))) +
             -(length(w)*(old[1]*log(old[2]) - lgamma(old[1]))  +
                   sum(lgamma(mc+old[1]) - (mc + old[1]*log(old[2] + u))))
-        ##   r = ncol(U)*(new[1]*log(new[2]) - old[1]*log(old[2]) +
-        ##                      lgamma(new[1])-lgamma(old[1]) )+
-        ##                          (new[1]- old[1])*sum(log(w)) - (new[2]-old[2])*sum(w)
     }
     ratio = min(1, exp(r));ratio
     u = 1*(runif(1)<=ratio)
@@ -260,7 +256,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
                     hh[3,i+1]<-a_w
                     hh[4,i+1]<-b_w
                 }
-                #if(i%%100==0) print(c(a_y, a_w))
+                ##if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
             }
         }
         
