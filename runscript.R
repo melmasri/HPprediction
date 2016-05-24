@@ -4,7 +4,7 @@
 ## runtype: uncertain, 10fold, ALL, nodist, weighted, NN.
 ## subtype: subset, anything
 ## datatype: GMP EID
-
+## SimpleRho: as in w^rho or not
 
 # A general running script
 options(echo=TRUE) # if you want see commands in output file
@@ -19,6 +19,8 @@ if(length(args)<3){
 runtype = args[1]
 datatype = args[2]
 subtype  = args[3]
+SIMPLERHO = if(!is.na(args[4])) TRUE else FALSE
+
 sTime = Sys.time()
 
 if(grepl('GMP',datatype)){

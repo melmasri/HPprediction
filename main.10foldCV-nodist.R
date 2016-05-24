@@ -38,16 +38,17 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
+        
     if(dataset =='gmp')
-    hyper = list(parasite= c(0.6, 1), host =c(0.5, 1), eta = c(1.13, 1))
+        hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
     
     if(dataset =='eid')
-    hyper = list(parasite= c(0.5, 1), host =c(0.1, 1), eta = c(0.96, 1))
+        hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
     
     Z=1*(Z>0)
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy=gibbs_one(com_paCross,slice=12,wMH=TRUE)
+    param_phy=gibbs_one(com_paCross,slice=12,wMH=FALSE, hyper=hyper, wEta=FALSE,AdaptiveMC = FALSE,updateHyper = FALSE, yEta=FALSE,  yMH=FALSE)
     aux = getMean(param_phy)
     P = 1-exp(-outer(aux$y,aux$w))
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)

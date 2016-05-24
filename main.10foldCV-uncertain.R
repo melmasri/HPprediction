@@ -24,7 +24,7 @@ library(parallel)
 
 #######################
 ## subsetting
-slice=10
+slice=12
 if(SUBSET){
 ## EID
     if(dataset=='eid') aux = rownames(com) %in% pan$bionomial[pan$Order=="Rodentia"]
@@ -73,35 +73,25 @@ pairs = cross.validate.fold(com)
 tot.gr = length(unique(pairs[,'gr']))
 
 ## No uncertain
-if(dataset =='gmp'){
-    a_w = 0.6
-    b_w = 1
-    a_y = 0.5
-    b_y = 1
-    a_e = 1.13
-    b_e = 1
-    eta_sd = 0.022
-    w_sd = 0.15
-}
-if(dataset =='eid'){
-    a_w = 0.5
-    b_w = 1
-    a_y = 0.1
-    b_y = 2
-    a_e = 0.96
-    b_e = 1
-    eta_sd = 0.003
-    w_sd = 0.15
-}
+if(dataset =='gmp')
+    hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
+
+if(dataset =='eid')
+    hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+
 
 pdf('all.pdf')
 ## without G
-paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH = TRUE)
+paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH = TRUE, hyper=hyper)
 
 ana.plot(paramRegular, com)
 
 paramMu = getMean(paramRegular)
-PRegular = 1-  exp(-outer(paramMu$y, paramMu$w^paramMu$eta)*((phy_dist^paramMu$eta)%*% com))
+if(SIMPLERHO){
+    PRegular = 1-exp(-outer(paramMu$y, paramMu$w)*((phy_dist^paramMu$eta)%*% com))
+}else{
+    PRegular = 1-exp(-outer(paramMu$y, paramMu$w^paramMu$eta)*((phy_dist^paramMu$eta)%*% com))
+}
 
 rocRegular = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=FALSE, bins=400)
 ana.table(com10, com, rocRegular, TRUE)
@@ -111,13 +101,16 @@ ana.table(com10, com, rocRegular.all, TRUE)
 
 ##################################################
 ### with G
-paramRegularG = gibbs_one(com,slice=slice,dist= phy_dist,eta=1,wMH=TRUE,uncertain =TRUE)
+paramRegularG = gibbs_one(com,slice=slice,dist= phy_dist,eta=1,wMH=TRUE,uncertain =TRUE, hyper = hyper)
 
 ana.plot(paramRegularG, com)
 
 paramMuG = getMean(paramRegularG)
-PRegularG = 1-  exp(-outer(paramMuG$y,paramMuG$w^paramMuG$eta)*((phy_dist^paramMuG$eta)%*% com))
-
+if(SIMPLERHO){
+    PRegularG = 1-  exp(-outer(paramMuG$y,paramMuG$w)*((phy_dist^paramMuG$eta)%*% com))
+}else{
+    PRegularG = 1-  exp(-outer(paramMuG$y,paramMuG$w^paramMuG$eta)*((phy_dist^paramMuG$eta)%*% com))
+}
 ## Method 1
 P=PRegularG
 
@@ -134,36 +127,26 @@ plot(cbind(rocRegularG.all$roc$FPR, rocRegularG.all$roc$TPR), type='b', col='red
 lines(cbind(rocRegular.all$roc$FPR, rocRegular.all$roc$TPR), type='b', col='blue')
 dev.off()
 ## with uncertain
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
+    if(dataset =='gmp')
+        hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
 
-    if(dataset =='gmp'){
-        a_w = 0.6
-        b_w = 1
-        a_y = 0.5
-        b_y = 1
-        a_e = 1.13
-        b_e = 1
-        eta_sd = 0.022
-        w_sd = 0.15
-    }
-    if(dataset =='eid'){
-        a_w = 0.5
-        b_w = 1
-        a_y = 0.1
-        b_y = 2
-        a_e = 0.96
-        b_e = 1
-        eta_sd = 0.003
-        w_sd = 0.15
-    }
-    
+    if(dataset =='eid')
+        hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy=gibbs_one(com_paCross,slice=s,dist= dist,eta=1,wMH=TRUE,uncertain=TRUE)
+
+    param_phy=gibbs_one(com_paCross,slice=s,dist= dist,eta=1,wMH=!SIMPLERHO,uncertain=TRUE, hyper=hyper,wEta=!SIMPLERHO)
     aux = getMean(param_phy)
-    P1 = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
+
+    if(SIMPLERHO){
+        P1 = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+    }else{
+        P1 = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
+    }
     P = aux$L[1]*P1/(1-P1  + aux$L[1]*P1)
     P[com_paCross==1]<-P1[com_paCross==1]
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
@@ -171,7 +154,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s){
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice, mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

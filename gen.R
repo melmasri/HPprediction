@@ -50,8 +50,8 @@ raffinity.MH<-function(old, eta , m, Ud, sig=0.1, paramEta, hyper){
     u*new^eta + (1-u)*old^eta
 }
 
-rHyper<-function(old,y, w, eta, U, pdist, mr, mc, type='host'){
-    new = old*exp(rnorm(length(old), 0, sd = 0.1 ))
+rHyper<-function(old,y, w, eta, U, pdist, mr, mc, type='host', sig = 0.1){
+    new = old*exp(rnorm(length(old), 0, sd = sig ))
     new[2]<-1
     if(type=='host'){
         u = (U*pdist)%*%w
@@ -76,22 +76,16 @@ rHyper<-function(old,y, w, eta, U, pdist, mr, mc, type='host'){
     u*new + (1-u)*old
 }
 
-rEta<-function(eta.old, dist , pdist,Z, y, w, U,md, eta_sd =0.01, wEta, yEta, hyper){
+rEta<-function(eta.old, dist , pdist,Z, y, w, U,md, eta_sd =0.01, wEta, yEta){
     ## A function that generates the prior for the power of distance
-    ## eta.old = peta[i];y=y0[,i+1];w= w0[,i+1];U= U0
-    a = hyper[1]; b= hyper[2]
+    eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
     pdist.old = (dist^eta.old)%*%Z  +  md^eta.old
-    ## for (t in 1:5){
-    epsilon = rnorm(1, 0, sd = eta_sd) # Tested to be 0.005 with Adaptive MCMC
-    eta.prop = eta.old + if( eta.old + epsilon <=0) -1*epsilon else epsilon
     if(wEta) w.new= w^(eta.prop/eta.old) else w.new = w
     if(yEta) y.new =y^(eta.prop/eta.old) else y.new = y
-	## w.new =w # when eta is 1.
     pdist.new = (dist^eta.prop)%*%Z + md^eta.prop
     likli = sum(log((pdist.new/pdist.old)^Z )) - sum(U*(outer(y.new,w.new)*pdist.new - pdist.old*outer(y,w)))
-    prior = log(eta.old) - log(eta.prop)
-    #prior = dgamma(eta.prop, shape=a, scale=b, log=TRUE) - dgamma(eta.old, shape = a,scale = b, log=TRUE)
-    ratio = min(1, exp(likli + prior));ratio
+    
+    ratio = min(1, exp(likli));ratio
     u = (runif(1)<=ratio)
     if(u) { eta.old  = eta.prop;pdist.old = pdist.new }
     list (eta=eta.old, dist=pdist.old)
@@ -116,7 +110,7 @@ rg<-function(Z,Y,l){
     g
 }
 
-AdaptiveSigma<-function(param, ls, i, batch.size =50 ){
+AdaptiveSigma<-function(param, ls, i, batch.size =50){
     batch = (floor(i/batch.size)-1)*batch.size + 2
     if(!is.null(dim(param))){
         pvar= apply(param[,batch:i],1,sd)
@@ -125,10 +119,11 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50 ){
         pvar= sd(param[batch:i])/20
         ac = 1-mean(1*abs(param[batch:i]- param[batch:i-1])<=pvar)
     }
+    #print(cbind(i, range(ls), range(ac)))
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
-gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH=FALSE, wEta = TRUE, yEta =FALSE, hyper){
+gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALSE, yMH=FALSE, wEta = TRUE, yEta =FALSE,updateHyper=TRUE, AdaptiveMC=TRUE){
 
 	## A one step update in a Gibbs sampler.
 	## ## initialize
@@ -146,31 +141,32 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
     print(sprintf("Settings: uncertain=%s, wMH=%s,yMH=%s,wEta=%s,yEta=%s .",uncertain, wMH, yMH,wEta,yEta))
     print(dim(Z))
     ## Hyper parameters
-    a_w = 1;b_w = 1; a_y = 1; b_y = 1; a_e = 1;b_e = 1
+    a_w = 1;b_w = 1; a_y = 1; b_y = 1;
+
+    y_sd = apply(Z, 1,sd)
+    w_sd = apply(Z, 2,sd)
+    eta_sd = 0.01
+    
+    beta= 0.05
+    
     if(!missing(hyper)){
         print(hyper)
         a_y =  hyper[['host']][1]
         b_y =  hyper[['host']][2]
+        y_sd = hyper[['host']][3]
         a_w =  hyper[['parasite']][1]
         b_w =  hyper[['parasite']][2]
-        a_eta = hyper[['eta']][1]
-        b_eta = hyper[['eta']][2]
+        w_sd = hyper[['parasite']][3]
+        eta_sd = hyper[['eta']][1]
     }
     
-    w_sd = 0.5
-    y_sd = 0.5
-    eta_sd = 0.01
-    beta= 0.05
-    ls = floor(log(sqrt((n_w*colMeans(Z)*(1-colMeans(Z)))))/beta)
-    lsy = floor(log(sqrt((n_y*rowMeans(Z)*(1-rowMeans(Z)))))/beta)
-    ls = apply(Z, 2, function(r) floor(log(tol.err + sd(r))/beta))
-    lsy = apply(Z, 1, function(r) floor(log(tol.err + sd(r))/beta))
-    lseta = -100
+    
+    ls = floor(log(tol.err + w_sd)/beta)
+    lsy = floor(log(tol.err + y_sd)/beta)
+    lseta = floor(log(tol.err + eta_sd)/beta)
+    
     batch.size = 50
-    w_sd = exp(beta*ls)
-    y_sd = exp(beta*lsy)
-    eta_sd = 0.025 #exp(beta*lseta)
-
+    
     ## Variable holders
     g0<-rep(0.5, burn_in)
     hh<-matrix(0, nrow=4, ncol=burn_in)
@@ -190,20 +186,22 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
         
         for (i in 1:(burn_in-1)){
             ## for (i in 1:200){
-            if((i%%batch.size==0) & (i < 0.8*burn_in)){
-                if(wMH){
-                    ls  = AdaptiveSigma(w0, ls, i)
-                    w_sd = exp(beta*ls)
+            if(AdaptiveMC)
+                if((i%%batch.size==0) & (i < 0.8*burn_in)){
+                    if(wMH){
+                        ls  = AdaptiveSigma(w0, ls, i)
+                        w_sd = exp(beta*ls)
+                    }
+                    if(yMH){
+                        lsy = AdaptiveSigma(y0, lsy, i)
+                        y_sd = exp(beta*lsy)
+                    }
+                    if(!missing(eta) & !missing(dist)){
+                        lseta = AdaptiveSigma(peta, lseta, i)
+                        eta_sd = exp(beta*lseta)
+                    }
+                    
                 }
-                if(yMH){
-                    lsy = AdaptiveSigma(y0, lsy, i)
-                    y_sd = exp(beta*lsy)
-                }
-                ## if(!missing(eta) & !missing(dist)){
-                ##     lseta = AdaptiveSigma(peta, lseta, i)
-                ##     eta_sd = exp(beta*lseta)
-                ## }
-            }
             
             ## Updatting latent scores
             if(!uncertain){
@@ -228,14 +226,14 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
             ## updating eta
             if(!missing(eta)){  
                 new.eta = rEta(peta[i],dist,pdist,Z,y0[,i+1],
-                    w0[,i+1], U0,min_dist, eta_sd=eta_sd, wEta, yEta, c(a_e, b_e))
+                    w0[,i+1], U0,min_dist, eta_sd=eta_sd, wEta, yEta)
                 peta[i+1] = new.eta$eta
                 if(wMH & wEta)
                     w0[,i+1]=w0[,i+1]^(peta[i+1]/peta[i])
                 if(yMH & yEta)
                     y0[,i+1]=y0[,i+1]^(peta[i+1]/peta[i])
                 pdist = new.eta$dist
-                if(i%%100==0) print(peta[i+1])
+                #if(i%%100==0) print(peta[i+1])
             }
 
             ## Uncertainty variable
@@ -244,26 +242,28 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
             }
             
             ## Updating Hyper parameters
-            if(!yEta ){
-                new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
-                    peta[i+1],U0, pdist, mr, mc, type='host')
-                a_y = new[1]
-                b_y = new[2]
+            if(updateHyper){
+                if(!yEta ){
+                    new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
+                        peta[i+1],U0, pdist, mr, mc, type='host')
+                    a_y = new[1]
+                    b_y = new[2]
                 hh[1,i+1]<-a_y
-                hh[2,i+1]<-b_y
+                    hh[2,i+1]<-b_y
+                }
+                
+                if(!wEta){
+                    new = rHyper(c(a_w, b_w),y0[,i+1],w0[,i+1],
+                        peta[i+1], U0,pdist, mr, mc, type='parasite')
+                    a_w = new[1]
+                    b_w = new[2]
+                    hh[3,i+1]<-a_w
+                    hh[4,i+1]<-b_w
+                }
+                #if(i%%100==0) print(c(a_y, a_w))
             }
-            
-            if(!wEta){
-                new = rHyper(c(a_w, b_w),y0[,i+1],w0[,i+1],
-                    peta[i+1], U0,pdist, mr, mc, type='parasite')
-                a_w = new[1]
-                b_w = new[2]
-                hh[3,i+1]<-a_w
-                hh[4,i+1]<-b_w
-            }
-            if(i%%100==0) print(c(a_y, a_w))
         }
-            
+        
        ,warning = function(w)
            {print(c('warning at i:', i)); print(w);traceback()},
         error =function(e)
@@ -280,29 +280,29 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta, uncertain =FALSE,wMH=FALSE, yMH
         if(yEta) y0 = y0^(1/eta)
     }else eta = NULL
     g = if(uncertain) t(data.frame(g = g0[throw.out])) else NULL
-    param_phy = list(w = w0, y = y0, burn_in = burn_in - max(-throw.out), throw.out = max(-throw.out),eta = eta, g=g, hh=hh)
+    param_phy = list(w = w0, y = y0, burn_in = burn_in - max(-throw.out), throw.out = max(-throw.out),eta = eta, g=g, hh=hh, sd = list(w=w_sd, y = y_sd, eta= eta_sd))
     param_phy
 }
 ##################################################
 ##################################################
 ## old functions
 
-rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1, wEta, hyper){
-    a= hyper[1]
-    b = hyper[2]
-    if(!wEta) eta = 1
-    w.old = w.old^(1/eta)
-    epsilon = rnorm(length(w.old), 0, sd = w_sd) # 0.2 for regular 0.12 tested with AdaptiveMCMC
-    w.prop = w.old +  -2*(w.old + epsilon <=0)*epsilon + epsilon
-    likeli = (eta*mc+a-1)*log(w.prop/w.old) - (y%*%(U*pdist))*(w.prop^eta - w.old^eta) - (w.prop - w.old)*b
-                                        #    prior = dgamma(w.prop, shape=a, rate=b, log=TRUE) - dgamma(w.old, shape = a,rate = b, log=TRUE)
-    ratio = pmin(1, exp(likeli))
-    u = 1*(runif(length(w.old))<=ratio)
+## rWmc<-function(w.old, y,eta=1, pdist, mc, U, w_sd=0.1, wEta, hyper){
+##     a= hyper[1]
+##     b = hyper[2]
+##     if(!wEta) eta = 1
+##     w.old = w.old^(1/eta)
+##     epsilon = rnorm(length(w.old), 0, sd = w_sd) # 0.2 for regular 0.12 tested with AdaptiveMCMC
+##     w.prop = w.old +  -2*(w.old + epsilon <=0)*epsilon + epsilon
+##     likeli = (eta*mc+a-1)*log(w.prop/w.old) - (y%*%(U*pdist))*(w.prop^eta - w.old^eta) - (w.prop - w.old)*b
+##                                         #    prior = dgamma(w.prop, shape=a, rate=b, log=TRUE) - dgamma(w.old, shape = a,rate = b, log=TRUE)
+##     ratio = pmin(1, exp(likeli))
+##     u = 1*(runif(length(w.old))<=ratio)
     
-    u*w.prop^eta + (1-u)*w.old^eta
-}
+##     u*w.prop^eta + (1-u)*w.old^eta
+## }
 
-## rYmc<-function(y.old, w,eta=1, pdist, mr, U, y_sd, yEta, hyper){
+## rYmc <-function(y.old, w,eta=1, pdist, mr, U, y_sd, yEta, hyper){
 ##     ##a = a_y# shape parameter of a Gamma prior
 ##     ##b = b_y# Scale paramter of a Gamma prior
 ##     a = hyper[1];b=hyper[2]
