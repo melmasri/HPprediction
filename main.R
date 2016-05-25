@@ -23,22 +23,12 @@ com_paCross = 1*(comCross>0)
 ## Parameters for the independent GGP
 ## set the correct prior.
 print('Setting the prior.')
-if(dataset =='gmp'){
-    a_w = 0.6
-    b_w = 1
-    a_y = 0.5
-    b_y = 1
-    a_e = 1.13
-    b_e = 1
-}else{
-    a_w = 0.5
-    b_w = 1
-    a_y = 0.1
-    b_y = 2
-    a_e = 0.96
-    b_e = 1
-}
-print(sprintf('a_w %0.3f, b_w %0.3f, a_y %0.3f, b_y %0.3f, a_e %0.3f, b_e %0.3f',a_w, b_w, a_y, b_y, a_e, b_e))
+        
+if(dataset =='gmp')
+    hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
+
+if(dataset =='eid')
+    hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
 
                                         #sigma = 0
 #tau =1

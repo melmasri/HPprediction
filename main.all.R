@@ -22,28 +22,12 @@ load(DATAFILENAME)
 ## set the correct prior.
 print('Setting the prior.')
 ## No uncertain
-if(dataset =='gmp'){
-    a_w = 0.6
-    b_w = 1
-    a_y = 0.5
-    b_y = 1
-    a_e = 1.13
-    b_e = 1
-    eta_sd = 0.006
-    w_sd = 0.15
-    y_sd = 0.15
-}
-if(dataset =='eid'){
-    a_w = 0.5
-    b_w = 1
-    a_y = 0.1
-    b_y = 2
-    a_e = 0.96
-    b_e = 1
-    eta_sd = 0.003
-    w_sd = 0.15
-    y_sd = 0.15
-}
+if(dataset =='gmp')
+    hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
+
+if(dataset =='eid')
+    hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+
 #source('gen.R')
 ## Z = 1*(com>0)
 ## dist = Z%*%t(Z)
@@ -54,10 +38,20 @@ if(dataset =='eid'){
 
 ## dist=phy_dist
 ## Summary statistics
-param_phy = gibbs_one(1*(com>0),slice=10,dist= phy_dist, eta=1, uncertain=FALSE, yMH=TRUE, wMH = TRUE)
+
+
+## source('library.R')
+## source('gen.R')
+
+## y = rgamma(100, shape=2, rate=3)
+## w = rgamma(500, shape=0.5, rate=0.5)
+## z = 1*(runif(100*500)<=1-exp(-outer(y,w)))
+## com=z
+## SIMPLERHO=TRUE
+
+param_phy = gibbs_one(Z=1*(com>0),slice=25,dist = phy_dist, eta=1,uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper)
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
-
 ##################################################
 ##################################################

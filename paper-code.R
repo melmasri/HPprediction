@@ -72,6 +72,7 @@ load('gmp-01-05-00h46/param.RData')
 ## load('eid-11-03-08h43/param.RData')
 ## load('eid-30-04-21h49/param.RData')
 load('eid-01-05-00h46/param.RData')
+load('/home/mo/Github/HP-prediction/gmp-24-05-14h48/param.RData')
 library(xtable)
 
 com_pa = 1*(com>0)
@@ -98,12 +99,21 @@ plot(param_phy$y[r,burn], type='l', main='', col='blue', xlab='Iteration', ylab=
 plot(param_phy$w[c,burn], type='l', main = '', col='blue', xlab = 'Iteration', ylab='Parasite parameter')
 plot(param_phy$eta[burn], type='l', main = '', col='blue', xlab = 'Iteration', ylab='Scaling parameter')
 
+## plot(param_phy$y[r,burn]*param_phy$y[c, burn], type='l', main='', col='blue', xlab='Iteration', ylab='Host parameter')
+
+par(mfrow=c(2,1))
+plot(param_phy$hh[1,burn], type='l', main = '', col='blue', xlab = 'Iteration') 
+plot(param_phy$hh[3,burn], type='l', main = '', col='blue', xlab = 'Iteration') 
+
+
+## plot(param_phy$hh[1,burn]/param_phy$hh[2,burn], type='l', main = '', col='blue', xlab = 'Iteration') 
+## plot(param_phy$hh[3,burn]/param_phy$hh[4,burn], type='l', main = '', col='blue', xlab = 'Iteration') 
 dev.off()
 
 
 pdf(paste0(dataset, '_rho_post.pdf'))
 par(mfrow=c(1,1))
-hist(rowMeans(param_phy$w[,burn]), breaks=30, col='grey',main ='', ylab = 'Frequency',xlab = expression(paste('Averge posterior of ', rho)), border=TRUE)
+hist(rowMeans(param_phy$w[,burn]), breaks=50, col='grey',main ='', ylab = 'Frequency',xlab = expression(paste('Averge posterior of ', rho)), border=TRUE)
 box()
 dev.off()
 
@@ -137,9 +147,11 @@ dev.off()
 ## Histogram
 aux = getMean(param_phy)
 com_pa = 1*(com>0)
-P = 1-exp(-outer(aux$y^aux$eta, aux$w^aux$eta)*((phy_dist^aux$eta)%*%com_pa))
+P = 1-exp(-outer(aux$y, aux$w))
+P = 1-exp(-outer(aux$y, aux$w)*((phy_dist^aux$eta)%*%com_pa))
+pdf('affinity-single.pdf')
 roc = rocCurves(Z=com_pa, Z_cross = com_pa, P=P,plot=TRUE, bins=400, all=TRUE)
-com_pa = zz
+dev.off()
 zz = 1*(com>0)
 aux= which(colSums(zz)==1)
 zz[,aux]<-0
@@ -156,7 +168,8 @@ legend(x='topleft', legend=c('Observed associations', 'Unobserved associations')
 dev.off()
 
 Z_est = 1*(roc$P>roc$threshold)
-Z_est[com_pa==1]<-1
+plot_Z(Z_est)
+#Z_est[com_pa==1]<-1
 pdf(paste0(dataset, '_degree_est_host.pdf'))
 plot_degree(1*(com>0), Z_est, type='hosts')
 dev.off()
