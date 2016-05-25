@@ -72,6 +72,7 @@ load('gmp-01-05-00h46/param.RData')
 ## load('eid-11-03-08h43/param.RData')
 ## load('eid-30-04-21h49/param.RData')
 load('eid-01-05-00h46/param.RData')
+load('/home/mo/Github/HP-prediction/gmp-24-05-14h48/param.RData')
 library(xtable)
 
 com_pa = 1*(com>0)
@@ -97,6 +98,8 @@ par(mfrow=c(3,1))
 plot(param_phy$y[r,burn], type='l', main='', col='blue', xlab='Iteration', ylab='Host parameter')
 plot(param_phy$w[c,burn], type='l', main = '', col='blue', xlab = 'Iteration', ylab='Parasite parameter')
 plot(param_phy$eta[burn], type='l', main = '', col='blue', xlab = 'Iteration', ylab='Scaling parameter')
+
+## plot(param_phy$y[r,burn]*param_phy$y[c, burn], type='l', main='', col='blue', xlab='Iteration', ylab='Host parameter')
 
 par(mfrow=c(2,1))
 plot(param_phy$hh[1,burn], type='l', main = '', col='blue', xlab = 'Iteration') 
