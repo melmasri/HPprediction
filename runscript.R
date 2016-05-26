@@ -23,11 +23,20 @@ SIMPLERHO = if(!is.na(args[4])) TRUE else FALSE
 
 sTime = Sys.time()
 
-if(grepl('GMP',datatype)){
-    DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) '../comGMPD-year.RData' else if( SIMPLERHO) '../comGMPD.single.RData' else '../comGMPD.RData'
-}
-if(grepl('EID',datatype)){
-    DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) '../comEID-subset.RData' else  if (SIMPLERHO) '../comEID-PS.single.RData' else '../comEID-PS.RData'
+if(SIMPLERHO){
+    if(grepl('GMP',datatype)){
+        DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) '../comGMPD-year.single.RData' else '../comGMPD.single.RData'
+    }
+    if(grepl('EID',datatype)){
+        DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) '../comEID-subset.single.RData' else '../comEID-PS.single.RData'
+    }
+}else{
+    if(grepl('GMP',datatype)){
+        DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) '../comGMPD-year.RData' else '../comGMPD.RData'
+    }
+    if(grepl('EID',datatype)){
+        DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) '../comEID-subset.RData' else '../comEID-PS.RData'
+    }
 }
 
 SUBSET = if(grepl('subset', subtype)) TRUE else FALSE
