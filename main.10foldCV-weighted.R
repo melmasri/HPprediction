@@ -51,7 +51,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO){
 
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy = gibbs_one(com_paCross,slice=12 ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)
+    param_phy = gibbs_one(com_paCross,slice=8 ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)
     aux = getMean(param_phy)
     if(SIMPLERHO){
         P = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))

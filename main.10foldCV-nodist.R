@@ -49,7 +49,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset){
     Z=1*(Z>0)
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy=gibbs_one(com_paCross,slice=12,wMH=FALSE, hyper=hyper, wEta=FALSE,AdaptiveMC = FALSE,updateHyper = FALSE, yEta=FALSE,  yMH=FALSE)
+    param_phy=gibbs_one(com_paCross,slice=8,wMH=FALSE, hyper=hyper, wEta=FALSE,AdaptiveMC = FALSE,updateHyper = FALSE, yEta=FALSE,  yMH=FALSE)
     aux = getMean(param_phy)
     P = 1-exp(-outer(aux$y,aux$w))
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)

@@ -50,7 +50,7 @@ if(dataset =='eid')
 ## com=z
 ## SIMPLERHO=TRUE
 
-param_phy = gibbs_one(Z=1*(com>0),slice=5,dist = phy_dist, eta=1,uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper, updateHyper=FALSE)
+param_phy = gibbs_one(Z=1*(com>0),slice=8,dist = phy_dist, eta=1,uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper, updateHyper=FALSE)
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

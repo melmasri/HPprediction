@@ -49,7 +49,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist, SIMPLERHO){
     ## dist = dist + 1e-4
     ## diag(dist)<-0
 
-    param_phy = gibbs_one(com_paCross,slice=12 ,dist= dist,
+    param_phy = gibbs_one(com_paCross,slice=8 ,dist= dist,
         eta=1, wMH = !SIMPLERHO,yMH=FALSE, yEta=FALSE, hyper = hyper, wEta= !SIMPLERHO, updateHyper=FALSE)
     aux = getMean(param_phy)
     if(SIMPLERHO){

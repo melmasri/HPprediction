@@ -10,7 +10,7 @@
 ## Global Variable
 SAVE_PARAM = TRUE
 SEARCH_NNK = TRUE
-ZtZ = TRUE
+ZtZ = FALSE
 ## DATAFILENAME = 'comEID-PS.RData'
 ## DATAFILENAME = 'comGMPD.RData'
 print(DATAFILENAME)
