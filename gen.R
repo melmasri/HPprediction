@@ -183,7 +183,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
         for (i in 1:(burn_in-1)){
             ## for (i in 1:200){
             if(AdaptiveMC)
-                if((i%%batch.size==0) & (i < 0.8*burn_in)){
+                if((i%%batch.size==0) & (i < 0.4*burn_in)){
                     if(wMH){
                         ls  = AdaptiveSigma(w0, ls, i)
                         w_sd = exp(beta*ls)

@@ -39,7 +39,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
     if(dataset =='gmp')
-        hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
+        hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
     
     if(dataset =='eid')
         hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
@@ -51,7 +51,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO){
 
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy = gibbs_one(com_paCross,slice=12 ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO)
+    param_phy = gibbs_one(com_paCross,slice=12 ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)
     aux = getMean(param_phy)
     if(SIMPLERHO){
         P = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))

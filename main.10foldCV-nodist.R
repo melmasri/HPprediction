@@ -40,7 +40,8 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset){
 
         
     if(dataset =='gmp')
-        hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
+        hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
+
     
     if(dataset =='eid')
         hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))

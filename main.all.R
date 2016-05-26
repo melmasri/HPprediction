@@ -22,8 +22,9 @@ load(DATAFILENAME)
 ## set the correct prior.
 print('Setting the prior.')
 ## No uncertain
+
 if(dataset =='gmp')
-    hyper = list(parasite= c(1/3, 1), host =c(2, 1), eta = c(0.01))
+    hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) # comGMPD.single.RData
 
 if(dataset =='eid')
     hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
@@ -49,7 +50,7 @@ if(dataset =='eid')
 ## com=z
 ## SIMPLERHO=TRUE
 
-param_phy = gibbs_one(Z=1*(com>0),slice=25,dist = phy_dist, eta=1,uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper)
+param_phy = gibbs_one(Z=1*(com>0),slice=5,dist = phy_dist, eta=1,uncertain=FALSE, yMH=FALSE, wMH =!SIMPLERHO, wEta = !SIMPLERHO, yEta=FALSE, hyper=hyper, updateHyper=FALSE)
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
