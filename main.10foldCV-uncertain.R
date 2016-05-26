@@ -24,7 +24,7 @@ library(parallel)
 
 #######################
 ## subsetting
-slice=12
+
 if(SUBSET){
 ## EID
     if(dataset=='eid') aux = rownames(com) %in% pan$bionomial[pan$Order=="Rodentia"]
@@ -35,9 +35,13 @@ if(SUBSET){
     phy_dist = phy_dist[,aux]
     aux = colSums(1*(com>0))
     com = com[,aux>1]
-    if(dataset=='eid') slice = 40
+    aux = rowSums(1*(com>0))
+    com = com[aux>1,]
+    phy_dist = phy_dist[aux>1,]
+    phy_dist = phy_dist[,aux>1]
+    com = lof(com)
 }
-	
+slice = ceiling(12000/ncol(com))	
 diag(phy_dist)<-0
 
 
@@ -53,18 +57,19 @@ rownames(phy_dist)<-1:nrow(phy_dist)
 
 if(grepl('GMP', DATAFILENAME)){
     com10 = com
-    year = 2005
+    year = 2004
     aux = which(com10>year, arr.ind=T)
     com = 1*(com10>0)
     for(i in 1:nrow(aux))
         if(sum(com[aux[i,1],])>1 & sum(com[,aux[i,2]])>1)
             com[aux[i,1], aux[i,2]]<-0
-    print(sum(1*(com10>0)) - sum(com>0))
-    print((sum(1*(com10>0)) - sum(com>0))/sum(com10>0))
+    print(sprintf("No. of left out interactions between year %d and end of dataset is %d", year, sum(1*(com10>0)) - sum(com>0)))
+    print(sprintf("accounts for %f%%  of the data", 100*(sum(1*(com10>0)) - sum(com>0))/sum(com10>0)))
     com10=1*(com10>0)
 }
 
 if(grepl('EID', DATAFILENAME)){
+    com = 1*(com>0)
     com10 = 1*(com>0)
     com = cross.validate.set(com10, 0.1)
 }
@@ -72,17 +77,26 @@ if(grepl('EID', DATAFILENAME)){
 pairs = cross.validate.fold(com)
 tot.gr = length(unique(pairs[,'gr']))
 
-## No uncertain
-if(dataset =='gmp')
-    hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
+## ## No uncertain
+## # Setting Hyper parameters
+## if(SUBSET){
+##     if(dataset =='gmp')
+##         hyper = list(parasite =c(15, 1), host = c(0.35,1), eta = c(0.012)) #
     
-if(dataset =='eid')
-    hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+##     if(dataset =='eid')
+##         hyper = list(parasite= c(105, 1), host =c(1.2, 2), eta = c(0.015))
 
+## }else{
+##     if(dataset =='gmp')
+##         hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
+    
+##     if(dataset =='eid')
+##         hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+## }
 
 pdf('all.pdf')
 ## without G
-paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH = TRUE, hyper=hyper, updateHyper=FALSE)
+paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH =!SIMPLERHO,wEta=!SIMPLERHO, hyper=hyper)
 
 ana.plot(paramRegular, com)
 
@@ -101,7 +115,7 @@ ana.table(com10, com, rocRegular.all, TRUE)
 
 ##################################################
 ### with G
-paramRegularG = gibbs_one(com,slice=slice,dist= phy_dist,eta=1,wMH=TRUE,uncertain =TRUE, hyper = hyper, updateHyper= FALSE)
+paramRegularG = gibbs_one(com,slice=slice,dist= phy_dist,eta=1,wMH=!SIMPLERHO,uncertain =TRUE, hyper = hyper, wEta=!SIMPLERHO)
 
 ana.plot(paramRegularG, com)
 
@@ -127,14 +141,9 @@ plot(cbind(rocRegularG.all$roc$FPR, rocRegularG.all$roc$TPR), type='b', col='red
 lines(cbind(rocRegular.all$roc$FPR, rocRegular.all$roc$TPR), type='b', col='blue')
 dev.off()
 ## with uncertain
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO,hyper){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
-    if(dataset =='gmp')
-        hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
-        
-    if(dataset =='eid')
-        hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
 
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
@@ -154,7 +163,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO){
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,hyper=hyper,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

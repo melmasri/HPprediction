@@ -115,11 +115,11 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
         pvar= sd(param[batch:i])/20
         ac = 1-mean(1*abs(param[batch:i]- param[batch:i-1])<=pvar)
     }
-    #print(cbind(i, range(ls), range(ac)))
+    print(cbind(i, range(ls), range(ac)))
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
-gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALSE, yMH=FALSE, wEta = TRUE, yEta =FALSE,updateHyper=TRUE, AdaptiveMC=TRUE){
+gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALSE, yMH=FALSE, wEta = TRUE, yEta =FALSE,updateHyper=FALSE, AdaptiveMC=TRUE){
 
 	## A one step update in a Gibbs sampler.
 	## ## initialize
@@ -229,7 +229,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
                 if(yMH & yEta)
                     y0[,i+1]=y0[,i+1]^(peta[i+1]/peta[i])
                 pdist = new.eta$dist
-                #if(i%%100==0) print(peta[i+1])
+                if(i%%100==0) print(peta[i+1])
             }
 
             ## Uncertainty variable
@@ -256,7 +256,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
                     hh[3,i+1]<-a_w
                     hh[4,i+1]<-b_w
                 }
-                ##if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
+                if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
             }
         }
         

@@ -35,23 +35,23 @@ tot.gr = length(unique(pairs[,'gr']))
 ## Z  =com
 ## dataset= 'eid'
 
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO, hyper){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
-    if(dataset =='gmp')
-        hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
+    ## if(dataset =='gmp')
+    ##     hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
     
-    if(dataset =='eid')
-        hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+    ## if(dataset =='eid')
+    ## hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
 
     if(dataset =='gmp')
         Z[Z>2]<-log(1+Z)[Z>2]
     if(dataset =='eid')
         Z=log(Z+1)/2
-
+    slice = ceiling(12000/ncol(Z))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy = gibbs_one(com_paCross,slice=8 ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)
+    param_phy = gibbs_one(com_paCross,slice=slice ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)
     aux = getMean(param_phy)
     if(SIMPLERHO){
         P = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
@@ -66,7 +66,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO){
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com,dataset= dataset, dist=phy_dist, SIMPLERHO=SIMPLERHO, mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com,dataset= dataset, dist=phy_dist, SIMPLERHO=SIMPLERHO, hyper=hyper, mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

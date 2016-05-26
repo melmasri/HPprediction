@@ -77,6 +77,23 @@ if(is.null(run_script) | is.null(subDir)){
     print('something is wrong')
     q('no')
 }
+## ## No uncertain
+## # Setting Hyper parameters
+if(SUBSET){
+    if(dataset =='gmp')
+        hyper = list(parasite =c(15, 1), host = c(0.35,1), eta = c(0.012)) 
+    
+    if(dataset =='eid')
+        hyper = list(parasite= c(105, 1), host =c(1.2, 2), eta = c(0.015)) 
+    
+}else{
+    if(dataset =='gmp')
+        hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) 
+    
+    if(dataset =='eid')
+        hyper = list(parasite= c(26, 1), host =c(0.5, 2), eta = c(0.005)) # need to check
+}
+
 
 title = paste0(dataset,' ',subset,' all data')
 source('library.R')

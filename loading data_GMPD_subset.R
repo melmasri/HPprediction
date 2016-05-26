@@ -30,18 +30,22 @@ pan <- pan[,-grep("EXT", colnames(pan))]
 #dt <- dt[dt$host %in% pan$bionomial[pan$Order=="Carnivora"],]
 
 
-# Reformatting to Interaction matrix
-# Removing spaces and other non-unique characters
-Citation = gsub('(et al|et al.| |-)', '', dt$Citation)
-
-## Calculating unique citation count
-hp<- unique(data.frame( dt[, c('hostnames', 'parasite')], Citation=Citation) )
-aux = table(paste0(hp$hostnames, hp$parasite))
+## Matrix form where each cell is the FirstCitationDate
+## ## Calculating first citation year
+a = regexpr('[0-9]{2,4}+', dt$Citation, perl=TRUE)
+b = substr(dt$Citation, a, a + 3)
+b= as.numeric(b)
+dt$FirstCitationDate<-b
+dt =  dt[c(1,2,3,length(dt), 5:length(dt)-1)]
+                                        
+hp<- unique(data.frame( dt[, c('hostnames', 'parasite')], FirstCitationDate = dt$FirstCitationDate) )
+aux = paste0(hp$hostnames, hp$parasite)
 hp<- unique(hp[, c("hostnames", "parasite")])
-CiteCount = sapply(paste0(hp$hostnames, hp$parasite), function(r){
-	aux[which(names(aux)==r)]
-	})
-hp<-cbind(hp, CiteCount)
+Cite = sapply(paste0(hp$hostnames, hp$parasite), function(r){
+	min(dt$FirstCitationDate[which(aux==r)])
+})
+
+hp<-cbind(hp, CiteCount = Cite)
 
 # Creating interaction / community matrix
 com <- dcast(hp,hostnames ~ parasite, value.var='CiteCount', fill=0)
