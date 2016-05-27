@@ -376,7 +376,7 @@ getMean<-function(param){
     estimate_mode <- function(x)    mean(x)
 
     names =  names(param)[!sapply(param, is.null)]
-    names = names(param)[-grep('(etashoot|throw.out|burn_in|w_star|Z)',names(param))]
+    names = names(param)[-grep('(hh|sd|etashoot|throw.out|burn_in|w_star|Z)',names(param))]
     
     aux = lapply(param[names], function(r){
         if (!is.null(dim(r)))

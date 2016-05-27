@@ -210,7 +210,6 @@ sink()
 ## ## All files
 ##################################################
 ##################################################
-## Uncertainity
 ## ## All files
 rm(list=ls())
 files = grep('10foldCV-', list.dirs(), value=TRUE)
