@@ -81,7 +81,7 @@ burn = param_phy$burn_in - 20000:1
 burn = burn[burn>0]
 aux = getMean(param_phy)
 com_pa = 1*(com>0)
-P = 1-exp(-outer(aux$y^aux$eta, aux$w^aux$eta)*((phy_dist^aux$eta)%*%com_pa))
+P = 1-exp(-outer(Y^Eta, W^Eta)*((phy_dist^Eta)%*%com_pa))
 
 P_new <- P
 P_new[com_pa==1] <- 1
@@ -214,8 +214,8 @@ for (dataset in c('gmp', 'eid')){
     com_pa = 1*(com>0)
 
     if(SIMPLERHO)
-        P = 1-exp(-outer(aux$y, aux$w)*((phy_dist^aux$eta)%*%com_pa)) else 
-    P = 1-exp(-outer(aux$y, aux$w^aux$eta)*((phy_dist^aux$eta)%*%com_pa))
+        P = 1-exp(-outer(Y, W)*((phy_dist^Eta)%*%com_pa)) else 
+    P = 1-exp(-outer(Y, W^Eta)*((phy_dist^Eta)%*%com_pa))
 
     ## LOG-PROBABILITIES
     pdf(paste0(dataset, '_hist_obs_unk.pdf'))
@@ -289,6 +289,7 @@ for (dataset in c('gmp', 'eid')){
 ## 10 fold cross validation
 ## ## All files
 rm(list=ls())
+source('library.R')
 files = grep('10foldCV-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
 
@@ -317,11 +318,43 @@ for(data in c('eid', 'gmp')){
         m.pred=sapply(res,function(r) r$tb$pred)
         m.hold.out=sapply(res, function(r) r$tb$hold.out)
 
-        name = paste0(name, round(mean(m.auc),2),'-',round(mean(m.pred),2))
+        P = NULL
+        if(!is.null(res[[1]]$param)){
+            W = rowMeans(sapply(res, function(r) r$param$w))
+            Y = rowMeans(sapply(res, function(r) r$param$y))
+            if(!is.null(res[[1]]$param$eta)){
+                Eta = mean(sapply(res, function(r) r$param$eta))
+            } else Eta=1
+            
+            SIMPLERHO = TRUE
+            dist = phy_dist
+            
+            if(grepl('nodist', name)){
+                U = 1
+            }else  if(grepl('weighted', name)){
+                if(data =='gmp'){
+                    com[com>2]<-log(1+com)[com>2]
+                } 
+                if(data =='eid'){
+                    com=log(com+1)/2
+                }
+                U = (dist^Eta) %*% com
+            }else U = (dist^Eta)%*%(1*(com>0))
+
+            if(!grepl('NN', name)){
+                if(SIMPLERHO){
+                    P = 1-  exp(-outer(Y, W)*U)
+                }else{
+                    P = 1-  exp(-outer(Y, W))
+                }
+            }
+        }
+        
         TB = data.frame(m.auc, m.thresh, m.pred, m.hold.out)
-        list(name=name, graph=cbind(FPR, TPR), ana=TB)
+        list(name=name, graph=cbind(FPR, TPR), ana=TB, P=P)
     })
-    
+
+
     pdf(paste0(data, '10foldCV.pdf'))
     gnames = nn.files
     ## gnames= c('LS-network: full model', 'Nearest-neighbour', 'LS-network: phylogeny-only','LS-network: affinity-only','LS-network: weighted-by-counts')
@@ -339,10 +372,19 @@ for(data in c('eid', 'gmp')){
     legend('bottomright', legend = gnames, col=gcol, lty=glty,lwd=2, pch = gpch)
     dev.off()
 
+    ### Plotting the interaction posterior matrix 
+    for( i in 1:length(gres)){
+        if(!is.null(gres[[i]]$P)){
+            pdf(paste0('Z_', gres[[i]]$name, '.pdf'))
+            plot_Z(1*(gres[[i]]$P > mean(gres[[i]]$ana$m.thresh) ))
+            dev.off()
+        }
+    }
+    
     tb = t(sapply(gres, function(r) colMeans(r$ana)))
     rownames(tb)<-gnames
     write.csv(file=paste0(data, '-ana-10foldCV.csv'), round(tb,4))
-
+    
     ## LATEX TABLE
 
     names = sub('/param.RData', '', gnames)
@@ -369,6 +411,7 @@ for(data in c('eid', 'gmp')){
 
 rm(list=ls())
 filenames = paste0('Uncertain-10foldCV-',c('gmp','Carnivora','eid','Rodentia'))
+all.data = list()
 for(data in filenames){
     aux = grep(data, list.dirs(), value=TRUE)
     if(length(aux)==0) next
