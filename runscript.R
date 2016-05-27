@@ -1,7 +1,7 @@
 ## what to run
 ## Rscript runscript.R runtype datatype subtype
 
-## runtype: uncertain, 10fold, ALL, nodist, weighted, NN.
+## runtype: uncertain, 10fold, ALL, nodist, weighted, NN, distonly
 ## subtype: subset, anything
 ## datatype: GMP EID
 ## SimpleRho: as in w^rho or not
@@ -75,6 +75,12 @@ if(grepl('nodist', runtype)){
 if(grepl('weighted', runtype)){
     run_script = '../main.10foldCV-weighted.R'
     subDir <- paste0("./Weighted-10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
+}
+
+
+if(grepl('distonly', runtype)){
+    run_script = '../main.10foldCV-dist-only.R'
+    subDir <- paste0("./DistOnly-10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
 }
 
 if(grepl('NN', runtype)){

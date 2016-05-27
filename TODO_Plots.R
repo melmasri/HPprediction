@@ -128,13 +128,9 @@ rm(list=ls())
 files = grep('./(gmp|eid)-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
 files = files[order(files, decreasing=TRUE)]
-
-
-
 rho_col <- "blue"
 gamma_col <- "red"
 eta_col <- "darkgreen"
-
 
 for (dataset in c('gmp', 'eid')){
     f = grep(dataset, files, value=T)[1] # unique files for gmp and eid
@@ -290,6 +286,7 @@ for (dataset in c('gmp', 'eid')){
 ## ## All files
 rm(list=ls())
 source('library.R')
+library(xtable)
 files = grep('10foldCV-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
 
