@@ -123,7 +123,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
 
 	## A one step update in a Gibbs sampler.
 	## ## initialize
-    Z = 1*(Z>0)
+    #Z = 1*(Z>0)
     colnames(Z)<-NULL
     rownames(Z)<-NULL
     if(!missing(dist))

@@ -14,9 +14,9 @@ com_pa = 1*(com>0)
 burn = param_phy$burn_in - 20000:1
 burn = burn[burn>0]
 
-# pdf(paste0(dataset, '_Z.pdf'))
+pdf(paste0(dataset, '_Z.pdf'))
 plot_Z(1*(com>0) , xlab = 'parasites', ylab = 'hosts')
-# dev.off()
+dev.off()
 
 # HIST: Average RHO
 # pdf(paste0(dataset, '_rho_post.pdf'))
@@ -125,6 +125,7 @@ print(xtable(tb,digits=0,  align='lccc'), file=filename)
 ### files of the format gmp- or eid-
 
 rm(list=ls())
+library(xtable)
 files = grep('./(gmp|eid)-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
 files = files[order(files, decreasing=TRUE)]
@@ -329,9 +330,9 @@ for(data in c('eid', 'gmp')){
             Y = rowMeans(sapply(res, function(r) r$param$y))
             Eta = mean(sapply(res, function(r) r$param$eta))
             
-            if(data =='gmp'){
-                com[com>2]<-log(1+com)[com>2]
-            } 
+            ## if(data =='gmp'){
+            ##     com[com>2]<-log(1+com)[com>2]
+            ## } 
             if(data =='eid'){
                 com=log(com+1)/2
             }
