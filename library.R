@@ -748,9 +748,9 @@ ana.plot<-function(pg, com){
     plot(pg$w[r,burn], type='l', main = 'Most popular host')
     plot(pg$y[c,burn], type='l', main = 'Most popular parasite')
     plot(pg$eta[burn], type='l', main = 'Beta posterior')
-    if(!is.null(pg$L)){
+    if(!is.null(pg$g)){
         dev.new()
         par(mfrow=c(1,1))
-        hist(pg$L[1,burn], main = 'G posterior')
+        hist(pg$g[burn], main = 'G posterior')
     }
 }

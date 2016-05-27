@@ -131,7 +131,7 @@ P=PRegularG
 rocRegularG = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=FALSE, bins=400)
 ana.table(com10, com, rocRegularG, TRUE)
 
-P = paramMuG$L[1]*PRegularG/(1-PRegularG  + paramMuG$L[1]*PRegularG)
+P = paramMuG$g*PRegularG/(1-PRegularG  + paramMuG$g*PRegularG)
 P[com==1]<-PRegularG[com==1]
 
 rocRegularG.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=TRUE, bins=400)
@@ -156,14 +156,14 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO,hyper)
     }else{
         P1 = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
     }
-    P = aux$L[1]*P1/(1-P1  + aux$L[1]*P1)
+    P = aux$g*P1/(1-P1  + aux$g*P1)
     P[com_paCross==1]<-P1[com_paCross==1]
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,hyper=hyper,mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,hyper=hyper,mc.preschedule = TRUE, mc.cores = 4) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
