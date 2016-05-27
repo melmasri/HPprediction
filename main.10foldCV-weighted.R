@@ -39,29 +39,32 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO, hyper){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
     ## if(dataset =='gmp')
-    ##     hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
+    ## hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
     
     ## if(dataset =='eid')
     ## hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
-
-    if(dataset =='gmp')
-        Z[Z>2]<-log(1+Z)[Z>2]
-    if(dataset =='eid')
-        Z=log(Z+1)/2
+        
+    ## if(dataset =='gmp')
+    ##     Z[Z>2]<-log(1+Z)[Z>2]
+    ## if(dataset =='eid')
+    ##     Z=log(Z+1)/2
+    
     slice = ceiling(12000/ncol(Z))
+    slice = 4
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     param_phy = gibbs_one(com_paCross,slice=slice ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)
+
     aux = getMean(param_phy)
     if(SIMPLERHO){
         P = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
     }else{
         P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
     }
-    
+
     Z= 1*(Z>0)
     com_paCross = 1*(com_paCross>0)
-    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=TRUE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)

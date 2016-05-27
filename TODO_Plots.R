@@ -135,9 +135,8 @@ eta_col <- "darkgreen"
 for (dataset in c('gmp', 'eid')){
     f = grep(dataset, files, value=T)[1] # unique files for gmp and eid
     if(length(f)==0) next
-
     load(f)
-
+    source('library.R')
     com_pa = 1*(com>0)
     r = which.max(rowSums(com_pa));r
     c = which.max(colSums(com_pa));c
@@ -210,8 +209,8 @@ for (dataset in c('gmp', 'eid')){
     com_pa = 1*(com>0)
 
     if(SIMPLERHO)
-        P = 1-exp(-outer(Y, W)*((phy_dist^Eta)%*%com_pa)) else 
-    P = 1-exp(-outer(Y, W^Eta)*((phy_dist^Eta)%*%com_pa))
+        P = 1-exp(-outer(aux$y, aux$w)*((phy_dist^aux$eta)%*%com_pa)) else 
+    P = 1-exp(-outer(aux$y, aux$w^aux$eta)*((phy_dist^aux$eta)%*%com_pa))
 
     ## LOG-PROBABILITIES
     pdf(paste0(dataset, '_hist_obs_unk.pdf'))
@@ -229,6 +228,7 @@ for (dataset in c('gmp', 'eid')){
     ## DEGREE DISTRIBUTION
     roc = rocCurves(Z=com_pa, Z_cross = com_pa, P=P,plot=TRUE, bins=400, all=TRUE)
     Z_est = 1*(roc$P>roc$threshold)
+    #Z_est[com_pa==1]<-0
     pdf(paste0(dataset, '_degree_est_host.pdf'))
     plot_degree(1*(com>0), Z_est, type='hosts')
     dev.off()
@@ -316,44 +316,72 @@ for(data in c('eid', 'gmp')){
         m.hold.out=sapply(res, function(r) r$tb$hold.out)
 
         P = NULL
-        if(!is.null(res[[1]]$param)){
+        legend.name =NULL
+        if(grepl('DistOnly', name)){
+            Eta = mean(sapply(res, function(r) r$param))
+            P = 1-exp(-(phy_dist^Eta) %*%(1*(com>0)))
+            legend.name ='LS-network: phylogeny-only'
+             
+        }
+
+        if(grepl('Weighted', name)){
             W = rowMeans(sapply(res, function(r) r$param$w))
             Y = rowMeans(sapply(res, function(r) r$param$y))
-            if(!is.null(res[[1]]$param$eta)){
-                Eta = mean(sapply(res, function(r) r$param$eta))
-            } else Eta=1
+            Eta = mean(sapply(res, function(r) r$param$eta))
             
-            SIMPLERHO = TRUE
-            dist = phy_dist
-            
-            if(grepl('nodist', name)){
-                U = 1
-            }else  if(grepl('weighted', name)){
-                if(data =='gmp'){
-                    com[com>2]<-log(1+com)[com>2]
-                } 
-                if(data =='eid'){
-                    com=log(com+1)/2
-                }
-                U = (dist^Eta) %*% com
-            }else U = (dist^Eta)%*%(1*(com>0))
-
-            if(!grepl('NN', name)){
-                if(SIMPLERHO){
-                    P = 1-  exp(-outer(Y, W)*U)
-                }else{
-                    P = 1-  exp(-outer(Y, W))
-                }
+            if(data =='gmp'){
+                com[com>2]<-log(1+com)[com>2]
+            } 
+            if(data =='eid'){
+                com=log(com+1)/2
             }
+            U = (phy_dist^Eta) %*% com
+            if(SIMPLERHO){
+                P = 1-  exp(-outer(Y, W)*U)
+            }else{
+                P = 1-  exp(-outer(Y, W^Eta)*U)
+            }
+            legend.name = 'LS-network: weighted-by-counts'
+
+        }
+
+        if(grepl('nodist', name)){
+            W = rowMeans(sapply(res, function(r) r$param$w))
+            Y = rowMeans(sapply(res, function(r) r$param$y))
+            P = 1-  exp(-outer(Y, W))
+            legend.name = 'LS-network: affinity-only'
+
+        }
+
+        if(grepl('NN', name)){
+            P<-NULL
+            legend.name  ='Nearest-neighbour' 
+        }
+
+
+        if(name=='gmp' | name =='eid'){
+            W = rowMeans(sapply(res, function(r) r$param$w))
+            Y = rowMeans(sapply(res, function(r) r$param$y))
+            Eta = mean(sapply(res, function(r) r$param$eta))
+
+            U = (phy_dist^Eta)%*%(1*(com>0))
+            
+            if(SIMPLERHO){
+                P = 1-  exp(-outer(Y, W)*U)
+            }else{
+                P = 1-  exp(-outer(Y, W^Eta)*U)
+            }
+            legend.name = 'LS-network: full model'
         }
         
         TB = data.frame(m.auc, m.thresh, m.pred, m.hold.out)
-        list(name=name, graph=cbind(FPR, TPR), ana=TB, P=P)
+        list(name=name, legend.name = legend.name,graph=cbind(FPR, TPR), ana=TB, P=P)
     })
 
 
     pdf(paste0(data, '10foldCV.pdf'))
-    gnames = nn.files
+    gnames = sapply(gres, function(r) r[['legend.name']])
+    #gnames = nn.files
     ## gnames= c('LS-network: full model', 'Nearest-neighbour', 'LS-network: phylogeny-only','LS-network: affinity-only','LS-network: weighted-by-counts')
     gcol = c('red', 'blue', 'brown', 'cyan', 'darkgreen', 'yellow')
     glty = c(3,2,1,4,6,7)
@@ -373,7 +401,7 @@ for(data in c('eid', 'gmp')){
     for( i in 1:length(gres)){
         if(!is.null(gres[[i]]$P)){
             pdf(paste0('Z_', gres[[i]]$name, '.pdf'))
-            plot_Z(1*(gres[[i]]$P > mean(gres[[i]]$ana$m.thresh) ))
+            plot_Z(1*(gres[[i]]$P > mean(gres[[i]]$ana$m.thresh) ),xlab = 'parasites', ylab = 'hosts')
             dev.off()
         }
     }
@@ -416,11 +444,11 @@ for(data in filenames){
 
     com=1*(com>0)
     ## Creating probability matrix
-    G<-paramRegularG$L[1,]
+    G<-paramRegularG$g
     W = rowMeans(sapply(res, function(r) r$param$w))
     Y = rowMeans(sapply(res, function(r) r$param$y))
     Eta = mean(sapply(res, function(r) r$param$eta))
-    g  =  mean(sapply(res, function(r) r$param$L[1]))
+    g  =  mean(sapply(res, function(r) r$param$g))
 
     if(SIMPLERHO){
         P = 1- exp(-outer(Y,W)*((phy_dist^Eta)%*%com) )
@@ -432,9 +460,6 @@ for(data in filenames){
     P1[com>0]<-P[com>0]
     P=P1
     
-    
-    
-
     ## Histograms
     P1 = P
     pdf(paste0(data, 'with_g_hist_obs_unk.pdf'))
@@ -470,7 +495,8 @@ dev.off()
     
     ## Histogram of G
     pdf(paste0(data, 'hist_g.pdf'),height=4)
-    hist(G,freq=T, xlim=c(0,0.5),col='darkblue', xlab='Posterior estimate of g for the GMP-Carnivora database', main='')
+    hist(G,freq=T, xlim=c(0,0.5),col='darkblue', xlab='Posterior estimate of g for the GMP-Carnivora database', main='', breaks=40)
+    abline(v=quantile(G,probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
     
     
@@ -506,11 +532,13 @@ dev.off()
     
     ## Table of analysis
     ## For 10fold CV with g
+    
+    
     library(xtable)
     filename = paste0(data, '_result_table.txt')
-    
+    tbg= data.frame(ana.table(com=1*(com10>0), comCross=com, roc = rocRegularG.all))
     tb= data.frame(ana.table(com=1*(com10>0), comCross=com, roc = rocRegular.all))
-    tb = round(rbind(tbg, tb),4)
+    tb = round(rbind(tbg, tb),3)
     rownames(tb)=c('Model with $g$', 'Model without $g$')
     tb = data.frame(tb, MuG = mean(G))
     tb

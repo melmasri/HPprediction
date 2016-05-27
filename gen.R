@@ -181,6 +181,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
     tryCatch(
         
         for (i in 1:(burn_in-1)){
+            if(i%%ncol(Z)==0) print(sprintf('Slice %d', i/ncol(Z)))
             ## for (i in 1:200){
             if(AdaptiveMC)
                 if((i%%batch.size==0) & (i < 0.4*burn_in)){
