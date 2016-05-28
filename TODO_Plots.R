@@ -174,15 +174,15 @@ for (dataset in c('gmp', 'eid')){
     
     ## HIST: Average GAMMA
     pdf(paste0(dataset, '_gamma_post.pdf'))
-    hist(rowMeans(param_phy$y[,burn]), breaks=30, col=gamma_col,main ='', ylab = 'Frequency',
+    hist(rowMeans(param_phy$y[,burn]), breaks=80, col=gamma_col,main ='', ylab = 'Frequency',
          xlab = expression(paste('Averge posterior of ', gamma)), border=TRUE)
     abline(v=quantile(rowMeans(param_phy$y[,burn]),probs = 0.95), col="red", lty=2, lwd=2)
     dev.off()
 
     ## HIST: Average ETA
     pdf(paste0(dataset, '_eta_post.pdf'))
-    hist(param_phy$eta[burn], breaks=30, col=eta_col,main ='', ylab = 'Frequency',
-         xlab = expression(paste('Posterior of ', eta)), border=TRUE, xlim=c(1.32, 1.48))
+    hist(param_phy$eta[burn], breaks=35, col=eta_col,main ='', ylab = 'Frequency',
+         xlab = expression(paste('Posterior of ', eta)), border=TRUE)
     abline(v=quantile(param_phy$eta[burn],probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
 
