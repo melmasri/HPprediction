@@ -41,7 +41,7 @@ if(SUBSET){
     phy_dist = phy_dist[,aux>1]
     com = lof(com)
 }
-slice = ceiling(12000/ncol(com))	
+slice = ceiling(10000/ncol(com))	
 diag(phy_dist)<-0
 
 
@@ -147,10 +147,10 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO,hyper)
 
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-
+    ## with G
     param_phy=gibbs_one(com_paCross,slice=s,dist= dist,eta=1,wMH=!SIMPLERHO,uncertain=TRUE, hyper=hyper,wEta=!SIMPLERHO, updateHyper=FALSE)
     aux = getMean(param_phy)
-
+    
     if(SIMPLERHO){
         P1 = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
     }else{
@@ -162,8 +162,28 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, dataset,s, SIMPLERHO,hyper)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
-    list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,hyper=hyper,mc.preschedule = TRUE, mc.cores = 4) 
+
+    withG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    ## without G
+    param_phy=gibbs_one(com_paCross,slice=s,dist= dist,eta=1,wMH=!SIMPLERHO,uncertain=FALSE, hyper=hyper,wEta=!SIMPLERHO)
+    aux = getMean(param_phy)
+    
+    if(SIMPLERHO){
+        P1 = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+    }else{
+        P1 = 1-  exp(-outer(aux$y, aux$w^aux$eta)*((dist^aux$eta)%*% com_paCross))
+    }
+    P = P1
+    P[com_paCross==1]<-P1[com_paCross==1]
+    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+    tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+    roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+
+    withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    
+    list(withG=withG, withOutG = withOutG)
+},pairs=pairs,Z = com,dist=phy_dist, dataset=dataset,s=slice,SIMPLERHO=SIMPLERHO,hyper=hyper,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
