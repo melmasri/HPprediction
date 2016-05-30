@@ -118,7 +118,7 @@ gen_process<-function(nodes_w, nodes_y, y){
 }
 
 
-plot_Z<-function(Z, xlab, ylab){
+plot_Z<-function(Z, xlab, ylab, ...){
 	# UseRaster for rendering large matrices more efficiently
 	# If rows are readers and columns are books, the Z matrix has to be flipped and transposed
 	# a t(Z[nrow(Z):1,])
@@ -133,7 +133,7 @@ plot_Z<-function(Z, xlab, ylab){
 	axis(2, at = c(1,10*1:(ceiling(nrow(Z)/10))), labels = c(10*(ceiling(nrow(Z)/10)):1,1))
 }
 
-plot_degree <- function(Z, Z_est, type='both'){
+plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='red'){
 	# Provide presence/absence matrix (Z) with rows as hosts and columns as parasites.
     ## Optional estimated presence/absence matrix (Z_est) can be added to existing plot.
     para_degrees <- as.data.frame(table(colSums(Z)))
@@ -160,33 +160,33 @@ plot_degree <- function(Z, Z_est, type='both'){
     }
     gpch = c('+', '*')
     if(type=='parasites'){
-        plot((para_degrees), type="p", col="red", pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        legend(xlim[2]*0.3, ylim[2]*0.6, c("Parasites"), col = c("red"),
+        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
+        legend(xlim[2]*0.3, ylim[2]*0.6, c("Parasites"), col = parasite.col,
                pch = gpch[2], box.col="white")
         if(!missing(Z_est)){
-            points((para_est), type="p", col="red", pch=16)
-            legend(xlim[2]*0.3, ylim[2]*0.4, c("Estimated"), col = c("red"),
+            points((para_est), type="p", col=parasite.col, pch=16)
+            legend(xlim[2]*0.3, ylim[2]*0.4, c("Estimated"), col = parasite.col,
                pch = 16, box.col="white")
         }
     }
     if(type=='hosts'){
-        plot((host_degrees), type="p", col="blue", pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        legend(xlim[2]*0.3, ylim[2]*0.6, c("Hosts"), col = c("blue"),
+        plot((host_degrees), type="p", col=host.col, pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
+        legend(xlim[2]*0.3, ylim[2]*0.6, c("Hosts"), col = host.col,
                pch = gpch[1], box.col="white")
         if(!missing(Z_est)){
-            points((host_est), type="p", col="blue", pch=16)
-            legend(xlim[2]*0.3, ylim[2]*0.4, c("Estimated"), col = c("blue"),
+            points((host_est), type="p", col=host.col, pch=16)
+            legend(xlim[2]*0.3, ylim[2]*0.4, c("Estimated"), col = host.col,
                    pch = 16, box.col="white")
         }
     }
     if(type=='both'){
-        plot((para_degrees), type="p", col="red", pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        points((host_degrees), type="p", col="blue", pch=gpch[1])
-    legend(xlim[2]*0.3, ylim[2]*0.6, c("Parasites", "Hosts"), col = c("red", "blue"),
+        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
+        points((host_degrees), type="p", col=host.col, pch=gpch[1])
+    legend(xlim[2]*0.3, ylim[2]*0.6, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
            pch = gpch[2:1], box.col="white")
         if (!missing(Z_est)) {
-            points((para_est), type="p", col="red", pch=16)
-            points((host_est), type="p", col="blue", pch=16)
+            points((para_est), type="p", col=parasite.col, pch=16)
+            points((host_est), type="p", col=host.col, pch=16)
             legend(xlim[2]*0.3, ylim[2]*0.33, c("Estimated"), col = c("black"),
                    pch = 16, box.col="white")
         }

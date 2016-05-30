@@ -96,22 +96,22 @@ tot.gr = length(unique(pairs[,'gr']))
 
 pdf('all.pdf')
 ## without G
-paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH =!SIMPLERHO,wEta=!SIMPLERHO, hyper=hyper)
+## paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH =!SIMPLERHO,wEta=!SIMPLERHO, hyper=hyper)
 
-ana.plot(paramRegular, com)
+## ana.plot(paramRegular, com)
 
-paramMu = getMean(paramRegular)
-if(SIMPLERHO){
-    PRegular = 1-exp(-outer(paramMu$y, paramMu$w)*((phy_dist^paramMu$eta)%*% com))
-}else{
-    PRegular = 1-exp(-outer(paramMu$y, paramMu$w^paramMu$eta)*((phy_dist^paramMu$eta)%*% com))
-}
+## paramMu = getMean(paramRegular)
+## if(SIMPLERHO){
+##     PRegular = 1-exp(-outer(paramMu$y, paramMu$w)*((phy_dist^paramMu$eta)%*% com))
+## }else{
+##     PRegular = 1-exp(-outer(paramMu$y, paramMu$w^paramMu$eta)*((phy_dist^paramMu$eta)%*% com))
+## }
 
-rocRegular = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=FALSE, bins=400)
-ana.table(com10, com, rocRegular, TRUE)
+## rocRegular = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=FALSE, bins=400)
+## ana.table(com10, com, rocRegular, TRUE)
 
-rocRegular.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=TRUE, bins=400)
-ana.table(com10, com, rocRegular.all, TRUE)
+## rocRegular.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=TRUE, bins=400)
+## ana.table(com10, com, rocRegular.all, TRUE)
 
 ##################################################
 ### with G

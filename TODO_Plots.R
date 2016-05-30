@@ -19,9 +19,6 @@
 ## reverse <- nrow(P_new) : 1
 ## P_new <- P_new[reverse,]
 ## image(t(P_new), col=colorRampPalette(c("white","black"))(400))
-## image(t(P_new), col=colorRampPalette(c("white","blue","brown"))(400))
-
-
 
 ##################################################
 ##################################################
@@ -36,6 +33,7 @@ files = files[order(files, decreasing=TRUE)]
 rho_col <- "blue"
 gamma_col <- "red"
 eta_col <- "darkgreen"
+g_col<-'ivory4'
 
 for (dataset in c('gmp', 'eid')){
     f = grep(dataset, files, value=T)[1] # unique files for gmp and eid
@@ -55,38 +53,43 @@ for (dataset in c('gmp', 'eid')){
     dev.off()
 
     pdf(paste0('degree_', dataset,'.pdf'))
-    plot_degree(com>0 + 0)
+    plot_degree(com>0 + 0, host.col=gamma_col, parasite.col = rho_col)
     dev.off()
 
 
     pdf(paste0('param_mcmc_',dataset,'.pdf'))
     par(mfrow=c(3,1))
-    plot(param_phy$y[r,burn], type='l', main='', col=rho_col, xlab='Iteration', ylab='Host parameter')
-    plot(param_phy$w[c,burn], type='l', main = '', col=gamma_col, xlab = 'Iteration', ylab='Parasite parameter')
-    plot(param_phy$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Scaling parameter')
+    plot(param_phy$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host')
+    plot(param_phy$w[c,burn], type='l', main = '', col=rho_col, xlab = 'Iteration', ylab='Parasite')
+    plot(param_phy$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Scale')
     dev.off()
 
     burn = param_phy$burn_in - 10000:1
 
-
     ## HIST: Average RHO
     pdf(paste0('rho_post_',dataset,'.pdf'))
     par(mfrow=c(1,1))
-    hist(rowMeans(param_phy$w[,burn]),breaks=80, col=rho_col,main ='', ylab = 'Frequency', xlab = expression(paste('Averge posterior of ', rho)), border=TRUE)
-    abline(v=quantile(rowMeans(param_phy$w[,burn]),probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
+    hist(unlist(param_phy$w[,burn]),breaks=80, col=rho_col,main ='', ylab = 'Proportion', xlab ='', border=TRUE, freq=FALSE)
+    abline(v=quantile(param_phy$w[,burn],probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
     
     ## HIST: Average GAMMA
     pdf(paste0('gamma_post_', dataset,'.pdf'))
-    hist(rowMeans(param_phy$y[,burn]), breaks=80, col=gamma_col,main ='', ylab = 'Frequency',
-         xlab = expression(paste('Averge posterior of ', gamma)), border=TRUE)
-    abline(v=quantile(rowMeans(param_phy$y[,burn]),probs = 0.95), col="red", lty=2, lwd=2)
+    if(dataset=='eid'){
+        yy = log(param_phy$y[, burn])
+        prob = c(0.05, 0.95)
+    } else {
+        yy = param_phy$y[, burn]
+        prob = c(0.95)
+    }
+    hist(unlist(yy), breaks=80, col=gamma_col,main ='', ylab = 'Proportion',freq= FALSE,xlab = '', border=TRUE)
+    abline(v=quantile(yy,probs = prob), col="red", lty=2, lwd=2)
     dev.off()
 
     ## HIST: Average ETA
     pdf(paste0('eta_post_',dataset,'.pdf'))
-    hist(param_phy$eta[burn], breaks=35, col=eta_col,main ='', ylab = 'Frequency',
-         xlab = expression(paste('Posterior of ', eta)), border=TRUE)
+    hist(param_phy$eta[burn], breaks=35, col=eta_col,main ='', ylab = 'Proportion',
+         freq=FALSE, xlab = '', border=TRUE)
     abline(v=quantile(param_phy$eta[burn],probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
 
@@ -94,18 +97,20 @@ for (dataset in c('gmp', 'eid')){
     ## BOXPLOT: Invidual RHOs
     pdf(paste0('boxplot_rho_100_',dataset,'.pdf'))
     aux = apply(param_phy$w[, burn],1, median )
-    aux = order(aux, decreasing = T);aux[1:100]
-    boxplot(data.frame(t(param_phy$w[aux[1:100], burn])), outline=F, 
-            names = paste(1:100), ylab= 'Value', xlab = 'Ordered parameters',
+    no.par = 80
+    aux = order(aux, decreasing = T);
+    boxplot(data.frame(t(param_phy$w[aux[1:no.par], burn])), outline=F, 
+            names = paste(1:no.par), ylab= 'Value', xlab = 'Ordered parameters',
             whiskcol=rho_col, staplecol=rho_col, col=rho_col, medcol="white")## BOXPLOT: Invidual RHOs
     dev.off()
 
     ## BOXPLOT: Invidual GAMMAs
     pdf(paste0('boxplot_gamma_100_',dataset,'.pdf'))
     aux = apply(param_phy$y[, burn],1, median )
-    aux = order(aux, decreasing = T);aux[1:100]
-    boxplot(data.frame(t(param_phy$y[aux[1:100], burn])), outline=F, 
-            names = paste(1:100), ylab= 'Value', xlab = 'Ordered parameters',
+    no.par = 80
+    aux = order(aux, decreasing = T)
+    boxplot(data.frame(t(param_phy$y[aux[1:no.par], burn])), outline=F, 
+            names = paste(1:no.par), ylab= 'Value', xlab = 'Ordered parameters',
             whiskcol=gamma_col, staplecol=gamma_col, col=gamma_col, medcol="white")
     dev.off()
 
@@ -123,8 +128,8 @@ for (dataset in c('gmp', 'eid')){
     colnoass = rgb(1,0,0.4,0.4,0.5)
     hist(log(P[com>0]),col=colass,main ='',
          ylab = 'Probability', freq=FALSE, xlab='Log of probability',
-         ylim = c(0,0.38), xlim=c(-12,0), breaks=25)
-    hist(log(P[com==0]),col=colnoass,freq=FALSE, add=TRUE, breaks=25)
+         ylim = c(0,0.38), xlim=c(-12,0), breaks=30)
+    hist(log(P[com==0]),col=colnoass,freq=FALSE, add=TRUE, breaks=30)
     legend(x='topleft', legend=c('Observed associations',
                             'Unobserved associations'), lwd=4, col=c(colass, colnoass))
     dev.off()
@@ -135,13 +140,13 @@ for (dataset in c('gmp', 'eid')){
     Z_est = 1*(roc$P>roc$threshold)
     #Z_est[com_pa==1]<-0
     pdf(paste0('degree_est_host_',dataset,'.pdf'))
-    plot_degree(1*(com>0), Z_est, type='hosts')
+    plot_degree(1*(com>0), Z_est, type='hosts', host.col = gamma_col, parasite.col = rho_col)
     dev.off()
     pdf(paste0('degree_est_parasite_', dataset, '.pdf'))
-    plot_degree(1*(com>0), Z_est, type='parasites')
+    plot_degree(1*(com>0), Z_est, type='parasites',host.col = gamma_col, parasite.col = rho_col)
     dev.off()
     pdf(paste0('degree_est_',dataset,'.pdf'))
-    plot_degree(1*(com>0), Z_est)
+    plot_degree(1*(com>0), Z_est,host.col = gamma_col, parasite.col = rho_col)
     dev.off()
 
 
@@ -194,8 +199,8 @@ source('library.R')
 library(xtable)
 files = grep('10foldCV-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
-
 all.data = list()
+
 
 for(data in c('eid', 'gmp')){
 
@@ -284,11 +289,15 @@ for(data in c('eid', 'gmp')){
     })
 
 
+
+    ord.model = c('LS-network: full model','LS-network: affinity-only','LS-network: phylogeny-only','LS-network: weighted-by-counts','Nearest-neighbour')
+
     pdf(paste0('10foldCV-',data,'.pdf'))
     gnames = sapply(gres, function(r) r[['legend.name']])
+    ord.plot = sapply(ord.model, function(r) which(r==gnames))
     #gnames = nn.files
     ## gnames= c('LS-network: full model', 'Nearest-neighbour', 'LS-network: phylogeny-only','LS-network: affinity-only','LS-network: weighted-by-counts')
-    gcol = c('red', 'blue', 'brown', 'cyan', 'darkgreen', 'yellow')
+    gcol = c('black', 'lemonchiffon4', 'brown', 'cyan', 'darkgreen', 'yellow')
     glty = c(3,2,1,4,6,7)
     ## gpch = c('+', '*', 'o', 6, 7)
     gpch = c(3, 8, 1, 6, 5,9)
@@ -299,7 +308,7 @@ for(data in c('eid', 'gmp')){
     for (i in 2:length(gres)){
         lines(gres[[i]]$graph,type=t, col=gcol[i],lty=glty[i], lwd=glwd,pch=gpch[i])
     }
-    legend('bottomright', legend = gnames, col=gcol, lty=glty,lwd=2, pch = gpch)
+    legend('bottomright', legend = gnames[ord.plot], col=gcol[ord.plot], lty=glty[ord.plot],lwd=2, pch = gpch[ord.plot])
     dev.off()
 
     ### Plotting the interaction posterior matrix 
@@ -322,12 +331,20 @@ for(data in c('eid', 'gmp')){
     names = sub('10foldCV-', '', names)
     
     TBx = data.frame(names, tb[,'m.auc'], tb[,'m.pred'])
-    print(xtable(TBx),
-          include.rownames = FALSE,
-          include.colnames = FALSE,
-          sanitize.text.function=function(x){x},
-          only.contents=TRUE, file=paste0('tbAUC', data, '.tex'))
+    all.data[[data]]<-TBx
 }
+
+xx = cbind(all.data[['gmp']][,c(1,2,3)], all.data[['eid']][,c(2,3)])
+rownames(xx)<-NULL
+xx = xx[sapply(ord.model, function(r) which(r==xx[,'names'])),]
+
+print(xtable(xx),
+      include.rownames = FALSE,
+      include.colnames = FALSE,
+      sanitize.text.function=function(x){x},
+      only.contents=TRUE, file='tbAUC.tex')
+
+
 
 ## DONE
 ##################################################
@@ -342,14 +359,20 @@ for(data in c('eid', 'gmp')){
 rm(list=ls())
 filenames = paste0('Uncertain-10foldCV-',c('gmp','Carnivora','eid','Rodentia'))
 all.data = list()
+rho_col <- "blue"
+gamma_col <- "red"
+eta_col <- "darkgreen"
+g_col<-'ivory4'
+
 for(data in filenames){
     print(data)
     aux = grep(data, list.dirs(), value=TRUE)
     if(length(aux)==0) next
     load(paste0(aux[1], '/param.RData'))
-
+    source('library.R')
     com=1*(com>0)
     ## Creating probability matrix
+
     aux = sapply(res, function(r) r[['withG']]['param'])
     G = mean(sapply(aux, function(r) r[['g']]))
     W = rowMeans(sapply(aux, function(r) r[['w']]))
@@ -403,7 +426,6 @@ for(data in filenames){
     rocNoG = rocCurves(Z=1*(com10>0), Z_cross=com, P=Pnog, all=TRUE, plot=FALSE, bins=400)
     pdf(paste0('without_gZ-2010_',data,'.pdf'))
     plot_Z(1*(rocNoG$P> rocNoG$threshold),'parasites', 'hosts' )
-    #plot_Z(1*(rocRegular.all$P> rocRegular.all$threshold),'parasites', 'hosts' )
     dev.off()
     
     rocG= rocCurves(Z=1*(com10>0), Z_cross=com, P=Pg, all=TRUE, plot=FALSE, bins=400)
@@ -413,7 +435,7 @@ for(data in filenames){
     
     ## Histogram of G
     pdf(paste0('hist_g_',data,'.pdf'),height=4)
-    hist(paramRegularG$g,freq=T,col='darkblue', xlab='Posterior estimate of g for the GMP-Carnivora database', main='', breaks=40)
+    hist(paramRegularG$g,freq=T,col=g_col, xlab='Posterior estimate of g for the GMP-Carnivora database', main='', breaks=40)
     abline(v=quantile(paramRegularG$g,probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
     
@@ -422,19 +444,19 @@ for(data in filenames){
     Z = 1*(com10>0)
     Z_est = 1*(rocG$P>rocG$threshold)
     pdf(paste0('degree_est_host_', data,'.pdf'))
-    plot_degree(Z, Z_est, type='hosts')
+    plot_degree(Z, Z_est, type='hosts',host.col = gamma_col, parasite.col = rho_col)
     dev.off()
     pdf(paste0('degree_est_parasite_', data,'.pdf'))
-    plot_degree(Z, Z_est, type='parasites')
+    plot_degree(Z, Z_est, type='parasites',host.col = gamma_col, parasite.col = rho_col)
     dev.off()
     pdf(paste0('degree_est_',data,'.pdf'))
-    plot_degree(Z, Z_est)
+    plot_degree(Z, Z_est,host.col = gamma_col, parasite.col = rho_col)
     dev.off()
     
     ## Table of analysis
     pdf(paste0('ROC-g_', data,'.pdf'))
     gnames= c('LS-network: with g', 'LS-network: without g')
-    gcol = c('red', 'blue')
+    gcol = c('black', 'ivory4')
     glty = c(1,2)
     gpch = c(5,2)
     t = 'b'
