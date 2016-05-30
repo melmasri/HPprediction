@@ -49,7 +49,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist,SIMPLERHO, hyper){
     ## if(dataset =='eid')
     ##     Z=log(Z+1)/2
     
-    slice = ceiling(8000/ncol(Z))
+    slice = min(5,ceiling(8000/ncol(Z)))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     param_phy = gibbs_one(com_paCross,slice=slice ,dist= dist, eta=1, wMH = !SIMPLERHO, hyper=hyper, wEta=!SIMPLERHO,updateHyper=FALSE)

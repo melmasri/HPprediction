@@ -40,7 +40,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dataset, dist, SIMPLERHO, hyper){
     ## if(dataset =='eid')
     ##     hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
 
-    slice = ceiling(12000/ncol(Z))
+    slice = min(ceiling(8000/ncol(Z)), 5)
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     ## dist  = com_paCross%*%t(com_paCross)

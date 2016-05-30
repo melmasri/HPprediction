@@ -41,7 +41,7 @@ if(SUBSET){
     phy_dist = phy_dist[,aux>1]
     com = lof(com)
 }
-slice = ceiling(10000/ncol(com))	
+slice = min(ceiling(8000/ncol(com),5)
 diag(phy_dist)<-0
 
 
