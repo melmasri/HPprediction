@@ -133,8 +133,9 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
     burn_in = n_w*slice
     throw.out.slice = floor(0.2*slice)
     throw.out = throw.out.slice*ncol(Z)
-    print(sprintf("Run for %i slices, and %i burn ins",slice, burn_in))
-    print(sprintf("Settings: uncertain=%s, wMH=%s,yMH=%s,wEta=%s,yEta=%s .",uncertain, wMH, yMH,wEta,yEta))
+    	print(sprintf("Run for %i slices, and %i burn ins",slice, burn_in))
+        print(sprintf("Settings: uncertain=%s, wMH=%s,yMH=%s,wEta=%s,yEta=%s .",uncertain, wMH, yMH,wEta,yEta))
+	print(sprintf("updateHyper= %s,AdaptiveMC= %s ", updateHyper, AdaptiveMC))
     print(dim(Z))
     ## Hyper parameters
     a_w = 1;b_w = 1; a_y = 1; b_y = 1;

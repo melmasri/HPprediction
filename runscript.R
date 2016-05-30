@@ -20,7 +20,7 @@ runtype = args[1]
 datatype = args[2]
 subtype  = args[3]
 SIMPLERHO = if(!is.na(args[4])) TRUE else FALSE
-SINGLE = if(!is.na(args[4])) TRUE else FALSE
+SINGLE = if(!is.na(args[5])) FALSE else TRUE
 
 sTime = Sys.time()
 
