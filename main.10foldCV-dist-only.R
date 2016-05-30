@@ -49,7 +49,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist){
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=eta, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR, P = P)
-},pairs=pairs,Z = com_pa, dist=phy_dist, mc.preschedule = TRUE, mc.cores = 4) 
+},pairs=pairs,Z = com_pa, dist=phy_dist, mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

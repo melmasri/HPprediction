@@ -29,7 +29,7 @@ if(grepl('GMP',datatype)){
     paste0('../comGMPD',if(SINGLE) '.single' else '','.RData')
 }
 if(grepl('EID',datatype)){
-    DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) if(SINGLE) paste0('../comEID-subset',if(SINGLE) '.single'else '','.RData') else
+    DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) paste0('../comEID-subset',if(SINGLE) '.single'else '','.RData') else
     paste0('../comEID-PS',if(SINGLE) '.single' else '', '.RData')
 }
 
