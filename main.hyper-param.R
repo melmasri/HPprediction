@@ -8,11 +8,11 @@ SAVE_PARAM = TRUE
 
 if(dataset=='gmp')
     DATAFILENAME = 'comGMPD.single.RData'
-if(dataset = 'eid')
+if(dataset == 'eid')
     DATAFILENAME = 'comEID-PS..single.RData'
 
 
-sink(pate0('Dataset: ', dataset))
+sink(paste0('Dataset: ', dataset))
 print(DATAFILENAME)
 source('library.R')
 source('gen.R')
