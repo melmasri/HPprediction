@@ -39,7 +39,9 @@ for (dataset in c('gmp', 'eid')){
     f = grep(dataset, files, value=T)[1] # unique files for gmp and eid
     if(length(f)==0) next
     load(f)
+    print(f)
     source('library.R')
+
     com_pa = 1*(com>0)
     r = which.max(rowSums(com_pa));r
     c = which.max(colSums(com_pa));c
@@ -367,6 +369,7 @@ g_col<-'ivory4'
 for(data in filenames){
     print(data)
     aux = grep(data, list.dirs(), value=TRUE)
+    print(aux)
     if(length(aux)==0) next
     load(paste0(aux[1], '/param.RData'))
     source('library.R')
@@ -413,7 +416,7 @@ for(data in filenames){
     pdf(paste0('hist_obs_unk_', data,'.pdf'))
     colass = rgb(0,0.8,0.8,0.5)
     colnoass = rgb(1,0,0.4,0.4,0.5)
-    hist(log(P1[com10>0]),col=colass,main ='', ylab = 'Density', freq=FALSE, xlab='Log of probability', ylim = c(0,0.38), xlim=c(-12,0), breaks=25)
+    hist(log(P1[com10>0]),col=colass,main ='', ylab = 'Density', freq=FALSE, xlab='Log of probability', ylim = c(0,0.38), xlim=c(-15,0), breaks=25)
     hist(log(P1[com10==0]),col=colnoass,freq=FALSE, add=TRUE, breaks=30)
     legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass))
     dev.off()
@@ -435,7 +438,7 @@ for(data in filenames){
     
     ## Histogram of G
     pdf(paste0('hist_g_',data,'.pdf'),height=4)
-    hist(paramRegularG$g,freq=T,col=g_col, xlab='Posterior estimate of g for the GMP-Carnivora database', main='', breaks=40)
+    hist(paramRegularG$g,freq=T,col=g_col, xlab='Posterior estimate of g for the GMP-Carnivora database', main='', breaks=40, xlim=c(0,0.6))
     abline(v=quantile(paramRegularG$g,probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
     
@@ -510,5 +513,14 @@ print(xtable(PRED),
       sanitize.text.function=function(x){x},
       only.contents=TRUE, file='tb-GMP-EID-Pred.tex')
 
+
+
+MuG = sapply(all.data, function(r) round(r[['MuG']],4))[1,]
+MuG = data.frame(t(MuG))
+print(xtable(MuG, digits = 3),
+      include.colnames = TRUE,
+      include.rownames = TRUE,
+      sanitize.text.function=function(x){x},
+      only.contents=TRUE,file='tb-GMP-EID-MuG.tex')
 ### DONE
 ##################################################
