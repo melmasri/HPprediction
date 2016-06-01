@@ -138,10 +138,10 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     ## Optional estimated presence/absence matrix (Z_est) can be added to existing plot.
     para_degrees <- as.data.frame(table(colSums(Z)))
     para_degrees$Var1 <- as.numeric(para_degrees$Var1)
-    para_degrees = para_degrees[-which(para_degrees$Var1<2),]
+    ## para_degrees = para_degrees[-which(para_degrees$Var1<2),]
     host_degrees <- as.data.frame(table(rowSums(Z)))
     host_degrees$Var1 <- as.numeric(host_degrees$Var1)
-    host_degrees = host_degrees[-which(host_degrees$Var1<2),]
+    ## host_degrees = host_degrees[-which(host_degrees$Var1<2),]
 
     xlim = c(1, max(para_degrees$Var1,host_degrees$Var1)*1.5)
     ylim = c(1, max(para_degrees$Freq,host_degrees$Freq)*1.5)
@@ -149,10 +149,10 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     if (!missing(Z_est)){
         para_est <- as.data.frame(table(colSums(Z_est)))
         para_est$Var1 <- as.numeric(para_est$Var1)
-        para_est = para_est[-which(para_est$Var1<2),]
+        ## para_est = para_est[-which(para_est$Var1<2),]
         host_est <- as.data.frame(table(rowSums(Z_est)))
         host_est$Var1 <- as.numeric(host_est$Var1)
-        host_est = host_est[-which(host_est$Var1<2),]
+        ## host_est = host_est[-which(host_est$Var1<2),]
         xlim = c(1, max(para_degrees$Var1,host_degrees$Var1,
             para_est$Var1, host_est$Var1)*1.5)
         ylim = c(1, max(para_degrees$Freq,host_degrees$Freq,
