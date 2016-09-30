@@ -945,3 +945,16 @@ auc = unlist(sapply(sim100, function(r) r$ana['m.auc'] ))
 tb = rbind(summary(pred), summary(auc))
 rownames(tb)<-c('pred', 'auc')
 write.csv(tb, file='100sim_report.csv')
+
+
+
+##
+load('paper-sim-results/param-gmp.RData')
+
+par(mfrow=c(2,1))
+plot(param_phy1$hh[1,], col='blue', type='l')
+lines(param_phy2$hh[1,], col='orange')
+lines(param_phy3$hh[1,],col ='yellow')
+plot(param_phy1$hh[3,], col='blue', type='l')
+lines(param_phy2$hh[3,], col='orange')
+lines(param_phy3$hh[3,],col ='yellow')

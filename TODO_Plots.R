@@ -27,6 +27,7 @@
 
 rm(list=ls())
 library(xtable)
+library(coda)
 files = grep('./(gmp|eid)-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
 files = files[order(files, decreasing=TRUE)]
@@ -66,6 +67,17 @@ for (dataset in c('gmp', 'eid')){
     plot(param_phy$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Scale')
     dev.off()
 
+    pdf(paste0('ACF_param_mcmc_',dataset,'.pdf'))
+    par(mfrow=c(3,1))
+    acf(param_phy$y[r,burn],lag.max=100, main='Host - most active')
+    text(80, 0.8, paste0('Effective sample size: ',round(effectiveSize(param_phy$y[r,burn]))))
+    round(effectiveSize(param_phy$y[r,burn]))
+    acf(param_phy$w[c,burn],lag.max=100, main='Parasite - most active')
+    text(80, 0.8, paste0('Effective sample size: ',round(effectiveSize(param_phy$w[c,burn]))))
+    acf(param_phy$eta[burn],lag.max=100, main='Scale parameter')
+    text(80, 0.8, paste0('Effective sample size: ',round(effectiveSize(param_phy$eta[burn]))))
+    dev.off()
+        
     burn = param_phy$burn_in - 10000:1
 
     ## HIST: Average RHO
@@ -104,6 +116,9 @@ for (dataset in c('gmp', 'eid')){
     boxplot(data.frame(t(param_phy$w[aux[1:no.par], burn])), outline=F, 
             names = paste(1:no.par), ylab= 'Value', xlab = 'Ordered parameters',
             whiskcol=rho_col, staplecol=rho_col, col=rho_col, medcol="white")## BOXPLOT: Invidual RHOs
+    ## Adding mean Post and 95% coverage interval
+    abline(h=mean(unlist((param_phy$w[,burn]))), col='red',lty=2, lwd=1 )
+    abline(h=quantile((param_phy$w[,burn]),probs = c(0.05, 0.95)), col="red", lty=2, lwd=1)
     dev.off()
 
     ## BOXPLOT: Invidual GAMMAs
@@ -114,6 +129,8 @@ for (dataset in c('gmp', 'eid')){
     boxplot(data.frame(t(param_phy$y[aux[1:no.par], burn])), outline=F, 
             names = paste(1:no.par), ylab= 'Value', xlab = 'Ordered parameters',
             whiskcol=gamma_col, staplecol=gamma_col, col=gamma_col, medcol="white")
+    abline(h=mean(unlist((param_phy$y[,burn]))), col='red',lty=2, lwd=1 )
+    abline(h=quantile((param_phy$y[,burn]),probs = c(0.05, 0.95)), col="red", lty=2, lwd=1)
     dev.off()
 
     ## AUC tables
@@ -169,7 +186,7 @@ for (dataset in c('gmp', 'eid')){
 
     print(TB)
     print(roc$auc)
-
+    
     TBx=data.frame(Parameter = rownames(TB), Estimate = TB$mu, sd = TB$sd,
         CI = paste0('(', round(TB$X5.,2), ', ', round(TB$X95.,2) , ')'))
 
@@ -197,12 +214,12 @@ for (dataset in c('gmp', 'eid')){
 ## 10 fold cross validation
 ## ## All files
 rm(list=ls())
-source('library.R')
+source('../library.R')
 library(xtable)
 files = grep('10foldCV-', list.dirs(), value=TRUE)
 files = paste0(files,'/param.RData')
 all.data = list()
-
+wilcoxon = list()
 
 for(data in c('eid', 'gmp')){
 
@@ -334,6 +351,10 @@ for(data in c('eid', 'gmp')){
     
     TBx = data.frame(names, tb[,'m.auc'], tb[,'m.pred'])
     all.data[[data]]<-TBx
+
+    tb = t(sapply(gres, function(r) r$ana[,'m.auc']))
+    rownames(tb)<-gnames
+    wilcoxon[[data]]<-tb
 }
 
 xx = cbind(all.data[['gmp']][,c(1,2,3)], all.data[['eid']][,c(2,3)])
@@ -346,7 +367,35 @@ print(xtable(xx),
       sanitize.text.function=function(x){x},
       only.contents=TRUE, file='tbAUC.tex')
 
+wilcoxon.local.test<-function(x,y){
+    d = x-y
+    r = rank(abs(d))
+    T = min(sum(r[d>0]) + 0.5*sum(r[d==0]), sum(r[d<0])+0.5*sum(r[d==0]))
+    N = length(r)
+    z = (T - 0.25*N*(N+1))/(sqrt((1/24)*N*(N+1)*(2*N+1)))
+    2*pnorm(-abs(z))
+}
 
+ll=list()
+for(n in names(wilcoxon)){
+    dd = wilcoxon[[n]]
+    grid = expand.grid(1:nrow(dd),1:nrow(dd))
+    p = cbind(grid, p = apply(grid,1, function(r)
+        wilcoxon.local.test(dd[r[1],],dd[r[2],])))
+
+    wil = matrix(0, nrow(dd), nrow(dd))
+    wil[cbind(p[,1], p[,2])]<-round(p[,3],5)
+    wil[upper.tri(wil)]<-0
+    rownames(wil)<-sub('LS-network: ', '', rownames(dd))
+    ll[[n]]<-wil
+}
+
+print(xtable(cbind(ll[['gmp']], ll[['eid']]),digits=3),
+      include.rownames = TRUE,
+      include.colnames = FALSE,
+      sanitize.text.function=function(x){x},
+      only.contents=TRUE,
+      file='tbWilcoxon-10fold-AUC.tex' )
 
 ## DONE
 ##################################################
@@ -366,13 +415,24 @@ gamma_col <- "red"
 eta_col <- "darkgreen"
 g_col<-'ivory4'
 
+wil=list()
+wilcoxon.local.test<-function(x,y){
+    d = x-y
+    r = rank(abs(d))
+    T = min(sum(r[d>0]) + 0.5*sum(r[d==0]), sum(r[d<0])+0.5*sum(r[d==0]))
+    N = length(r)
+    z = (T - 0.25*N*(N+1))/(sqrt((1/24)*N*(N+1)*(2*N+1)))
+    2*pnorm(-abs(z))
+}
+
+
 for(data in filenames){
     print(data)
     aux = grep(data, list.dirs(), value=TRUE)
     print(aux)
     if(length(aux)==0) next
     load(paste0(aux[1], '/param.RData'))
-    source('library.R')
+    source('../library.R')
     com=1*(com>0)
     ## Creating probability matrix
 
@@ -401,6 +461,13 @@ for(data in filenames){
     }else{
         Pnog = 1- exp(-outer(Y,W^Eta)*((phy_dist^Eta)%*%com) )
     }
+    ## AUC for Wilcoxon
+    wil[[data]]<-cbind(all = wilcoxon.local.test(unlist(sapply(res, function(r)
+        r[['withG']][['tb.all']]['auc'])),
+                           unlist(sapply(res, function(r) r[['withOutG']][['tb.all']]['auc']))),
+                       subset = wilcoxon.local.test(unlist(sapply(res, function(r)
+                           r[['withG']][['tb']]['auc'])),
+                           unlist(sapply(res, function(r) r[['withOutG']][['tb']]['auc']))))
 
     ## Histograms
     P1 = Pg
@@ -522,5 +589,15 @@ print(xtable(MuG, digits = 3),
       include.rownames = TRUE,
       sanitize.text.function=function(x){x},
       only.contents=TRUE,file='tb-GMP-EID-MuG.tex')
+
+WIL = data.frame(do.call('rbind', wil))
+rownames(WIL)<-sub('Uncertain-10foldCV-', '', names(wil))
+
+print(xtable(WIL, digits = 3),
+      include.colnames = TRUE,
+      include.rownames = TRUE,
+      sanitize.text.function=function(x){x},
+      only.contents=TRUE,file='tbWilcoxon-Uncer.tex')
+
 ### DONE
 ##################################################

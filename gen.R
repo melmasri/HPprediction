@@ -40,7 +40,8 @@ raffinity.MH<-function(old, eta , m, Ud, sig=0.1, paramEta, hyper){
     b = hyper[2]
     if(!paramEta) eta = 1
     old= old^(1/eta)
-    epsilon = rnorm(length(old), 0, sd = sig) 
+    epsilon = rnorm(length(old), 0, sd = sig)
+    #print(epsilon)
     new = old +  -2*(old + epsilon <=0)*epsilon + epsilon    
 
     likeli = (eta*m+a-1)*log(new/old) -  (new - old)*b - (new^eta - old^eta)*Ud
@@ -150,10 +151,10 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
         print(hyper)
         a_y =  hyper[['host']][1]
         b_y =  hyper[['host']][2]
-        y_sd = hyper[['host']][3]
+        y_sd = 0.1
         a_w =  hyper[['parasite']][1]
         b_w =  hyper[['parasite']][2]
-        w_sd = hyper[['parasite']][3]
+        w_sd =0.1
         eta_sd = hyper[['eta']][1]
     }
     
@@ -161,7 +162,6 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
     ls = floor(log(tol.err + w_sd)/beta)
     lsy = floor(log(tol.err + y_sd)/beta)
     lseta = floor(log(tol.err + eta_sd)/beta)
-    
     batch.size = 50
     
     ## Variable holders
@@ -185,7 +185,7 @@ gibbs_one<-function(Z,y,w,dist, slice = 10, eta,hyper, uncertain =FALSE,wMH=FALS
             if(i%%ncol(Z)==0) print(sprintf('Slice %d', i/ncol(Z)))
             ## for (i in 1:200){
             if(AdaptiveMC)
-                if((i%%batch.size==0) & (i < 0.4*burn_in)){
+                if(((i%%batch.size==0) & (i < 0.4*burn_in))){
                     if(wMH){
                         ls  = AdaptiveSigma(w0, ls, i)
                         w_sd = exp(beta*ls)

@@ -9,7 +9,7 @@ SAVE_PARAM = TRUE
 if(dataset=='gmp')
     DATAFILENAME = 'comGMPD.single.RData'
 if(dataset == 'eid')
-    DATAFILENAME = 'comEID-PS..single.RData'
+    DATAFILENAME = 'comEID-PS.single.RData'
 
 
 sink(paste0('Dataset: ', dataset))
@@ -18,7 +18,7 @@ source('library.R')
 source('gen.R')
 load(DATAFILENAME)
 
-slice= min(5,ceiling(10000/ncol(com)))
+slice= min(5,ceiling(4000/ncol(com)))
 
 if(dataset =='gmp')
     hyper = list(parasite =c(5, 1), host = c(1,1), eta = c(0.008)) 
@@ -38,7 +38,7 @@ param_phy1[['g']]<-NULL
 param_phy = list(w = w0, y = y0, burn_in = burn_in - max(-throw.out), throw.out = max(-throw.out),eta = eta, g=g, hh=hh, sd = list(w=w_sd, y = y_sd, eta= eta_sd))
 
 if(dataset =='gmp')
-    hyper = list(parasite =c(1, 1), host = c(2,1), eta = c(0.008)) # comGMPD.single.RData
+    hyper = list(parasite =c(1, 1), host = c(0.1,1), eta = c(0.008)) # comGMPD.single.RData
 
 if(dataset =='eid')
     hyper = list(parasite= c(1, 1), host =c(2, 2), eta = c(0.01))
@@ -53,7 +53,7 @@ param_phy2[['eta']]<-NULL
 param_phy2[['g']]<-NULL
 
 if(dataset =='gmp')
-    hyper = list(parasite =c(0.1, 1), host = c(0.1,1), eta = c(0.008)) 
+    hyper = list(parasite =c(0.1, 1), host = c(0.3,1), eta = c(0.008)) 
 
 if(dataset =='eid')
     hyper = list(parasite= c(0.1, 1), host =c(0.1, 2), eta = c(0.01))
