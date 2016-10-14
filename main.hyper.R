@@ -32,7 +32,7 @@ updateHyper = TRUE
 AdaptiveMC = TRUE
 
 hyper = list(parasite= c(0.34, 1), host =c(0.93, 2), eta = c(0.005)) # need to check
-slice= ceiling(6000/ncol(com))
+slice= ceiling(10000/ncol(com))
 
 param_phy = gibbs_one(Z=com,slice=slice,dist=phy_dist, eta=1, hyper=hyper, updateHyper = updateHyper, AdaptiveMC=AdaptiveMC)
 
