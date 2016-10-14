@@ -2,8 +2,8 @@
 ## Rscript runscript.R runtype datatype subtype
 
 ## runtype: uncertain, 10fold, ALL, nodist, weighted, NN, distonly
-## subtype: subset, anything
 ## datatype: GMP EID
+## subtype: subset, anything
 ## SimpleRho: as in w^rho or not
 
 # A general running script
@@ -93,7 +93,7 @@ if(SUBSET){
         hyper = list(parasite =c(15, 1), host = c(0.35,1), eta = c(0.012)) 
     
     if(dataset =='eid')
-        hyper = list(parasite= c(105, 1), host =c(1.2, 2), eta = c(0.015)) 
+        hyper = list(parasite= c(105, 1), host =c(1.2, 1), eta = c(0.015)) 
     
 }else{
     if(dataset =='gmp')

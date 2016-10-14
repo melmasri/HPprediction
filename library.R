@@ -729,14 +729,15 @@ ana.table<-function(com, comCross, roc, plot=FALSE){
     tb= data.frame(auc = roc$auc, thresh= roc$threshold,
         tot.inter = sum(com), hold.out= sum(abs(comCross - com)[com==1]),
         pred = sum(zz[com==1 & comCross==0])/sum(abs(comCross - com)[com==1]),
-        pred.all = sum(zz[com==1])/sum(com),
-        zeros =sum(comCross==0),
-        TP =sum(zz[com>0]),
-        FN =sum(1-zz[com>0]),
-        FP =sum(zz[com==0]),
-        TN = sum(1-zz[com==0]),
-        no.hosts = dim(com)[1],
-        no.parasite = dim(com)[2])
+        pred.all = sum(zz[com==1])/sum(com))
+     ##   zeros =sum(comCross==0),
+    ##     TP =sum(zz[com>0]),
+    ##     FN =sum(1-zz[com>0]),
+    ##     FP =sum(zz[com==0]),
+    ##     TN = sum(1-zz[com==0]),
+    ##     no.hosts = dim(com)[1],
+    ##     no.parasite = dim(com)[2])
+    ## 
     tb
 }
 

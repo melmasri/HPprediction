@@ -22,52 +22,37 @@ raffinity.MH<-function(old, eta , m, Ud, sig=0.1, hyper){
     u*new + (1-u)*old
 }
 
-rHyper<-function(old,y, w, eta, U, pdist, mr, mc, type='host', sig = 0.1){
+rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
+    ## old= c(a_y, b_y);y=y0[,i+1];w=w0[,i+1];U= U0; pdist=pdist.right; type='host'
+    ## sig=0.1
     new = old*exp(rnorm(length(old), 0, sd = sig ))
     new[2]<-1
     if(type=='host'){
         u = (U*pdist)%*%w
         r = length(y)*(new[1]*log(new[2]) - lgamma(new[1]) )  +
-            sum(lgamma(mr+new[1]) - (mr + new[1]*log(new[2] + u))) +
+            sum(lgamma(mr+new[1]) - (mr + new[1])*log(new[2] + u)) +
                 -(length(y)*(old[1]*log(old[2]) - lgamma(old[1]))  +
-                      sum(lgamma(mr+old[1]) - (mr + old[1]*log(old[2] + u))))
+                      sum(lgamma(mr+old[1]) - (mr + old[1])*log(old[2] + u)))
     }
     if(type=='parasite'){
         u =  y%*%(U*pdist)
         r = length(w)*(new[1]*log(new[2]) - lgamma(new[1]) )  +
-            sum(lgamma(mc+new[1]) - (mc + new[1]*log(new[2] + u))) +
+            sum(lgamma(mc+new[1]) - (mc + new[1])*log(new[2] + u)) +
             -(length(w)*(old[1]*log(old[2]) - lgamma(old[1]))  +
-                  sum(lgamma(mc+old[1]) - (mc + old[1]*log(old[2] + u))))
+                  sum(lgamma(mc+old[1]) - (mc + old[1])*log(old[2] + u)))
     }
     ratio = min(1, exp(r));ratio
     u = 1*(runif(1)<=ratio)
     u*new + (1-u)*old
 }
 
-
-rEta1<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
-    nr = nrow(Z)
-    ##pdist.right = t(sapply(1:nr, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-    ## A function that generates the prior for the power of distance
-    eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
-    #dist1 = eta.prop*dist
-   # pdist.right.new = t(sapply(1:nr, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-    pdist.right.new = exp(-eta.prop*dist)
-    likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
-    
-    ratio = min(1, exp(likeli));ratio
-    u = (runif(1)<=ratio)
-    if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
-    list (eta=eta.old, dist=pdist.old)
-}
-
 rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
-    nr = nrow(Z)
-    ##pdist.right = t(sapply(1:nr, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
     ## A function that generates the prior for the power of distance
     eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
     dist1 = dist^eta.prop
-    pdist.right.new = t(sapply(1:nr, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
+
+    pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
+    #pdist.right.new = dist1%*%Z
     likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
     
     ratio = min(1, exp(likeli));ratio
@@ -108,9 +93,7 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
-gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=TRUE){
-    Z=com_paCross;slice=slice ;dist= dist;
-        eta=1; hyper = hyper; updateHyper=FALSE; AdaptiveMC=TRUE
+gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE){
 	## A one step update in a Gibbs sampler.
 	## ## initialize
     #Z = 1*(Z>0)
@@ -165,22 +148,17 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         min_dist  = min(dist[upper.tri(dist)]) else min_dist=0
     if(!missing(eta)) peta = rep(eta, burn_in)  else
     peta = rep(1, burn_in)
-    if(missing(dist)) pdist = 1 else
-    pdist = (dist^peta[1])%*%Z
-    dist1 = dist^peta[1]
-    pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:n_y]%*%Z[1:n_y, ]))
-
-    ## maxpd=max(pdist)
-    ## dd1 = maxpd - pdist
-    ## dd2 = maxpd - pdist.right
-    ## pdist   = exp(-dd1)
-    ## pdist.right = exp(-dd2)
-    pd0 = pdist.right!=0
+    if(missing(dist)) pdist.right<-pdist<- 1 else{
+        pdist = (dist^peta[1])%*%Z
+        dist1 = dist^peta[1]
+        pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
+        #pdist.right = pdist
+    }
+       pd0 = pdist.right!=0
     tryCatch(
         
         for (i in 1:(burn_in-1)){
             if(i%%ncol(Z)==0) print(sprintf('Slice %d', i/ncol(Z)))
-            ##            for (i in 1:200){
             if(AdaptiveMC)
                 if(((i%%batch.size==0) & (i < 0.4*burn_in))){
                     ls  = AdaptiveSigma(w0, ls, i)
@@ -218,11 +196,8 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             if(!missing(eta)){
                 new.eta = rEta(peta[i],dist,pdist.right,Z,y0[,i+1],
                     w0[,i+1], U0,pd0, eta_sd=eta_sd)
-                ## new.eta = rEta1(peta[i],dd2,pdist.right,Z,y0[,i+1],
-                ##     w0[,i+1], U0,pd0, eta_sd=eta_sd)
                 peta[i+1] = new.eta$eta
                 pdist.right = new.eta$dist
-                ## pdist   = exp(-peta[i+1]*dd1)
                 pdist = (dist^peta[i+1])%*%Z
                 #if(i%%100==0) print(peta[i+1])
             }
@@ -232,27 +207,24 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             ##         g0[i+1] = rg(Z, U0,l=pdist*outer(y0[,i],w0[,i])) 
             ##     }
             
-        ##     ## Updating Hyper parameters
-        ##     if(updateHyper){
-        ##         if(!yEta ){
-        ##             new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
-        ##                 peta[i+1],U0, pdist, mr, mc, type='host')
-        ##             a_y = new[1]
-        ##             b_y = new[2]
-        ##         hh[1,i+1]<-a_y
-        ##             hh[2,i+1]<-b_y
-        ##         }
+            ## Updating Hyper parameters
+            if(updateHyper){ 
+                new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
+                    U0, pdist.right, mr, mc, type='host')
+                a_y = new[1]
+                b_y = new[2]
+                hh[1,i+1]<-a_y
+                hh[2,i+1]<-b_y
                 
-        ##         if(!wEta){
-        ##             new = rHyper(c(a_w, b_w),y0[,i+1],w0[,i+1],
-        ##                 peta[i+1], U0,pdist, mr, mc, type='parasite')
-        ##             a_w = new[1]
-        ##             b_w = new[2]
-        ##             hh[3,i+1]<-a_w
-        ##             hh[4,i+1]<-b_w
-        ##         }
-        ##         #if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
-        ##     }
+                new = rHyper(c(a_w, b_w),y0[,i+1],w0[,i+1],
+                    U0,pdist.right, mr, mc, type='parasite')
+                a_w = new[1]
+                b_w = new[2]
+                hh[3,i+1]<-a_w
+                hh[4,i+1]<-b_w
+            }
+            ##if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
+            
         }
         
        ,warning = function(w)
