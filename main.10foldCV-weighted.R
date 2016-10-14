@@ -33,7 +33,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     ## if(dataset =='eid')
     ##     Z=log(Z+1)/2
     
-    slice = max(5,ceiling(10000/ncol(Z)))
+    slice = max(5,ceiling(8000/ncol(Z)))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     param_phy = gibbs_one(com_paCross,slice=slice ,dist= dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = FALSE)
@@ -43,7 +43,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     
     Z= 1*(Z>0)
     com_paCross = 1*(com_paCross>0)
-    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=TRUE, bins=400, all=FALSE)
+    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)

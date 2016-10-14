@@ -28,7 +28,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, hyper){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
-    slice = max(5,ceiling(10000/nrow(Z)))
+    slice = max(5,ceiling(8000/nrow(Z)))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     param_phy=gibbs_one(com_paCross,slice=slice,hyper=hyper,AdaptiveMC = FALSE,updateHyper = FALSE)

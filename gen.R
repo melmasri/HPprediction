@@ -46,6 +46,21 @@ rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     u*new + (1-u)*old
 }
 
+rEta1<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
+    ## A function that generates the prior for the power of distance
+    eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
+    dist1 = dist^eta.prop
+
+    pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
+    pdist.right.new = exp(eta.prop*pdist.right.new)
+    likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
+    
+    ratio = min(1, exp(likeli));ratio
+    u = (runif(1)<=ratio)
+    if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
+    list (eta=eta.old, dist=pdist.old)
+}
+
 rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
     ## A function that generates the prior for the power of distance
     eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
@@ -152,7 +167,7 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         pdist = (dist^peta[1])%*%Z
         dist1 = dist^peta[1]
         pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-        #pdist.right = pdist
+                                        #pdist.right = pdist
     }
        pd0 = pdist.right!=0
     tryCatch(
@@ -196,8 +211,11 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             if(!missing(eta)){
                 new.eta = rEta(peta[i],dist,pdist.right,Z,y0[,i+1],
                     w0[,i+1], U0,pd0, eta_sd=eta_sd)
+                ## new.eta = rEta1(peta[i],dist,pdist.right,Z,y0[,i+1],
+                ##     w0[,i+1], U0,pd0, eta_sd=eta_sd)
                 peta[i+1] = new.eta$eta
                 pdist.right = new.eta$dist
+                ## pdist = exp((dist^peta[i+1])%*%Z)
                 pdist = (dist^peta[i+1])%*%Z
                 #if(i%%100==0) print(peta[i+1])
             }
