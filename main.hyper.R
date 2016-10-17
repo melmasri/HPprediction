@@ -27,14 +27,16 @@ sink(paste0('hyper-',DATAFILENAME, '.txt'))
 ## set the correct prior.
 print('Setting the prior.')
 ## No uncertain
+
 com=1*(com>0)
 updateHyper = TRUE
-AdaptiveMC = TRUE
+AdaptiveMC = FALSE
 
 hyper = list(parasite= c(0.34, 1), host =c(0.93, 2), eta = c(0.005)) # need to check
-slice= ceiling(10000/ncol(com))
+slice= ceiling(8000/ncol(com))
 
-param_phy = gibbs_one(Z=com,slice=slice,dist=phy_dist, eta=1, hyper=hyper, updateHyper = updateHyper, AdaptiveMC=AdaptiveMC)
+param_phy = gibbs_one(Z=com,slice=slice,dist=phy_dist, eta=1, hyper=hyper, updateHyper =
+                          updateHyper, AdaptiveMC=AdaptiveMC)
 
 aux = getMean(param_phy);aux$eta
 P = 1-  exp(-outer(aux$y, aux$w)*((phy_dist^aux$eta)%*%com))

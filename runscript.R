@@ -96,11 +96,16 @@ if(SUBSET){
         hyper = list(parasite= c(105, 1), host =c(1.2, 1), eta = c(0.015)) 
     
 }else{
-    if(dataset =='gmp')
-        hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) 
-    
-    if(dataset =='eid')
-        hyper = list(parasite= c(26, 1), host =c(0.5, 2), eta = c(0.005)) # need to check
+    if(dataset =='gmp'){
+        if(SINGLE)
+            hyper = list(parasite =c(49, 1), host = c(1.95,1), eta = c(0.005)) else
+        hyper = list(parasite =c(14, 1), host = c(1.6,1), eta = c(0.008))
+    }
+    if(dataset =='eid'){
+        if(SINGLE)
+            hyper = list(parasite= c(26, 1), host =c(0.5, 2), eta = c(0.005)) else
+        hyper = list(parasite= c(0.2, 1), host =c(0.73, 2), eta = c(0.005)) 
+    }
 }
 
 

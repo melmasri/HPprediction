@@ -2,8 +2,8 @@
 
 ## Global Variable
 SAVE_PARAM = TRUE
-#DATAFILENAME = 'comGMPD.single.RData'
-DATAFILENAME = 'comGMPD.RData'
+DATAFILENAME = 'comGMPD.single.RData'
+## DATAFILENAME = 'comGMPD.RData'
 #DATAFILENAME = 'comEID-subset.single.RData'
 ## DATAFILENAME = 'comEID-PS.RData'
 #DATAFILENAME = 'comEID-PS.single.RData'
@@ -32,7 +32,7 @@ AdaptiveMC = TRUE
 hyper = list(parasite= c(0.34, 1), host =c(0.93, 2), eta = c(0.005)) # need to check
 slice= ceiling(12000/ncol(com))
 slice=8
-
+com=1*(com>0)
 param_phy = gibbs_one(Z=1*(com>0),slice=slice,dist=phy_dist, eta=1, hyper=hyper, updateHyper = updateHyper, AdaptiveMC=AdaptiveMC)
 
 param_phy = gibbs_one(Z=1*(com>0),slice=slice, hyper=hyper, updateHyper =updateHyper, AdaptiveMC=AdaptiveMC)
@@ -60,6 +60,7 @@ print(roc$auc)
 ## 86.27 no dist
 ## 90.9 wth dist
 ## 93.86 with new(dist)
+## 93.55 with orderd dist
 
 ## GMP-Carni (pdist)
 ## 84.91 no dist

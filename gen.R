@@ -109,7 +109,8 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
 }
 
 gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE){
-	## A one step update in a Gibbs sampler.
+    ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
+    ## A one step update in a Gibbs sampler.
 	## ## initialize
     #Z = 1*(Z>0)
     colnames(Z)<-NULL
