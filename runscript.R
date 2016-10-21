@@ -1,10 +1,11 @@
 ## what to run
-## Rscript runscript.R runtype datatype subtype
+## Rscript runscript.R runtype datatype subtype non-single
 
 ## runtype: uncertain, 10fold, ALL, nodist, weighted, NN, distonly
 ## datatype: GMP EID
 ## subtype: subset, anything
-## SimpleRho: as in w^rho or not
+## non-single: leave empty for single, otherwise non-single
+
 
 # A general running script
 options(echo=TRUE) # if you want see commands in output file
@@ -96,16 +97,33 @@ if(SUBSET){
     
 }else{
     if(dataset =='gmp'){
-        if(SINGLE)
-            hyper = list(parasite =c(49, 1), host = c(1.95,1), eta = c(0.005)) else
-        hyper = list(parasite =c(14, 1), host = c(1.6,1), eta = c(0.008))
+        if(SINGLE){
+            if(runtype=='nodist'){
+                hyper = list(parasite =c(0.22, 1), host = c(0.77,1), eta = c(0.005))
+            }else 
+                hyper = list(parasite =c(49, 1), host = c(1.95,1), eta = c(0.005))
+        }else{
+            if(runtype=='nodist'){
+                hyper = list(parasite =c(0.25, 1), host = c(0.82,1), eta = c(0.005))
+            }else 
+                hyper = list(parasite =c(13.8, 1), host = c(1.6,1), eta = c(0.008))
+        }
     }
     if(dataset =='eid'){## affinity only
-        if(SINGLE)
-            hyper = list(parasite= c(0.17, 1), host =c(0.65, 2), eta = c(0.005)) else
-        hyper = list(parasite= c(0.2, 1), host =c(0.73, 2), eta = c(0.005)) 
+        if(SINGLE){
+            if(runtype=='nodist'){
+                hyper = list(parasite= c(0.17, 1), host =c(0.66, 2), eta = c(0.005))
+            }else 
+                hyper = list(parasite= c(0.17, 1), host =c(0.66, 2), eta = c(0.005))
+        }else{
+            if(runtype=='nodist'){
+                hyper = list(parasite =c(0.2, 1), host = c(0.73,1), eta = c(0.005))
+            }else 
+                hyper = list(parasite= c(0.2, 1), host =c(0.73, 2), eta = c(0.005))
+        }
     }
 }
+
 
 
 title = paste0(dataset,' ',subset,' all data')
