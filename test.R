@@ -1,9 +1,3 @@
-param_phy = gibbs_one(1*(com>0),slice=5,dist= phy_dist, eta=1, uncertain=FALSE, yMH=TRUE, wMH = TRUE, hyper=hyper, wEta = FALSE, yEta=FALSE)
-
-
-
-param_phy = gibbs_one(1*(com>0),slice=5,dist= phy_dist, eta=1, uncertain=FALSE, yMH=TRUE, wMH = TRUE, hyper=hyper, wEta = FALSE, yEta=FALSE)
-BAD,
 
 
 com_pa = 1*(com>0)
@@ -13,26 +7,43 @@ burn = param_phy$burn_in - 20000:1
 dim(param_phy$y)
 burn = burn[burn>0]
 range(burn)
+aux = getMean(param_phy)
 
-
+par(mfrow=c(3,1))
+plot(param_phy$eta)
+abline(h=aux$eta, col='red')
 plot(param_phy$w[c,])
-abline(h=w[c])
-w[c]
-
-
+abline(h=aux$w[c], col='red')
 plot(param_phy$y[r,])
-abline(h=y[r])
-y[r]
-plot(param_phy$hh[1,])
+abline(h=aux$y[r], col='red')
 
-lines(param_phy$hh[3,], col='blue')
+par(mfrow=c(3,1))
+plot(param_phy$eta)
+abline(h=aux$eta, col='red')
+plot(param_phy$w[c,])
+abline(h=aux$w[c], col='red')
+plot(param_phy$y[r,])
+abline(h=aux$y[r], col='red')
+
+par(mfrow=c(2,1))
+plot(param_phy$hh[1,], ylab='hosts')
+plot(param_phy$hh[3,],ylab='parasites')
 
 
-Vulpes_vulpes 
-          219 
-mean(param_phy$y[r,])
-[1] 0.1066
-mean(param_phy$w[c,])
-[1] 31.89
-> 
+range(exp(-aux$eta*dd))
+range(as.vector(P))
+summary(as.vector(P))
 
+plot(param_phy$y[1,], ylim=c(0, 20))
+for(i in 1:10)
+    lines(param_phy$y[i, ], col=i)
+
+
+### nodist
+aux = getMean(param_phy)
+P = 1-  exp(-outer(aux$y, aux$w))
+roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=TRUE, bins=400, all=FALSE)
+tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+tb.all

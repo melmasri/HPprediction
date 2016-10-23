@@ -21,17 +21,17 @@ rownames(com)<-1:nrow(com)
 colnames(phy_dist)<-1:ncol(phy_dist)
 rownames(phy_dist)<-1:nrow(phy_dist)
 com_pa = 1*(com>0)
-pairs = cross.validate.fold(com)
+pairs = cross.validate.fold(com, n=5)
 tot.gr = length(unique(pairs[,'gr']))
 
 res = mclapply(1:tot.gr ,function(x, pairs, Z, hyper){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
-    slice = max(5,ceiling(8000/nrow(Z)))
+    slice = max(5,ceiling(10000/nrow(Z)))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    param_phy=gibbs_one(com_paCross,slice=slice,hyper=hyper,AdaptiveMC = FALSE,updateHyper = FALSE)
+    param_phy=gibbs_one(com_paCross,slice=slice,hyper=hyper,AdaptiveMC = TRUE,updateHyper = FALSE)
     aux = getMean(param_phy)
     P = 1-exp(-outer(aux$y,aux$w))
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)

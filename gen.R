@@ -46,13 +46,15 @@ rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     u*new + (1-u)*old
 }
 
-rEta1<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
+rEta1<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01, ord, ordord){
     ## A function that generates the prior for the power of distance
     eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
     dist1 = dist^eta.prop
+    pdist.right.new =t(sapply(1:nrow(Z), function(k)
+        sapply(1:ncol(Z), function(i)
+            dist1[k, ord[1:ordord[k,i], i]] %*% Z[1:ordord[k,i],i])))
+    ## pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
 
-    pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-    pdist.right.new = exp(eta.prop*pdist.right.new)
     likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
     
     ratio = min(1, exp(likeli));ratio
@@ -65,7 +67,6 @@ rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
     ## A function that generates the prior for the power of distance
     eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
     dist1 = dist^eta.prop
-
     pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
     #pdist.right.new = dist1%*%Z
     likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
@@ -113,6 +114,7 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     ## A one step update in a Gibbs sampler.
 	## ## initialize
     #Z = 1*(Z>0)
+
     colnames(Z)<-NULL
     rownames(Z)<-NULL
     if(!missing(dist))
@@ -165,12 +167,22 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     if(!missing(eta)) peta = rep(eta, burn_in)  else
     peta = rep(1, burn_in)
     if(missing(dist)) pdist.right<-pdist<- 1 else{
+        ## ord = apply(Z,2, function(r) sample(nrow(Z), nrow(Z)))
+        ## ord1 = apply(Z, 2, function(r) which(r==1)[1])
+        ## ord2= sapply(1:ncol(ord), function(r)which(ord[, r]==ord1[r]))
+        ## aux<-ord[1,]
+        ## ord[1,]<-ord1
+        ## ord[cbind(ord2,1:ncol(ord))]<-aux
+        ## ordord= apply(ord,2, order)
         pdist = (dist^peta[1])%*%Z
         dist1 = dist^peta[1]
         pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-                                        #pdist.right = pdist
+        ## pdist.right = pdist
+        ## pdist.right =t(sapply(1:n_y, function(k)
+        ##         sapply(1:n_w, function(i)
+        ##             dist1[k, ord[1:ordord[k,i], i]] %*% Z[1:ordord[k,i],i])))
     }
-       pd0 = pdist.right!=0
+    pd0 = pdist.right!=0
     tryCatch(
         
         for (i in 1:(burn_in-1)){
@@ -212,13 +224,10 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             if(!missing(eta)){
                 new.eta = rEta(peta[i],dist,pdist.right,Z,y0[,i+1],
                     w0[,i+1], U0,pd0, eta_sd=eta_sd)
-                ## new.eta = rEta1(peta[i],dist,pdist.right,Z,y0[,i+1],
-                ##     w0[,i+1], U0,pd0, eta_sd=eta_sd)
                 peta[i+1] = new.eta$eta
                 pdist.right = new.eta$dist
-                ## pdist = exp((dist^peta[i+1])%*%Z)
                 pdist = (dist^peta[i+1])%*%Z
-                #if(i%%100==0) print(peta[i+1])
+                ##if(i%%100==0) print(peta[i+1])
             }
 
             ## Uncertainty variable

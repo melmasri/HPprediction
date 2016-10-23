@@ -23,7 +23,7 @@ rownames(com)<-1:nrow(com)
 colnames(phy_dist)<-1:ncol(phy_dist)
 rownames(phy_dist)<-1:nrow(phy_dist)
 com_pa = 1*(com>0)
-pairs = cross.validate.fold(com_pa)
+pairs = cross.validate.fold(com_pa, n=5)
 tot.gr = length(unique(pairs[,'gr']))
 
 res = lapply(1:tot.gr ,function(x, pairs, Z, dist){

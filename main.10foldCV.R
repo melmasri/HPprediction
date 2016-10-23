@@ -11,6 +11,12 @@ print(DATAFILENAME)
 load(DATAFILENAME)
 library(parallel)
 
+## com=1*(com>0)
+## aux = order(rowSums(com), decreasing = TRUE)
+## com = com[aux, ]
+## phy_dist = phy_dist[aux,]
+## phy_dist = phy_dist[ ,aux]
+
 #######################
 ## set the correct prior.
 ## Summary statistics
@@ -21,19 +27,19 @@ rownames(com)<-1:nrow(com)
 colnames(phy_dist)<-1:ncol(phy_dist)
 rownames(phy_dist)<-1:nrow(phy_dist)
 com_pa = 1*(com>0)
-pairs = cross.validate.fold(com_pa)
+pairs = cross.validate.fold(com_pa, n=5)
 tot.gr = length(unique(pairs[,'gr']))
 
 res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
-    slice = max(ceiling(8000/ncol(Z)), 5)
+    slice = max(ceiling(10000/ncol(Z)), 5)
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     
     param_phy = gibbs_one(com_paCross,slice=slice ,dist= dist,
-        eta=1, hyper = hyper, updateHyper=FALSE, AdaptiveMC=FALSE)
+        eta=1, hyper = hyper, updateHyper=FALSE, AdaptiveMC=TRUE)
     aux = getMean(param_phy)
     
     P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))

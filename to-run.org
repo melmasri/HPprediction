@@ -1,0 +1,30 @@
+
+*  TO run for NEW-HP
+** Setting:
+
+Hyper as in nodist for all
+Com is not ordered per hosts (row)
+5fold cross validation
+Adaptive MC = TRUE
+slice = max(ceiling(10000/ncol(Z)), 5)
+
+See git commit 
+** Commands
+10fold commands
+echo "Rscript runscript.R 10fold GMP nosub" | at now
+echo "Rscript runscript.R 10fold GMP nosub single" | at now + 1 minute
+echo "Rscript runscript.R 10fold EID nosub" | at now + 2 minute
+
+echo "Rscript runscript.R 10fold EID nosub single" | at now 
+
+Disonly commands
+echo "Rscript runscript.R Distonly EID nosub single" | at now 
+echo "Rscript runscript.R Distonly EID nosub" | at now + 1 minute
+echo "Rscript runscript.R Distonly GMP nosub single" | at now + 3 minute
+echo "Rscript runscript.R Distonly GMP nosub" | at now + 4 minute
+
+Nodist commands
+echo "Rscript runscript.R nodist EID nosub single" | at now 
+echo "Rscript runscript.R nodist EID nosub" | at now + 1 minute
+echo "Rscript runscript.R nodist GMP nosub single" | at now + 3 minute
+echo "Rscript runscript.R nodist GMP nosub" | at now + 4 minute

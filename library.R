@@ -452,6 +452,7 @@ cross.validate.fold<-function(Z, n= 10){
     
     aux = do.call('rbind', aux)
     pairs[aux[,1], 'gr']<-aux[,2]
+    print(sprintf("Actual cross-validation rate is %0.3f" , table(pairs[,'gr'])/sum(1*(Z>0))))
     pairs[order(pairs[,'gr']),]
     
 }
