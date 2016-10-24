@@ -7,9 +7,16 @@ Com is not ordered per hosts (row)
 5fold cross validation
 Adaptive MC = TRUE
 slice = max(ceiling(10000/ncol(Z)), 5)
+slice for main all 
+slice = ceiling(20000/ncol(Z))
+NN Setup:
+SEARCH_NNK = TRUE
+ZtZ = FALSE
 
 See git commit 
 d7ff746..ae0fea3  gumbel-with-order-likelihood -> gumbel-with-order-likelihood
+
+up to commit 
 
 ** Commands
 10fold commands

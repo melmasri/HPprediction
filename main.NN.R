@@ -1,11 +1,5 @@
-# ########################################################################
-# Mohamad Elmasri (elmasri.m@gmail.com)
-# This is script is supposed to replicate the results of:
-#  Caron, F. (2012) Bayesian nonparametric models for bipartite graphics
-# ########################################################################
-# Project dates:	start January 19, 2015
-# 					close ongoing
-#########################################
+## Script for the nearest NN
+
 ## rm(list= ls())
 ## Global Variable
 SAVE_PARAM = TRUE
