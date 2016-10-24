@@ -91,6 +91,7 @@ if(SEARCH_NNK){
         if (abs(max.nnk  - min.nnk)<4) break
     }    
     nnk = pointlist[a]
+    print(sprintf('nnk is: %d', nnk))
 }
 
 res = lapply(1:tot.gr ,function(x, pairs, Z, dist, nn.k){

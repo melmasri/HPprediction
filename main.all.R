@@ -23,7 +23,7 @@ print('Setting the prior.')
 ## if(dataset =='eid')
 ##     hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
 
-slice= ceiling(12000/ncol(com))
+slice= ceiling(20000/ncol(com))
 param_phy = gibbs_one(Z=1*(com>0),slice=slice,dist = phy_dist, eta=1,uncertain=FALSE, hyper=hyper, AdaptiveMC= TRUE, updateHyper = FALSE)
 
 if(SAVE_PARAM)
