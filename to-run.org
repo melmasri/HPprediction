@@ -1,7 +1,7 @@
 
 *  To run for NEW-HP
 ** Setting:
-
+[2016-10-24 Mon 03:05]
 Hyper as in nodist for all
 Com is not ordered per hosts (row)
 5fold cross validation
@@ -17,6 +17,7 @@ See git commit
 d7ff746..ae0fea3  gumbel-with-order-likelihood -> gumbel-with-order-likelihood
 
 up to commit 
+00ce05f..bd389d9  gumbel-with-order-likelihood -> gumbel-with-order-likelihood
 
 ** Commands
 10fold commands
