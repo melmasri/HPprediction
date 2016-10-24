@@ -1,5 +1,5 @@
 
-*  TO run for NEW-HP
+*  To run for NEW-HP
 ** Setting:
 
 Hyper as in nodist for all
@@ -9,6 +9,8 @@ Adaptive MC = TRUE
 slice = max(ceiling(10000/ncol(Z)), 5)
 
 See git commit 
+d7ff746..ae0fea3  gumbel-with-order-likelihood -> gumbel-with-order-likelihood
+
 ** Commands
 10fold commands
 echo "Rscript runscript.R 10fold GMP nosub" | at now
@@ -18,13 +20,28 @@ echo "Rscript runscript.R 10fold EID nosub" | at now + 2 minute
 echo "Rscript runscript.R 10fold EID nosub single" | at now 
 
 Disonly commands
-echo "Rscript runscript.R Distonly EID nosub single" | at now 
-echo "Rscript runscript.R Distonly EID nosub" | at now + 1 minute
-echo "Rscript runscript.R Distonly GMP nosub single" | at now + 3 minute
-echo "Rscript runscript.R Distonly GMP nosub" | at now + 4 minute
+echo "Rscript runscript.R distonly EID nosub single" | at now 
+echo "Rscript runscript.R distonly EID nosub" | at now + 1 minute
+echo "Rscript runscript.R distonly GMP nosub single" | at now + 3 minute
+echo "Rscript runscript.R distonly GMP nosub" | at now + 6 minute
 
 Nodist commands
 echo "Rscript runscript.R nodist EID nosub single" | at now 
 echo "Rscript runscript.R nodist EID nosub" | at now + 1 minute
 echo "Rscript runscript.R nodist GMP nosub single" | at now + 3 minute
 echo "Rscript runscript.R nodist GMP nosub" | at now + 4 minute
+
+ALL 
+echo "Rscript runscript.R ALL EID nosub" | at now 
+echo "Rscript runscript.R ALL EID nosub single" | at now + 1 minute
+
+echo "Rscript runscript.R ALL GMP nosub" | at now 
+echo "Rscript runscript.R ALL GMP nosub single" | at now + 1 minute
+
+NN
+echo "Rscript runscript.R NN EID nosub" | at now 
+echo "Rscript runscript.R NN EID nosub single" | at now + 1 minute
+
+echo "Rscript runscript.R NN GMP nosub" | at now 
+echo "Rscript runscript.R NN GMP nosub single" | at now + 1 minute
+
