@@ -78,8 +78,9 @@ rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
 }
 
 rg<-function(Z,Y,l){
+    ## g0[i+1] = rg(Z, U0,l=pdist*outer(y0[,i],w0[,i])) 
     ## Method 1 P(Z=0|g) = 1 \delta(s<0) + g \delta(s>=0)
-    S = log(l) - 0.5772
+    S = log(l) #- 0.5772
     ZZ = 1*(S>=0)
     ## Method 1
     ##ZZ = 1*(Y<1)
@@ -109,7 +110,9 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
-gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE){
+gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE,w,y){
+
+    ## Z=com;slice=slice;dist=phy_dist; eta=1; hyper=hyper;updateHyper=FALSE;  AdaptiveMC = TRUE;uncertain=FALSE
     ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
     ## A one step update in a Gibbs sampler.
 	## ## initialize
@@ -157,8 +160,8 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     ## Variable holders
     g0<-rep(0.5, burn_in)
     hh<-matrix(0, nrow=4, ncol=burn_in)
-    y0<-matrix(1,nrow= n_y, ncol =burn_in)
-    w0<-matrix(1, nrow= n_w, ncol =burn_in)
+    y0<-matrix(if(missing(y)) 1 else y ,nrow= n_y, ncol =burn_in)
+    w0<-matrix(if(missing(w)) 1 else w, nrow= n_w, ncol =burn_in)
 	Z0 <- Z==0
 	mc <- colSums(1*(Z>0))
 	mr <- rowSums(1*(Z>0))
@@ -203,11 +206,11 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
                 }
             
             ## Updatting latent scores
-            ##if(!uncertain){
-            U0<- rExp(pdist*outer(y0[,i],w0[,i]))
-            U0[Z0]<-1
-            ## }else
-            ##     U0 <-rExp2(pdist*outer(y0[,i],w0[,i]), g0[i], Z, Z0)
+            if(!uncertain){
+                U0<- rExp(pdist*outer(y0[,i],w0[,i]))
+                U0[Z0]<-1
+            }else
+                U0 <-rExp2(pdist*outer(y0[,i],w0[,i]), g0[i], Z, Z0)
             
             ## Updating parasite parameters
             w0[,i+1]<-raffinity.MH(w0[,i],peta[i],mc,
@@ -231,9 +234,9 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             }
 
             ## Uncertainty variable
-            ## if(uncertain){
-            ##         g0[i+1] = rg(Z, U0,l=pdist*outer(y0[,i],w0[,i])) 
-            ##     }
+            if(uncertain){
+                g0[i+1] = rg(Z, U0,l=pdist*outer(y0[,i],w0[,i])) 
+            }
             
             ## Updating Hyper parameters
             if(updateHyper){ 

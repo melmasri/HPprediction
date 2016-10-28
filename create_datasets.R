@@ -129,6 +129,44 @@ plot_Z(1*(com>0))
 save(com, phy_dist,pan, file='comGMPD-year.single.RData')
 
 
+
+## GMP - subset - nosingle
+rm(list=ls())
+source('library.R')
+source('loading data_GMPD_subset.R')
+source('load_phyDistance.R')
+min.no=2
+dim(com)
+dim(phy_dist)
+
+## Removing
+#empty columns
+aux = which(colSums(1*(com>0))<min.no)
+if(length(aux)>0)
+    com = com[, -aux]
+dim(com)
+
+## rows with less than min.no interactions
+min.no=1
+aux = which(rowSums(1*(com>0))<min.no)
+if(length(aux)>0){
+    com = com[-aux, ]
+    phy_dist = phy_dist[-aux,]
+    phy_dist = phy_dist[,-aux]
+}
+dim(com)
+
+aux = which(rowSums(1*(com>0))==0);aux  #should be none
+aux = which(colSums(1*(com>0))==0);aux #should be none
+com=lof(com)
+
+range( phy_dist)/(max(phy_dist)+1e-2)
+phy_dist= phy_dist/(max(phy_dist)+1e-2)
+plot_Z(1*(com>0))
+
+save(com, phy_dist,pan, file='comGMPD-year.RData')
+
+
 ## EID - subset
 rm(list=ls())
 source('library.R')

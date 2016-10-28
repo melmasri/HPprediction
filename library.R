@@ -726,7 +726,10 @@ ana.table<-function(com, comCross, roc, plot=FALSE){
     com = 1*(com>0)
     comCross  = 1*(comCross>0)
     zz = 1*(roc$P>roc$threshold)
-    if(plot) plot_Z(zz)
+    if(plot){
+        par(mfrow=c(1,1))
+        plot_Z(zz,'parasites', 'hosts' )
+    }
     tb= data.frame(auc = roc$auc, thresh= roc$threshold,
         tot.inter = sum(com), hold.out= sum(abs(comCross - com)[com==1]),
         pred = sum(zz[com==1 & comCross==0])/sum(abs(comCross - com)[com==1]),
@@ -742,17 +745,27 @@ ana.table<-function(com, comCross, roc, plot=FALSE){
     tb
 }
 
-ana.plot<-function(pg, com){
-    r = which.max(rowSums(com));r
-    c = which.max(colSums(com));c
+ana.plot<-function(pg){
+    rho_col <- "blue"
+    gamma_col <- "red"
+    eta_col <- "darkgreen"
+    g_col<-'ivory4'
+    
+    r = which.max(rowMeans(pg$y));r
+    c = which.max(rowMeans(pg$w));c
+    burn = pg$burn_in - 10000:1
+    burn = burn[burn>0]
+
     burn = -c(1:3)
-    par(mfrow=c(3,1))
-    plot(pg$w[r,burn], type='l', main = 'Most popular host')
-    plot(pg$y[c,burn], type='l', main = 'Most popular parasite')
-    plot(pg$eta[burn], type='l', main = 'Beta posterior')
+    if(!is.null(pg$eta)) par(mfrow=c(3,1)) else
+    par(mfrow=c(2,1))
+    
+    plot(pg$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host parameter')
+    plot(pg$w[c,burn], type='l', main = '', col=rho_col,  xlab = 'Iteration', ylab='Parasite parameter')
+    if(!is.null(pg$eta))
+        plot(pg$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Scaling parameter')
     if(!is.null(pg$g)){
-        dev.new()
         par(mfrow=c(1,1))
-        hist(pg$g[burn], main = 'G posterior')
+        hist(pg$g[burn],xlab='Posterior estimate of g',main='', col=g_col)
     }
 }

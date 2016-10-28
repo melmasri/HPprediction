@@ -90,8 +90,8 @@ if(is.null(run_script) | is.null(subDir)){
 ## # Setting Hyper parameters
 if(SUBSET){
     if(dataset =='gmp')
-        hyper = list(parasite =c(15, 1), host = c(0.35,1), eta = c(0.012)) 
-    
+        hyper = list(parasite =c(0.32, 1), host = c(0.94,1), eta = c(0.012)) 
+
     if(dataset =='eid')
         hyper = list(parasite= c(105, 1), host =c(1.2, 1), eta = c(0.015)) 
     
