@@ -42,8 +42,24 @@ for(i in 1:10)
 ### nodist
 aux = getMean(param_phy)
 P = 1-  exp(-outer(aux$y, aux$w))
+P = 1-exp(-outer(aux$y, aux$w)*((phy_dist^aux$eta)%*% com))
 roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=TRUE, bins=400, all=FALSE)
 tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
 roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
 tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
 tb.all
+
+ tb
+    auc     thresh tot.inter hold.out      pred  pred.all
+1 87.85 0.02506266      3730      620 0.7403226 0.7450402
+> tb.all
+   auc     thresh tot.inter hold.out      pred  pred.all
+1 88.9 0.02005013      3730      620 0.7677419 0.7806971
+
+tb
+    auc     thresh tot.inter hold.out      pred  pred.all
+1 94.28 0.01503759      3730      620 0.8725806 0.8680965
+> tb.all
+    auc     thresh tot.inter hold.out      pred  pred.all
+1 93.78 0.01503759      3730      620 0.8725806 0.8680965
+> 

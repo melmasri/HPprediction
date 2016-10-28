@@ -29,8 +29,7 @@ if(grepl('GMP',datatype)){
     paste0('../comGMPD',if(SINGLE) '.single' else '','.RData')
 }
 if(grepl('EID',datatype)){
-    DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) paste0('../comEID-subset',if(SINGLE) '.single'else '','.RData') else
-    paste0('../comEID-PS',if(SINGLE) '.single' else '', '.RData')
+    DATAFILENAME = paste0('../comEID-PS',if(SINGLE) '.single' else '', '.RData')
 }
 
 SUBSET = if(grepl('subset', subtype)) TRUE else FALSE
@@ -131,6 +130,7 @@ print(DATAFILENAME)
 print(run_script)
 print(args)
 print(run_script)
+print(subDir)
 ## Process started at:
 print(sprintf('Start time %s.',format(sTime, "%Y-%m-%d %H:%M:%S")))
 ##-----------------------------------------------------------

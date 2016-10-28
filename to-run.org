@@ -12,7 +12,7 @@ slice = ceiling(20000/ncol(Z))
 NN Setup:
 SEARCH_NNK = TRUE
 ZtZ = FALSE
-
+For weighting Z = log(1+Z)/2
 See git commit 
 d7ff746..ae0fea3  gumbel-with-order-likelihood -> gumbel-with-order-likelihood
 
@@ -51,4 +51,11 @@ echo "Rscript runscript.R NN EID nosub single" | at now + 1 minute
 
 echo "Rscript runscript.R NN GMP nosub" | at now 
 echo "Rscript runscript.R NN GMP nosub single" | at now + 1 minute
+
+WEIGHTED
+echo "Rscript runscript.R weighted EID nosub" | at now 
+echo "Rscript runscript.R weighted EID nosub single" | at now + 1 minute
+
+echo "Rscript runscript.R weighted GMP nosub" | at now 
+echo "Rscript runscript.R weighted GMP nosub single" | at now + 1 minute
 

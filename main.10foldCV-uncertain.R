@@ -3,8 +3,11 @@
 
 ## Global Variable
 SAVE_PARAM = TRUE
-## DATAFILENAME = 'comEID-PS.single.RData'
-##DATAFILENAME = 'comGMPD.single.RData'
+## DATAFILENAME = 'comEID-subset.RData'
+## DATAFILENAME = 'comGMPD-year.RData'
+## DATAFILENAME = 'comGMPD-year.single.RData'
+## SUBSET = FALSE
+dataset = if(grepl('GMP', DATAFILENAME)) 'gmp' else 'eid'
 print(DATAFILENAME)
 ## source('library.R')
 ## source('gen.R')
@@ -30,7 +33,7 @@ if(SUBSET){
     phy_dist = phy_dist[,aux>1]
     com = lof(com)
 }
-slice = max(ceiling(8000/ncol(com)),5)
+slice = max(ceiling(14000/ncol(com)),5)
 diag(phy_dist)<-0
 
 
@@ -64,81 +67,88 @@ if(grepl('EID', DATAFILENAME)){
     com = cross.validate.set(com10, 0.1)
 }
 
-pairs = cross.validate.fold(com)
-tot.gr = length(unique(pairs[,'gr']))
-
-## ## No uncertain
-## # Setting Hyper parameters
-## if(SUBSET){
-##     if(dataset =='gmp')
-##         hyper = list(parasite =c(15, 1), host = c(0.35,1), eta = c(0.012)) #
-    
-##     if(dataset =='eid')
-##         hyper = list(parasite= c(105, 1), host =c(1.2, 2), eta = c(0.015))
-
-## }else{
-##     if(dataset =='gmp')
-##         hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) #
-    
-##     if(dataset =='eid')
-##         hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
-## }
-
+##  hyper = list(parasite =c(0.32, 1), host = c(0.94,1), eta = c(0.012)) 
 pdf('all.pdf')
+
 ## without G
-## paramRegular = gibbs_one(com,slice=slice,dist= phy_dist, eta=1,wMH =!SIMPLERHO,wEta=!SIMPLERHO, hyper=hyper)
+### It phylogeny does not improve subset 
+if(SUBSET){
+    param = gibbs_one(com,slice=slice , hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE)
+}else
+    param = gibbs_one(com,slice=slice,dist=phy_dist, eta=1.5, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE)
 
-## ana.plot(paramRegular, com)
+ana.plot(param)
+paramMu = getMean(param)
+if(SUBSET){
+    P = 1-exp(-outer(paramMu$y, paramMu$w))
+}else{
+    P = 1-exp(-outer(paramMu$y, paramMu$w)*((phy_dist^paramMu$eta)%*% com))
+}
+par(mfrow=c(1,1))
+roc = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=FALSE, bins=400)
+ana.table(com10, com, roc, plot=TRUE)
 
-## paramMu = getMean(paramRegular)
-## if(SIMPLERHO){
-##     PRegular = 1-exp(-outer(paramMu$y, paramMu$w)*((phy_dist^paramMu$eta)%*% com))
-## }else{
-##     PRegular = 1-exp(-outer(paramMu$y, paramMu$w^paramMu$eta)*((phy_dist^paramMu$eta)%*% com))
-## }
-
-## rocRegular = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=FALSE, bins=400)
-## ana.table(com10, com, rocRegular, TRUE)
-
-## rocRegular.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=PRegular, plot=TRUE, all=TRUE, bins=400)
-## ana.table(com10, com, rocRegular.all, TRUE)
+roc.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=TRUE, bins=400)
+ana.table(com10, com, roc.all, plot=TRUE)
 
 ##################################################
 ### with G
-paramRegularG = gibbs_one(com,slice=slice,dist= phy_dist,eta=1,uncertain =TRUE, hyper = hyper)
+if(SUBSET){
+    paramG = gibbs_one(com,slice=slice , hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = TRUE)
+}else
+    paramG = gibbs_one(com,slice=slice,dist=phy_dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=TRUE)
 
-ana.plot(paramRegularG, com)
+ana.plot(paramG)
 
-paramMuG = getMean(paramRegularG)
-PRegularG = 1-  exp(-outer(paramMuG$y,paramMuG$w)*((phy_dist^paramMuG$eta)%*% com))
+paramMuG = getMean(paramG)
+if(SUBSET){
+    PG = 1-exp(-outer(paramMu$y, paramMu$w))
+}else{
+    PG = 1-exp(-outer(paramMu$y, paramMu$w)*((phy_dist^paramMu$eta)%*% com))
+}
 
-## Method 1
-P=PRegularG
+PG1 = paramMuG$g*PG/(1-PG  + paramMuG$g*PG)
+PG1[com==1]<-PG[com==1]
 
-rocRegularG = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=FALSE, bins=400)
-ana.table(com10, com, rocRegularG, TRUE)
+rocG = rocCurves(Z =1*(com10>0), Z_cross = com, P=PG1, plot=TRUE, all=FALSE, bins=400)
+cbind(Model=c('with G', 'without G'), rbind( round(ana.table(com10, com, rocG), 4), round(ana.table(com10, com, roc), 4)))
 
-P = paramMuG$g*PRegularG/(1-PRegularG  + paramMuG$g*PRegularG)
-P[com==1]<-PRegularG[com==1]
+rocG.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=PG1, plot=TRUE, all=TRUE, bins=400)
+cbind(Model=c('with G', 'without G'), rbind( round(ana.table(com10, com, rocG.all), 4), round(ana.table(com10, com, roc.all), 4)))
 
-rocRegularG.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=TRUE, bins=400)
-ana.table(com10, com, rocRegularG.all, TRUE)
+par(mfrow=c(1,1))
+plot(cbind(rocG$roc$FPR, rocG$roc$TPR), type='b', col='red', xlab='1-specificity', ylab = 'sensitivity', main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1))
+lines(cbind(roc$roc$FPR, roc$roc$TPR), type='b', col='blue')
 
-plot(cbind(rocRegularG.all$roc$FPR, rocRegularG.all$roc$TPR), type='b', col='red')
-lines(cbind(rocRegular.all$roc$FPR, rocRegular.all$roc$TPR), type='b', col='blue')
+par(mfrow=c(1,1))
+plot(cbind(rocG.all$roc$FPR, rocG.all$roc$TPR), type='b', col='red', xlab='1-specificity', ylab = 'sensitivity', main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1))
+lines(cbind(roc.all$roc$FPR, roc.all$roc$TPR), type='b', col='blue')
+
 dev.off()
-## with uncertain
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,s,hyper){
+
+FOLD CV for uncertainty
+pairs = cross.validate.fold(com, n=5)
+tot.gr = length(unique(pairs[,'gr']))
+
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyper, SUBSET){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
+    slice = max(5,ceiling(8000/ncol(Z)))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     ## with G
-    param_phy=gibbs_one(com_paCross,slice=s,dist= dist,eta=1,uncertain=TRUE, hyper=hyper, updateHyper=FALSE)
-    aux = getMean(param_phy)
+    if(SUBSET){
+        param = gibbs_one(com_paCross,slice=slice , hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = TRUE)
+    }else
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=TRUE)
     
-    P1 = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+    aux  = getMean(param)
+    if(SUBSET){
+        P1 = 1-exp(-outer(aux$y, aux$w))
+    }else{
+        P1 = 1-exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+    }
     
     P = aux$g*P1/(1-P1  + aux$g*P1)
     P[com_paCross==1]<-P1[com_paCross==1]
@@ -148,25 +158,32 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,s,hyper){
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
 
     withG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+
     ## without G
-    param_phy=gibbs_one(com_paCross,slice=s,dist= dist,eta=1,uncertain=FALSE, hyper=hyper)
-    aux = getMean(param_phy)
+    if(SUBSET){
+        param = gibbs_one(com_paCross,slice=slice , hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = FALSE)
+    }else
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE)
     
-    P1 = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
-    P = P1
-    P[com_paCross==1]<-P1[com_paCross==1]
+    aux  = getMean(param)
+    if(SUBSET){
+        P = 1-exp(-outer(aux$y, aux$w))
+    }else{
+        P = 1-exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+    }
+    
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
-
+    
     withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
     list(withG=withG, withOutG = withOutG)
-},pairs=pairs,Z = com,dist=phy_dist,s=slice,hyper=hyper,mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com,dist=phy_dist,hyper=hyper, SUBSET = SUBSET,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
 
-##################################################
-##################################################
+## ##################################################
+## ##################################################
