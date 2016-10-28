@@ -59,3 +59,13 @@ echo "Rscript runscript.R weighted EID nosub single" | at now + 1 minute
 echo "Rscript runscript.R weighted GMP nosub" | at now 
 echo "Rscript runscript.R weighted GMP nosub single" | at now + 1 minute
 
+UNCERTAIN
+echo "Rscript runscript.R weighted EID subset" | at now 
+echo "Rscript runscript.R weighted GMP subset" | at now 
+
+echo "Rscript runscript.R weighted EID nosub single" | at now + 1 minute
+echo "Rscript runscript.R weighted GMP nosub single" | at now + 1 minute
+
+echo "Rscript runscript.R weighted EID nosub" | at now + 3 minute
+echo "Rscript runscript.R weighted GMP nosub" | at now + 3 minute
+
