@@ -126,7 +126,7 @@ lines(cbind(roc.all$roc$FPR, roc.all$roc$TPR), type='b', col='blue')
 
 dev.off()
 
-FOLD CV for uncertainty
+##  FOLD CV for uncertainty
 pairs = cross.validate.fold(com, n=5)
 tot.gr = length(unique(pairs[,'gr']))
 
