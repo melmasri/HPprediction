@@ -16,7 +16,6 @@ library(parallel)
 
 #######################
 ## subsetting
-
 if(SUBSET){
 ## EID
     if(dataset=='eid') aux = rownames(com) %in% pan$bionomial[pan$Order=="Rodentia"]
@@ -198,8 +197,49 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyperNoG, hyperG, SUBSET){
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     
     withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-    
-    list(withG=withG, withOutG = withOutG)
+
+    ## Dist only
+    eta = seq(0,3, by=0.1)
+    a = sapply(eta, function(t){
+        P = 1-  exp(-(dist^t) %*% com_paCross)
+        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+        roc$auc
+    })
+    eta = eta[which.max(a)]
+    P =  P = 1-  exp(-(dist^eta) %*% com_paCross)
+    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+    tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+    roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+    DistOnly = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    list(param=eta, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+
+    ## Affinity only
+    affinWithOutG<-NULL
+    affinWithG<-NULL
+    if(!SUBSET){
+        ## with G
+        param = gibbs_one(com_paCross,slice=slice,hyper=hyperG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=TRUE)
+        aux  = getMean(param)
+        P1 = 1-exp(-outer(aux$y, aux$w))
+        P = aux$g*P1/(1-P1  + aux$g*P1)
+        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+        tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+        roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+        tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+        affinWithG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+
+        ## withOut G
+        param = gibbs_one(com_paCross,slice=slice,hyper=hyperNoG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE)
+        aux  = getMean(param)
+        P = 1-exp(-outer(aux$y, aux$w))
+        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+        tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+        roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+        tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+        affinWithOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    }
+    list(withG=withG, withOutG = withOutG, DistOnly= DistOnly, affinWithOutG= affinWithOutG, affinWithG = affinWithG)
 },pairs=pairs,Z = com,dist=phy_dist,hyperNoG=hyperNoG, hyperG=hyperG, SUBSET = SUBSET,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
