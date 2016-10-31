@@ -12,6 +12,12 @@ print(DATAFILENAME)
 load(DATAFILENAME)
 library(parallel)
 
+## com=1*(com>0)
+## aux = order(rowSums(com), decreasing = TRUE)
+## com = com[aux, ]
+## phy_dist = phy_dist[aux,]
+## phy_dist = phy_dist[ ,aux]
+
 #######################
 ## Parameters for the independent GGP
 ## set the correct prior.
