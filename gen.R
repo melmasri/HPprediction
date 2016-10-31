@@ -110,14 +110,12 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
-gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE,w,y){
-
+gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE){
     ## Z=com;slice=slice;dist=phy_dist; eta=1; hyper=hyper;updateHyper=FALSE;  AdaptiveMC = TRUE;uncertain=FALSE
     ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
     ## A one step update in a Gibbs sampler.
 	## ## initialize
     #Z = 1*(Z>0)
-
     colnames(Z)<-NULL
     rownames(Z)<-NULL
     if(!missing(dist))
@@ -142,13 +140,27 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     
     if(!missing(hyper)){
         print(hyper)
-        a_y =  hyper[['host']][1]
-        b_y =  hyper[['host']][2]
-        y_sd = 0.1
-        a_w =  hyper[['parasite']][1]
-        b_w =  hyper[['parasite']][2]
-        w_sd =0.1
-        eta_sd = hyper[['eta']][1]
+        ## Setting up host and parasite hyper parameters
+        if(!is.null(hyper[['hostHyper']])){
+            a_y =  hyper[['hostHyper']][1]
+            b_y =  hyper[['hostHyper']][2]
+            y_sd = 0.1
+        }
+        if(!is.null(hyper['parasiteHyper'])){
+            a_w =  hyper[['parasiteHyper']][1]
+            b_w =  hyper[['parasiteHyper']][2]
+            w_sd =0.1
+        }
+        
+        ## Setting up starting values
+        if(!is.null(hyper[['hostStart']])) y = hyper[['hostStart']] else y = 1
+        if(!is.null(hyper[['parasiteStart']])) w = hyper[['parasiteStart']] else w = 1
+        if(!is.null(hyper[['etaStart']])) etaStart = hyper[['etaStart']] else etaStart = 1
+        
+        ## Setting up hyper sampling tunning parameter
+        if(!is.null(hyper[['hostSamplingSD']])) y_sd = hyper[['hostSamplingSD']]
+        if(!is.null(hyper[['parasiteSamplingSD']])) w_sd = hyper[['parasiteSamplingSD']]
+        if(!is.null(hyper[['etaSamplingSD']])) eta_sd = hyper[['etaSamplingSD']]
     }
     
     
@@ -160,14 +172,14 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     ## Variable holders
     g0<-rep(0.5, burn_in)
     hh<-matrix(0, nrow=4, ncol=burn_in)
-    y0<-matrix(if(missing(y)) 1 else y ,nrow= n_y, ncol =burn_in)
-    w0<-matrix(if(missing(w)) 1 else w, nrow= n_w, ncol =burn_in)
+    y0<-matrix(y,nrow= n_y, ncol =burn_in)
+    w0<-matrix(w, nrow= n_w, ncol =burn_in)
 	Z0 <- Z==0
 	mc <- colSums(1*(Z>0))
 	mr <- rowSums(1*(Z>0))
     if(!missing(dist))
         min_dist  = min(dist[upper.tri(dist)]) else min_dist=0
-    if(!missing(eta)) peta = rep(eta, burn_in)  else
+    if(!missing(eta)) peta = rep(etaStart, burn_in)  else
     peta = rep(1, burn_in)
     if(missing(dist)) pdist.right<-pdist<- 1 else{
         ## ord = apply(Z,2, function(r) sample(nrow(Z), nrow(Z)))

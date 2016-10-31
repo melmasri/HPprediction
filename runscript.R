@@ -89,23 +89,23 @@ if(is.null(run_script) | is.null(subDir)){
 ## # Setting Hyper parameters
 if(SUBSET){
     if(dataset =='gmp')
-        hyper = list(parasite =c(0.32, 1), host = c(0.94,1), eta = c(0.01)) 
+        hyper = list(parasiteHyper =c(0.32, 1), hostHyper = c(0.94,1), etaSamplingSD = c(0.01)) 
 
     if(dataset =='eid')
-        hyper = list(parasite= c(0.35, 1), host =c(0.78, 1), eta = c(0.01)) 
+        hyper = list(parasiteHyper= c(0.35, 1), hostHyper =c(0.78, 1), etaSamplingSD = c(0.01)) 
     
 }else{
     if(dataset =='gmp'){
         if(SINGLE){
-            hyper = list(parasite =c(0.22, 1), host = c(0.77,1), eta = c(0.005))
+            hyper = list(parasiteHyper =c(0.22, 1), hostHyper = c(0.77,1), etaSamplingSD = c(0.005))
         }else
-            hyper = list(parasite =c(0.25, 1), host = c(0.82,1), eta = c(0.005))
+            hyper = list(parasiteHyper =c(0.25, 1), hostHyper = c(0.82,1), etaSamplingSD = c(0.005))
     }
     if(dataset =='eid'){## affinity only
         if(SINGLE){
-            hyper = list(parasite= c(0.17, 1), host =c(0.66, 2), eta = c(0.005))
+            hyper = list(parasiteHyper= c(0.17, 1), hostHyper =c(0.66, 2), etaSamplingSD = c(0.005))
         }else 
-            hyper = list(parasite =c(0.2, 1), host = c(0.73,1), eta = c(0.005))
+            hyper = list(parasiteHyper =c(0.2, 1), hostHyper = c(0.73,1), etaSamplingSD = c(0.005))
     }
 }
 

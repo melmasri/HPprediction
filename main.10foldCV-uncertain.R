@@ -91,6 +91,16 @@ ana.table(com10, com, roc, plot=TRUE)
 roc.all = rocCurves(Z =1*(com10>0), Z_cross = com, P=P, plot=TRUE, all=TRUE, bins=400)
 ana.table(com10, com, roc.all, plot=TRUE)
 
+## Adapting hyper parameters
+hyperNoG<-hyper
+hyperNoG[['etaSamplingSD']]<-param$sd$eta
+hyperNoG[['hostSamplingSD']]<-param$sd$y
+hyperNoG[['parasiteSamplingSD']]<-param$sd$w
+
+hyperNoG[['hostStart']]<- paramMu$y
+hyperNoG[['parasiteStart']]<- paramMu$w
+hyperNoG[['etaStart']]<-paramMu$eta
+
 ##################################################
 ### with G
 if(SUBSET){
@@ -126,22 +136,32 @@ lines(cbind(roc.all$roc$FPR, roc.all$roc$TPR), type='b', col='blue')
 
 dev.off()
 
+hyperG<-hyper
+hyperG[['etaSamplingSD']]<-paramG$sd$eta
+hyperG[['hostSamplingSD']]<-paramG$sd$y
+hyperG[['parasiteSamplingSD']]<-paramG$sd$w
+
+hyperG[['hostStart']]<- paramMuG$y
+hyperG[['parasiteStart']]<- paramMuG$w
+hyperG[['etaStart']]<-paramMuG$eta
+
+
 ##  FOLD CV for uncertainty
 pairs = cross.validate.fold(com, n=5)
 tot.gr = length(unique(pairs[,'gr']))
 
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyper, SUBSET){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyperNoG, hyperG, SUBSET){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
-    slice = max(5,ceiling(8000/ncol(Z)))
+    slice = max(5,ceiling(6000/ncol(Z)))
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     ## with G
     if(SUBSET){
-        param = gibbs_one(com_paCross,slice=slice , hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = TRUE)
+        param = gibbs_one(com_paCross,slice=slice,hyper=hyperG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = TRUE)
     }else
-        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=TRUE)
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyperG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=TRUE)
     
     aux  = getMean(param)
     if(SUBSET){
@@ -161,9 +181,9 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyper, SUBSET){
 
     ## without G
     if(SUBSET){
-        param = gibbs_one(com_paCross,slice=slice , hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = FALSE)
+        param = gibbs_one(com_paCross,slice=slice , hyper=hyperNoG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain = FALSE)
     }else
-        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE)
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyperNoG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE)
     
     aux  = getMean(param)
     if(SUBSET){
@@ -180,7 +200,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyper, SUBSET){
     withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
     list(withG=withG, withOutG = withOutG)
-},pairs=pairs,Z = com,dist=phy_dist,hyper=hyper, SUBSET = SUBSET,mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com,dist=phy_dist,hyperNoG=hyperNoG, hyperG=hyperG, SUBSET = SUBSET,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
