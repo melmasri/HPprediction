@@ -3,7 +3,7 @@
 
 ## Global Variable
 SAVE_PARAM = TRUE
-## DATAFILENAME = 'comEID-subset.RData'
+# DATAFILENAME = 'comEID-subset.RData'
 ## DATAFILENAME = 'comGMPD-year.RData'
 ## DATAFILENAME = 'comGMPD-year.single.RData'
 ## SUBSET = FALSE
@@ -199,21 +199,33 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyperNoG, hyperG, SUBSET){
     withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
 
     ## Dist only
-    eta = seq(0,3, by=0.1)
-    a = sapply(eta, function(t){
-        P = 1-  exp(-(dist^t) %*% com_paCross)
-        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
-        roc$auc
-    })
-    eta = eta[which.max(a)]
-    P =  P = 1-  exp(-(dist^eta) %*% com_paCross)
-    roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
-    tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
-    roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
-    tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
-    DistOnly = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-    list(param=eta, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-
+    DistOnly<-NULL
+    if(!SUBSET){
+        ## without G
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyperNoG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE, distOnly=TRUE)
+        aux  = getMean(param)
+        P = 1-  exp(-(dist^aux$eta) %*% com_paCross)
+        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+        tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+        roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+        tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+        
+        distOnlyWithOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+        ## with G
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyperG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=TRUE, distOnly=TRUE)
+        aux  = getMean(param)
+        P1 = 1-  exp(-(dist^aux$eta) %*% com_paCross)
+        P = aux$g*P1/(1-P1  + aux$g*P1)
+        P[com_paCross==1]<-P1[com_paCross==1]
+        
+        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
+        tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
+        roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
+        tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
+        
+        distOnlyWithG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    }
+    
     ## Affinity only
     affinWithOutG<-NULL
     affinWithG<-NULL
