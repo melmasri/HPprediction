@@ -110,7 +110,7 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
     ls + sign(ac - 0.44)*(1*(abs(ac - 0.44)>0.03))
 }
 
-gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE){
+gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE, distOnly=FALSE){
     ## Z=com;slice=slice;dist=phy_dist; eta=1; hyper=hyper;updateHyper=FALSE;  AdaptiveMC = TRUE;uncertain=FALSE
     ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
     ## A one step update in a Gibbs sampler.
@@ -139,7 +139,6 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     beta= 0.05
     
     if(!missing(hyper)){
-        print(hyper)
         ## Setting up host and parasite hyper parameters
         if(!is.null(hyper[['hostHyper']])){
             a_y =  hyper[['hostHyper']][1]
@@ -151,16 +150,20 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             b_w =  hyper[['parasiteHyper']][2]
             w_sd =0.1
         }
-        
         ## Setting up starting values
         if(!is.null(hyper[['hostStart']])) y = hyper[['hostStart']] else y = 1
         if(!is.null(hyper[['parasiteStart']])) w = hyper[['parasiteStart']] else w = 1
         if(!is.null(hyper[['etaStart']])) etaStart = hyper[['etaStart']] else etaStart = 1
-        
+        if(distOnly){
+            y=1
+            w=1
+        }
         ## Setting up hyper sampling tunning parameter
         if(!is.null(hyper[['hostSamplingSD']])) y_sd = hyper[['hostSamplingSD']]
         if(!is.null(hyper[['parasiteSamplingSD']])) w_sd = hyper[['parasiteSamplingSD']]
         if(!is.null(hyper[['etaSamplingSD']])) eta_sd = hyper[['etaSamplingSD']]
+        
+        print(hyper)
     }
     
     
@@ -204,12 +207,13 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             if(i%%ncol(Z)==0) print(sprintf('Slice %d', i/ncol(Z)))
             if(AdaptiveMC)
                 if(((i%%batch.size==0) & (i < 0.4*burn_in))){
-                    ls  = AdaptiveSigma(w0, ls, i)
-                    w_sd = exp(beta*ls)
-                    
-                    lsy = AdaptiveSigma(y0, lsy, i)
-                    y_sd = exp(beta*lsy)
-                    
+                    if(!distOnly){
+                        ls  = AdaptiveSigma(w0, ls, i)
+                        w_sd = exp(beta*ls)
+                        
+                        lsy = AdaptiveSigma(y0, lsy, i)
+                        y_sd = exp(beta*lsy)
+                    }
                     if(!missing(eta) & !missing(dist)){
                         lseta = AdaptiveSigma(peta, lseta, i)
                         eta_sd = exp(beta*lseta)
@@ -225,15 +229,16 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
                 U0 <-rExp2(pdist*outer(y0[,i],w0[,i]), g0[i], Z, Z0)
             
             ## Updating parasite parameters
-            w0[,i+1]<-raffinity.MH(w0[,i],peta[i],mc,
-                                   y0[,i+1]%*%(U0*(pdist.right)),
-                                   sig=w_sd, c(a_w, b_w))
+            if(!distOnly){
+                w0[,i+1]<-raffinity.MH(w0[,i],peta[i],mc,
+                                       y0[,i+1]%*%(U0*(pdist.right)),
+                                       sig=w_sd, c(a_w, b_w))
             
-            ## Updating host parameters
-            y0[,i+1]<-raffinity.MH(y0[,i],peta[i],mr,
-                                   (U0*(pdist.right))%*%w0[,i+1],
-                                   sig=y_sd, c(a_y, b_y))
-            
+                ## Updating host parameters
+                y0[,i+1]<-raffinity.MH(y0[,i],peta[i],mr,
+                                       (U0*(pdist.right))%*%w0[,i+1],
+                                       sig=y_sd, c(a_y, b_y))
+            }
 
             ## updating eta
             if(!missing(eta)){
@@ -251,7 +256,7 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             }
             
             ## Updating Hyper parameters
-            if(updateHyper){ 
+            if(updateHyper & !distOnly){ 
                 new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
                     U0, pdist.right, mr, mc, type='host')
                 a_y = new[1]
@@ -277,9 +282,9 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         finally = print("Done!"))
     ## throwing out the burn_in stage.(approx 30%)
     if(throw.out==0) throw.out = c(1:burn_in) else throw.out = -c(1:throw.out)
-    #w0 = w0[,throw.out]
     y0 =  y0[,throw.out] 
-    w0 =  w0[,throw.out] 
+    w0 =  w0[,throw.out]
+    
     if(!missing(eta)){
         eta = peta[throw.out]
     }else eta = NULL
