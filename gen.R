@@ -162,8 +162,11 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         if(!is.null(hyper[['hostSamplingSD']])) y_sd = hyper[['hostSamplingSD']]
         if(!is.null(hyper[['parasiteSamplingSD']])) w_sd = hyper[['parasiteSamplingSD']]
         if(!is.null(hyper[['etaSamplingSD']])) eta_sd = hyper[['etaSamplingSD']]
-        
-        print(hyper)
+
+        print('host Hyper')
+        print(hyper[['hostHyper']])
+                print('parasite Hyper')
+        print(hyper[['parasiteHyper']])
     }
     
     

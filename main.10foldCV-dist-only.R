@@ -26,26 +26,24 @@ com_pa = 1*(com>0)
 pairs = cross.validate.fold(com_pa, n=5)
 tot.gr = length(unique(pairs[,'gr']))
 
-res = lapply(1:tot.gr ,function(x, pairs, Z, dist){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     source('../library.R', local=TRUE)
-    
+    source('../gen.R', local=TRUE)
+
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
+    slice = max(ceiling(8000/ncol(Z)), 5)
     
-    eta = seq(0,3, by=0.1)
-    a = sapply(eta, function(t){
-        P = 1-  exp(-(dist^t) %*% com_paCross)
-        roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
-        roc$auc
-    })
-    eta = eta[which.max(a)]
-    P =  P = 1-  exp(-(dist^eta) %*% com_paCross)
+    param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE, distOnly=TRUE)
+    aux  = getMean(param)
+    P = 1-  exp(-(dist^aux$eta) %*% com_paCross)
+
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
-    list(param=eta, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR, P = P)
-},pairs=pairs,Z = com_pa, dist=phy_dist)
+    list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+},pairs=pairs,Z = com_pa, hyper=hyper, dist=phy_dist,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
