@@ -199,7 +199,8 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyperNoG, hyperG, SUBSET){
     withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
 
     ## Dist only
-    DistOnly<-NULL
+    DistOnlyWithG<-NULL
+    DistOnlyWithOutG<-NULL
     if(!SUBSET){
         ## without G
         param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1, hyper=hyperNoG,updateHyper=FALSE, AdaptiveMC = TRUE, uncertain=FALSE, distOnly=TRUE)
@@ -251,7 +252,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist,hyperNoG, hyperG, SUBSET){
         tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
         affinWithOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     }
-    list(withG=withG, withOutG = withOutG, DistOnly= DistOnly, affinWithOutG= affinWithOutG, affinWithG = affinWithG)
+    list(withG=withG, withOutG = withOutG, affinWithOutG= affinWithOutG, affinWithG = affinWithG,DistOnlyWithOutG = DistOnlyWithOutG, DistOnlyWithG = DistOnlyWithG )
 },pairs=pairs,Z = com,dist=phy_dist,hyperNoG=hyperNoG, hyperG=hyperG, SUBSET = SUBSET,mc.preschedule = TRUE, mc.cores = tot.gr) 
 
 if(SAVE_PARAM)
