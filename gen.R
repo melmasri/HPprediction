@@ -59,8 +59,8 @@ rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
         ratio = min(1, exp(likeli));ratio
         u = (runif(1)<=ratio)
         if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
-        list (eta=eta.old, dist=pdist.old)
     }
+    list (eta=eta.old, dist=pdist.old)
 }
 
 rg<-function(Z,Y,l){
