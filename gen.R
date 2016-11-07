@@ -52,7 +52,7 @@ rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
         eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
         ##dist1 = dist^eta.prop
         ##pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-        pdist.right.new= sapply(dd2, function(r) colSums(r^eta.prop))
+        pdist.right.new= sapply(dist, function(r) colSums(r^eta.prop))
         ##pdist.right.new = dist1%*%Z
         likeli = sum(log((pdist.right.new/pdist.old)^Z ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
         
