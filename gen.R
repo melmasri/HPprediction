@@ -46,35 +46,21 @@ rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     u*new + (1-u)*old
 }
 
-rEta1<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01, ord, ordord){
-    ## A function that generates the prior for the power of distance
-    eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
-    dist1 = dist^eta.prop
-    pdist.right.new =t(sapply(1:nrow(Z), function(k)
-        sapply(1:ncol(Z), function(i)
-            dist1[k, ord[1:ordord[k,i], i]] %*% Z[1:ordord[k,i],i])))
-    ## pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-
-    likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
-    
-    ratio = min(1, exp(likeli));ratio
-    u = (runif(1)<=ratio)
-    if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
-    list (eta=eta.old, dist=pdist.old)
-}
-
 rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
     ## A function that generates the prior for the power of distance
-    eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
-    dist1 = dist^eta.prop
-    pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-    #pdist.right.new = dist1%*%Z
-    likeli = sum(log((pdist.right.new[pd0]/pdist.old[pd0])^Z[pd0] ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
-    
-    ratio = min(1, exp(likeli));ratio
-    u = (runif(1)<=ratio)
-    if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
-    list (eta=eta.old, dist=pdist.old)
+    for(i in 1:5){
+        eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
+        ##dist1 = dist^eta.prop
+        ##pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
+        pdist.right.new= sapply(dd2, function(r) colSums(r^eta.prop))
+        ##pdist.right.new = dist1%*%Z
+        likeli = sum(log((pdist.right.new/pdist.old)^Z ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
+        
+        ratio = min(1, exp(likeli));ratio
+        u = (runif(1)<=ratio)
+        if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
+        list (eta=eta.old, dist=pdist.old)
+    }
 }
 
 rg<-function(Z,Y,l){
@@ -111,7 +97,7 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
 }
 
 gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE, distOnly=FALSE){
-    ## Z=com;slice=slice;dist=phy_dist; eta=1; hyper=hyper;updateHyper=FALSE;  AdaptiveMC = TRUE;uncertain=FALSE
+   ## Z=com;slice=slice;dist=phy_dist; eta=1; hyper=hyper;updateHyper=FALSE;  AdaptiveMC = TRUE;uncertain=FALSE
     ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
     ## A one step update in a Gibbs sampler.
 	## ## initialize
@@ -195,13 +181,35 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         ## ord[1,]<-ord1
         ## ord[cbind(ord2,1:ncol(ord))]<-aux
         ## ordord= apply(ord,2, order)
-        pdist = (dist^peta[1])%*%Z
-        dist1 = dist^peta[1]
-        pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-        ## pdist.right = pdist
-        ## pdist.right =t(sapply(1:n_y, function(k)
-        ##         sapply(1:n_w, function(i)
-        ##             dist1[k, ord[1:ordord[k,i], i]] %*% Z[1:ordord[k,i],i])))
+        ## pdist = (dist^peta[1])%*%Z
+        ## dist1 = dist^peta[1]
+        ## pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
+        ## ## pdist.right = pdist
+        ## ## pdist.right =t(sapply(1:n_y, function(k)
+        ## ##         sapply(1:n_w, function(i)
+        ## ##             dist1[k, ord[1:ordord[k,i], i]] %*% Z[1:ordord[k,i],i])))
+
+        dd1 = lapply(1:ncol(Z),function(r){
+            r=Z[,r]
+            a = order(r, decreasing=TRUE)
+            cc=dist[a, a]*r[a]
+            cc[, order(a)]
+        })
+        
+        pdist= sapply(dd1, function(r) colSums(r^peta[i]))
+    
+        zero.r = rep(0, n_y)
+        dd2 = lapply(1:ncol(Z), function(r){
+            r=Z[,r]
+            a = order(r, decreasing=TRUE)
+            ord.dist=dist[a,a]
+            r= r[a]
+            cc = sapply(2:(n_y-1), function(x) ord.dist[x, ]*c(r[1:x],zero.r[(x+1):n_y] ))
+            cc = cbind(0, cc, ord.dist[n_y, ]*r)
+            cc[1,1]<-1
+            cc[,order(a)]
+        })
+        pdist.right= sapply(dd2, function(r) colSums(r^peta[i]))
     }
     pd0 = pdist.right!=0
     tryCatch(
@@ -245,11 +253,12 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
 
             ## updating eta
             if(!missing(eta)){
-                new.eta = rEta(peta[i],dist,pdist.right,Z,y0[,i+1],
+                new.eta = rEta(peta[i],dd2,pdist.right,Z,y0[,i+1],
                     w0[,i+1], U0,pd0, eta_sd=eta_sd)
                 peta[i+1] = new.eta$eta
                 pdist.right = new.eta$dist
                 pdist = (dist^peta[i+1])%*%Z
+                pdist  = sapply(dd1, function(r) colSums(r^peta[i+1]))
                 ##if(i%%100==0) print(peta[i+1])
             }
 
