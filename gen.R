@@ -196,7 +196,7 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             cc[, order(a)]
         })
         
-        pdist= sapply(dd1, function(r) colSums(r^peta[i]))
+        pdist= sapply(dd1, function(r) colSums(r^peta[1]))
     
         zero.r = rep(0, n_y)
         dd2 = lapply(1:ncol(Z), function(r){
@@ -209,7 +209,7 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             cc[1,1]<-1
             cc[,order(a)]
         })
-        pdist.right= sapply(dd2, function(r) colSums(r^peta[i]))
+        pdist.right= sapply(dd2, function(r) colSums(r^peta[1]))
     }
     pd0 = pdist.right!=0
     tryCatch(
