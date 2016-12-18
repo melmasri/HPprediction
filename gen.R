@@ -9,18 +9,39 @@ rExp<-function(l,a=1){
 	-log(1- unif*(1-exp(-l*a)))/(l + tol.err)
 }
 
-raffinity.MH<-function(old, eta , m, Ud, sig=0.1, hyper){
+rExp2<-function(l, g, Z, Z0){
+    p = 1- exp(-l)
+    unif = runif(length(l))
+    ## Method one P(z=0|g) = 1\delta_{s<0} + g\delta_{s>=0}
+    U = 1 + 0*p
+    U[!Z0] = -log(1- unif[!Z0]*p[!Z0])/(l[!Z0] + tol.err)
+    aa = (unif < g*p/(g*p + 1-p)) & Z0
+    U[aa] =  -log(1 - unif[aa]*(g*p[aa] + 1-p[aa])/g)/l[aa]
+    ## End of Method one
+    ## ## U = -log(unif*(1-Z) + (1-unif)*Z )/(l+tol.err)
+    ## aa = 1*(runif(sum(Z0))<= ((1-p)/(1-p + g*p))[Z0])
+    ## U[Z0]<-    U[Z0]^(1-aa) 
+    ## U
+    ## Method two P(z=1|g) = g\delta_{s<0} + 1\delta_{s>=0}
+    ## U = 1 + 0*p
+    ## aa = (unif < p/(p + g*(1-p))) & !Z0
+    ## U[aa] = -log(1- unif[aa]*(p[aa] + g*(1-p[aa])))/(l[aa])
+    U
+}
+
+raffinity.MH<-function(old, z, Ud, sig=0.1, hyper){
     a = hyper[1]
     b = hyper[2]
     epsilon = rnorm(length(old), 0, sd = sig)
     new = old +  -2*(old + epsilon <=0)*epsilon + epsilon    
 
-    likeli = (m+a-1)*log(new/old) -  (new - old)*(b +Ud)
+    likeli = (z+a-1)*log(new/old) -  (new - old)*(b +Ud)
     
     ratio = pmin(1, exp(likeli))
     u = 1*(runif(length(old))<=ratio)
     u*new + (1-u)*old
 }
+
 
 rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     ## old= c(a_y, b_y);y=y0[,i+1];w=w0[,i+1];U= U0; pdist=pdist.right; type='host'
@@ -46,20 +67,19 @@ rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     u*new + (1-u)*old
 }
 
-rEta<-function(eta.old, dist,pdist.old, Z, y, w, U,pd0, eta_sd =0.01){
+rEta<-function(eta.old,dist,pdist.old,zdiag, Z, y, w, U, eta_sd =0.01){
     ## A function that generates the prior for the power of distance
-    for(i in 1:5){
-        eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
-        ##dist1 = dist^eta.prop
-        ##pdist.right.new = t(sapply(1:nrow(Z), function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-        pdist.right.new= sapply(dist, function(r) colSums(r^eta.prop))
-        ##pdist.right.new = dist1%*%Z
-        likeli = sum(log((pdist.right.new/pdist.old)^Z ))- sum(U*(outer(y,w)*(pdist.right.new - pdist.old)))
-        
-        ratio = min(1, exp(likeli));ratio
-        u = (runif(1)<=ratio)
-        if(u) {eta.old  = eta.prop;pdist.old = pdist.right.new}
-    }
+    eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
+    dist1=0*dist
+    dist1[upper.tri(dist1)] =dist[upper.tri(dist)]^eta.prop
+    dist1 = dist1+ t(dist1)
+    pdist.new = dist1%*%Z
+    likeli = sum(log((pdist.new[zdiag]/pdist.old[zdiag])^Z[zdiag] ))-
+        sum(U*y*w*(pdist.new[zdiag] - pdist.old[zdiag]))
+    
+    ratio = min(1, exp(likeli));ratio
+    u = (runif(1)<=ratio)
+    if(u) {eta.old  = eta.prop;pdist.old = pdist.new}
     list (eta=eta.old, dist=pdist.old)
 }
 
@@ -97,7 +117,6 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
 }
 
 gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE, distOnly=FALSE){
-   ## Z=com;slice=slice;dist=phy_dist; eta=1; hyper=hyper;updateHyper=FALSE;  AdaptiveMC = TRUE;uncertain=FALSE
     ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
     ## A one step update in a Gibbs sampler.
 	## ## initialize
@@ -108,9 +127,8 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         colnames(dist)<-rownames(dist)<-NULL
 	n_w = ncol(Z);n_y = nrow(Z)
     n = n_w*n_y
-    burn_in = n_w*slice
-    throw.out.slice = floor(0.2*slice)
-    throw.out = throw.out.slice*ncol(Z)
+    burn_in = slice
+    throw.out = floor(0.2*slice)
     print(sprintf("Run for %i slices, and %i burn ins",slice, burn_in))
     print(sprintf("Settings: uncertain=%s.",uncertain))
 	print(sprintf("updateHyper= %s,AdaptiveMC= %s ", updateHyper, AdaptiveMC))
@@ -162,131 +180,116 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     batch.size = 50
     
     ## Variable holders
-    g0<-rep(0.5, burn_in)
-    hh<-matrix(0, nrow=4, ncol=burn_in)
-    y0<-matrix(y,nrow= n_y, ncol =burn_in)
-    w0<-matrix(w, nrow= n_w, ncol =burn_in)
+    hh<-matrix(0, nrow=4, ncol=burn_in+1)
+    g0<-rep(0.5, burn_in+1)
+    y0<-matrix(y,nrow= n_y, ncol =burn_in+1)
+    w0<-matrix(w, nrow= n_w, ncol =burn_in+1)
+
+    g0in<-rep(0.5, n_w+1)
+    y0in<-matrix(0,nrow= n_y, ncol =n_w+1)
+    w0in<-matrix(0, nrow= n_w, ncol =n_w+1)
+    petain = rep(1, n_w+1)
 	Z0 <- Z==0
+    U0 <- Z*0
 	mc <- colSums(1*(Z>0))
 	mr <- rowSums(1*(Z>0))
     if(!missing(dist))
         min_dist  = min(dist[upper.tri(dist)]) else min_dist=0
     if(!missing(eta)) peta = rep(etaStart, burn_in)  else
     peta = rep(1, burn_in)
-    if(missing(dist)) pdist.right<-pdist<- 1 else{
-        ## ord = apply(Z,2, function(r) sample(nrow(Z), nrow(Z)))
-        ## ord1 = apply(Z, 2, function(r) which(r==1)[1])
-        ## ord2= sapply(1:ncol(ord), function(r)which(ord[, r]==ord1[r]))
-        ## aux<-ord[1,]
-        ## ord[1,]<-ord1
-        ## ord[cbind(ord2,1:ncol(ord))]<-aux
-        ## ordord= apply(ord,2, order)
-        ## pdist = (dist^peta[1])%*%Z
-        ## dist1 = dist^peta[1]
-        ## pdist.right = t(sapply(1:n_y, function(r) dist1[r, 1:r]%*%Z[1:r, ]))
-        ## ## pdist.right = pdist
-        ## ## pdist.right =t(sapply(1:n_y, function(k)
-        ## ##         sapply(1:n_w, function(i)
-        ## ##             dist1[k, ord[1:ordord[k,i], i]] %*% Z[1:ordord[k,i],i])))
-
-        dd1 = lapply(1:ncol(Z),function(r){
-            r=Z[,r]
-            a = order(r, decreasing=TRUE)
-            cc=dist[a, a]*r[a]
-            cc[, order(a)]
-        })
         
-        pdist= sapply(dd1, function(r) colSums(r^peta[1]))
-    
-        zero.r = rep(0, n_y)
-        dd2 = lapply(1:ncol(Z), function(r){
-            r=Z[,r]
-            a = order(r, decreasing=TRUE)
-            ord.dist=dist[a,a]
-            r= r[a]
-            cc = sapply(2:(n_y-1), function(x) ord.dist[x, ]*c(r[1:x],zero.r[(x+1):n_y] ))
-            cc = cbind(0, cc, ord.dist[n_y, ]*r)
-            cc[1,1]<-1
-            cc[,order(a)]
-        })
-        pdist.right= sapply(dd2, function(r) colSums(r^peta[1]))
-    }
-    pd0 = pdist.right!=0
+    if(missing(dist)) pdist.right<-pdist<- 1 else
+    pdist = dist%*%Z
     tryCatch(
-        
-        for (i in 1:(burn_in-1)){
-            if(i%%ncol(Z)==0) print(sprintf('Slice %d', i/ncol(Z)))
-            if(AdaptiveMC)
-                if(((i%%batch.size==0) & (i < 0.4*burn_in))){
-                    if(!distOnly){
-                        ls  = AdaptiveSigma(w0, ls, i)
-                        w_sd = exp(beta*ls)
-                        
-                        lsy = AdaptiveSigma(y0, lsy, i)
-                        y_sd = exp(beta*lsy)
+        for(s in 1:slice){
+            print(sprintf('Slice %d', s))
+            g0in[1]= g0[s]
+            y0in[,1] = y0[,s]
+            w0in[,1] = w0[,s]
+            system.time(
+            for (i in 1:n_w-1){
+                Diag = cbind(1:n_y, 1+ (1:n_y-1 + i) %% n_w)
+                if(AdaptiveMC)
+                    if((((i+1)%%batch.size==0) & (s < 0.4*burn_in))){
+                        if(!distOnly){
+                            #ls  = AdaptiveSigma(w0, ls, i)
+                            #w_sd = exp(beta*ls)
+                            
+                            lsy = AdaptiveSigma(y0in, lsy, i+1)
+                            y_sd = exp(beta*lsy)
+                        }
+                        if(!missing(eta) & !missing(dist)){
+                            lseta = AdaptiveSigma(petain, lseta, i+1)
+                            eta_sd = exp(beta*lseta)
+                        }
                     }
-                    if(!missing(eta) & !missing(dist)){
-                        lseta = AdaptiveSigma(peta, lseta, i)
-                        eta_sd = exp(beta*lseta)
-                    }
-                    
-                }
-            
-            ## Updatting latent scores
-            if(!uncertain){
-                U0<- rExp(pdist*outer(y0[,i],w0[,i]))
-                U0[Z0]<-1
-            }else
-                U0 <-rExp2(pdist*outer(y0[,i],w0[,i]), g0[i], Z, Z0)
-            
-            ## Updating parasite parameters
-            if(!distOnly){
-                w0[,i+1]<-raffinity.MH(w0[,i],peta[i],mc,
-                                       y0[,i+1]%*%(U0*(pdist.right)),
-                                       sig=w_sd, c(a_w, b_w))
-            
-                ## Updating host parameters
-                y0[,i+1]<-raffinity.MH(y0[,i],peta[i],mr,
-                                       (U0*(pdist.right))%*%w0[,i+1],
-                                       sig=y_sd, c(a_y, b_y))
-            }
 
-            ## updating eta
-            if(!missing(eta)){
-                new.eta = rEta(peta[i],dd2,pdist.right,Z,y0[,i+1],
-                    w0[,i+1], U0,pd0, eta_sd=eta_sd)
-                peta[i+1] = new.eta$eta
-                pdist.right = new.eta$dist
-                pdist = (dist^peta[i+1])%*%Z
-                pdist  = sapply(dd1, function(r) colSums(r^peta[i+1]))
-                ##if(i%%100==0) print(peta[i+1])
-            }
-
-            ## Uncertainty variable
-            if(uncertain){
-                g0[i+1] = rg(Z, U0,l=pdist*outer(y0[,i],w0[,i])) 
-            }
-            
-            ## Updating Hyper parameters
-            if(updateHyper & !distOnly){ 
-                new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
-                    U0, pdist.right, mr, mc, type='host')
-                a_y = new[1]
-                b_y = new[2]
-                hh[1,i+1]<-a_y
-                hh[2,i+1]<-b_y
+                ## Updatting latent scores
+                if(!uncertain){
+                    U0[Diag]<-rExp(pdist[Diag]*y0in[,i+1]*w0in[Diag[,2], i+1])
+                    U0[Diag[Z0[Diag],]]<-1
+                }else
+                    U0[Diag] <-rExp2(
+                        pdist[Diag]*y0in[,i+1]*w0in[Diag[,2],i+1],
+                        g0in[i+1], Z[Diag], Z0[Diag])
                 
-                new = rHyper(c(a_w, b_w),y0[,i+1],w0[,i+1],
-                    U0,pdist.right, mr, mc, type='parasite')
-                a_w = new[1]
-                b_w = new[2]
-                hh[3,i+1]<-a_w
-                hh[4,i+1]<-b_w
+                ## Updating parasite parameters
+                if(!distOnly){
+                    w0in[Diag[,2],i+2]<- raffinity.MH(w0in[Diag[,2],i+1],Z[Diag],
+                                              y0in[,i+1]*U0[Diag]*pdist[Diag],
+                                              sig=w_sd, c(a_w, b_w))
+                    ## Updating host parameters
+                    y0in[,i+2]<-raffinity.MH(y0in[,i+1],Z[Diag],
+                                             U0[Diag]*pdist[Diag]*w0in[Diag[,2],i+2],
+                                             sig=y_sd, c(a_y, b_y))
+                }
+                
+                ## updating eta
+                if(!missing(eta)){
+                    new.eta = rEta(petain[i+1],dist,pdist,
+                        Diag,Z,y0in[,i+2], w0in[Diag[,2],i+2],
+                        U0[Diag], eta_sd=eta_sd)
+                    petain[i+2] = new.eta$eta
+                    pdist.right = new.eta$dist
+                    ##pdist = (dist^petain[i+2])%*%Z
+                    ##if(i%%100==0) print(peta[i+1])
+                }
+                
+                ## Uncertainty variable
+                ## if(uncertain){
+                ##     g0in[i+1] = rg(Z, U0,l=pdist*outer(y0in[,i+1],w0in[,i+1])) 
+                ## }
+                
+                ## end of slice loop    
             }
-            ##if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
+            )
+            y0[,s+1]<-rowMeans(y0in[,-1])
+            peta[s+1]<-mean(petain[-1])
+            w0[,s+1]<- rowSums(w0in[,-1])/n_w
             
+            g0in<-rep(0.5, n_w+1)
+            y0in<-matrix(0,nrow= n_y, ncol =n_w+1)
+            w0in<-matrix(0, nrow= n_w, ncol =n_w+1)
+            petain = rep(1, n_w+1)
+            
+            ## ## Updating Hyper parameters
+            ## if(updateHyper & !distOnly){ 
+            ##     new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
+            ##         U0, pdist.right, mr, mc, type='host')
+            ##     a_y = new[1]
+            ##     b_y = new[2]
+            ##     hh[1,i+1]<-a_y
+            ##     hh[2,i+1]<-b_y
+                
+            ##     new = rHyper(c(a_w, b_w),y0[,i+1],w0[,i+1],
+            ##         U0,pdist.right, mr, mc, type='parasite')
+            ##     a_w = new[1]
+            ##     b_w = new[2]
+            ##     hh[3,i+1]<-a_w
+            ##     hh[4,i+1]<-b_w
+            ## }
+            ##if(i%%100==0) print(c(a_y,b_y,a_w,b_w))
         }
-        
        ,warning = function(w)
            {print(c('warning at i:', i)); print(w);traceback()},
         error =function(e)
@@ -307,24 +310,3 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
 ##################################################
 ##################################################
 ## old functions
-
-rExp2<-function(l, g, Z, Z0){
-    p = 1- exp(-l)
-    unif = matrix(runif(length(l)), dim(p))
-    ## Method one P(z=0|g) = 1\delta_{s<0} + g\delta_{s>=0}
-    U = 1 + 0*p
-    U[!Z0] = -log(1- unif[!Z0]*p[!Z0])/(l[!Z0] + tol.err)
-    aa = (unif < g*p/(g*p + 1-p)) & Z0
-    U[aa] =  -log(1 - unif[aa]*(g*p[aa] + 1-p[aa])/g)/l[aa]
-    ## End of Method one
-    ## ## U = -log(unif*(1-Z) + (1-unif)*Z )/(l+tol.err)
-    ## aa = 1*(runif(sum(Z0))<= ((1-p)/(1-p + g*p))[Z0])
-    ## U[Z0]<-    U[Z0]^(1-aa) 
-    ## U
-    ## Method two P(z=1|g) = g\delta_{s<0} + 1\delta_{s>=0}
-    ## U = 1 + 0*p
-    ## aa = (unif < p/(p + g*(1-p))) & !Z0
-    ## U[aa] = -log(1- unif[aa]*(p[aa] + g*(1-p[aa])))/(l[aa])
-    U
-}
-
