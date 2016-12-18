@@ -66,14 +66,7 @@ rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     u = 1*(runif(1)<=ratio)
     u*new + (1-u)*old
 }
-eta.old =petain[i+1]
-pdist.old=pdist
-zdiag=Diag
 
-y=y0in[,i+2]
-w=w0in[Diag[,2],i+2]
-U=    U0[Diag]
-eta_sd
 rEta<-function(eta.old,dist,pdist.old,zdiag, Z, y, w, U, eta_sd =0.01){
     ## A function that generates the prior for the power of distance
     eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
