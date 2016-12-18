@@ -66,14 +66,21 @@ rHyper<-function(old,y, w, U, pdist, mr, mc, type='host', sig = 0.1){
     u = 1*(runif(1)<=ratio)
     u*new + (1-u)*old
 }
+eta.old =petain[i+1]
+pdist.old=pdist
+zdiag=Diag
 
+y=y0in[,i+2]
+w=w0in[Diag[,2],i+2]
+U=    U0[Diag]
+eta_sd
 rEta<-function(eta.old,dist,pdist.old,zdiag, Z, y, w, U, eta_sd =0.01){
     ## A function that generates the prior for the power of distance
     eta.prop = eta.old*exp(rnorm(1, 0, sd = eta_sd))
     dist1=0*dist
     dist1[upper.tri(dist1)] =dist[upper.tri(dist)]^eta.prop
     dist1 = dist1+ t(dist1)
-    pdist.new = dist1%*%Z
+    pdist.new = dist1%*%Z +tol.err
     likeli = sum(log((pdist.new[zdiag]/pdist.old[zdiag])^Z[zdiag] ))-
         sum(U*y*w*(pdist.new[zdiag] - pdist.old[zdiag]))
     
@@ -117,7 +124,7 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
 }
 
 gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE, distOnly=FALSE){
-    ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
+    # Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
     ## A one step update in a Gibbs sampler.
 	## ## initialize
     #Z = 1*(Z>0)
@@ -206,7 +213,6 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
             g0in[1]= g0[s]
             y0in[,1] = y0[,s]
             w0in[,1] = w0[,s]
-            system.time(
             for (i in 1:n_w-1){
                 Diag = cbind(1:n_y, 1+ (1:n_y-1 + i) %% n_w)
                 if(AdaptiveMC)
@@ -262,7 +268,7 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
                 
                 ## end of slice loop    
             }
-            )
+
             y0[,s+1]<-rowMeans(y0in[,-1])
             peta[s+1]<-mean(petain[-1])
             w0[,s+1]<- rowSums(w0in[,-1])/n_w
