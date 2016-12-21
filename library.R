@@ -669,10 +669,10 @@ plot_thresh<-function(i,y_est,w_est,Z,host = TRUE, ...){
 	}
 }
 
-generate_interactions<-function(r, c, eta = 0.3){
+generate_interactions<-function(r, c, eta = 0.3, aj=0.5, ai=0.5){
     ## Generate a sample of Z, D, w and y
     i = floor(r*1.5)
-    j = floor(c*1.5)
+    j = floor(c*2)
     distance_matrix<-function(n){
         d = matrix(0, ncol=n, nrow=n)
         a = rexp(sum(upper.tri(d)),5)
@@ -681,21 +681,24 @@ generate_interactions<-function(r, c, eta = 0.3){
         d[upper.tri(d)]<-a
         d
     }
+
     D = distance_matrix(i)
     De = D^eta
-    w = rgamma(j ,0.2, 1)
-    y = rgamma(i, 0.2, 1)
-    Z = sapply(1:j, function(s){
-        v= rep(0, i)
-        ra = sample(1:i,i)
-        v[ra[1]]<-1
-        ## Setting of first interaction
-        for(k in ra[2:length(ra)]){
-            p = 1- exp(-y*(w[s]*(v%*%(De))))
-            v[k]<-1*(runif(1)<=p[k])
-        }
-        v
-    })
+    w = rgamma(j ,aj, 1)
+    y = rgamma(i, ai, 1)
+    ## Setting of first interaction
+    yw = outer(y,w)
+
+    Z=matrix(0, i,j)
+    ##Sampling interactions
+    for(s in 1:1000*i){
+        sam = sample(1:i, j, replace=TRUE)
+        Diag = cbind(sam,1:j)
+        dd= (De%*%Z)[Diag]
+        dd = 1*(dd==0) + dd*1*(dd>0)
+        Z[Diag]<- 1*(runif(j)<= 1-exp(-yw[Diag]*dd))
+    }
+
     ## Removing empty or extra rows
     aux = which(colSums(Z)<=1)
     Z = Z[,-aux]
@@ -707,14 +710,16 @@ generate_interactions<-function(r, c, eta = 0.3){
         w = w[-aux]
     }else{
         if(ncol(Z)!=c)
-            print("No. columns less than r")
+            stop("No. columns less than c")
     }
     ## Removing row numbers
-    aux = which(rowSums(Z)<=1)
-    Z = Z[-aux,]
-    y = y[-aux]
-    D = D[-aux,]
-    D = D[,-aux]
+    aux = which(rowSums(Z)<1)
+    if(length(aux)>0){
+        Z = Z[-aux,]
+        y = y[-aux]
+        D = D[-aux,]
+        D = D[,-aux]
+    }
     ## Re ordering
     bank = lof(Z, indeces = TRUE)
     w = w[bank]

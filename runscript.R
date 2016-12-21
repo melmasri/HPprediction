@@ -27,13 +27,21 @@ sTime = Sys.time()
 if(grepl('GMP',datatype)){
     DATAFILENAME = if(grepl('subset', subtype)| grepl('uncertain', runtype)) paste0('../comGMPD-year',if(SINGLE) '.single' else '','.RData') else
     paste0('../comGMPD',if(SINGLE) '.single' else '','.RData')
-}
-if(grepl('EID',datatype)){
-    DATAFILENAME = paste0('../comEID-PS',if(SINGLE) '.single' else '', '.RData')
+}else{
+    if(grepl('EID',datatype)){
+        DATAFILENAME = paste0('../comEID-PS',if(SINGLE) '.single' else '', '.RData')
+    }else{
+        if(any(grepl(datatype, list.files(recursive=FALSE)))){
+            DATAFILENAME = paste0('../',grep(datatype, list.files(recursive=FALSE, pattern='RData'), value=TRUE)[1])
+        }
+    
+    }
 }
 
-SUBSET = if(grepl('subset', subtype)) TRUE else FALSE
-
+SUBSET  = if(grepl('subset', subtype)) TRUE else FALSE
+dataset = gsub('.RData', '', DATAFILENAME)
+dataset = gsub('../', '', dataset)
+subset  =''
 if(grepl('GMP', DATAFILENAME)){
     dataset='gmp'
     subset= if(SUBSET) 'Carnivora-' else ''
