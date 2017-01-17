@@ -4,7 +4,6 @@
 ## Global Variable
 SAVE_PARAM = TRUE
 ## DATAFILENAME = 'comEID-PS.single.RData'
-## DATAFILENAME = 'comGMPD.RData'
 ## DATAFILENAME = 'comGMPD.single.RData'
 print(DATAFILENAME)
 ## source('library.R')
@@ -36,7 +35,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     source('../gen.R', local=TRUE)
 
     slice = max(ceiling(10000/ncol(Z)), 5)
-    slice=100
+    slice=2000
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     
