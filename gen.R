@@ -117,7 +117,7 @@ AdaptiveSigma<-function(param, ls, i, batch.size =50){
 }
 
 gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FALSE, AdaptiveMC=FALSE, distOnly=FALSE){
-    # Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = updateHyper; AdaptiveMC=AdaptiveMC
+    ## Z=1*(com>0);slice=slice;dist=phy_dist; eta=1; hyper=hyper; updateHyper = FALSE; AdaptiveMC=TRUE; distOnly=FALSE
     ## A one step update in a Gibbs sampler.
 	## ## initialize
     #Z = 1*(Z>0)
@@ -185,10 +185,10 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     y0<-matrix(y,nrow= n_y, ncol =burn_in+1)
     w0<-matrix(w, nrow= n_w, ncol =burn_in+1)
 
-    g0in<-rep(0.5, n_w+1)
-    y0in<-matrix(0,nrow= n_y, ncol =n_w+1)
-    w0in<-matrix(0, nrow= n_w, ncol =n_w+1)
-    petain = rep(1, n_w+1)
+    g0in<-rep(0.5, n_y+1)
+    y0in<-matrix(0,nrow= n_y, ncol =1)
+    w0in<-matrix(0, nrow= n_w, ncol =n_y+1)
+    petain = rep(1, n_y+1)
 	Z0 <- Z==0
     U0 <- Z*0
 	mc <- colSums(1*(Z>0))
@@ -204,53 +204,53 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
         for(s in 1:slice){
             print(sprintf('Slice %d', s))
             g0in[1]= g0[s]
-            y0in[,1] = y0[,s]
+            y0in = y0[,s]
             w0in[,1] = w0[,s]
-            for (i in 1:n_w-1){
-                Diag = cbind(1:n_y, 1+ (1:n_y-1 + i) %% n_w)
-                if(AdaptiveMC)
-                    if((((i+1)%%batch.size==0) & (s < 0.4*burn_in))){
-                        if(!distOnly){
-                            #ls  = AdaptiveSigma(w0, ls, i)
-                            #w_sd = exp(beta*ls)
-                            
-                            lsy = AdaptiveSigma(y0in, lsy, i+1)
-                            y_sd = exp(beta*lsy)
-                        }
-                        if(!missing(eta) & !missing(dist)){
-                            lseta = AdaptiveSigma(petain, lseta, i+1)
-                            eta_sd = exp(beta*lseta)
-                        }
+            petain[1] = peta[s]
+            pdist = (dist^peta[s])%*%Z
+            if(AdaptiveMC)
+                if((((s+1)%%batch.size==0) &  (s < 0.5*burn_in))){
+                    if(!distOnly){
+                        ls  = AdaptiveSigma(w0, ls, s+1)
+                        w_sd = exp(beta*ls)
+                        
+                        lsy = AdaptiveSigma(y0, lsy, s+1)
+                        y_sd = exp(beta*lsy)
                     }
+                    if(!missing(eta) & !missing(dist)){
+                        lseta = AdaptiveSigma(peta, lseta, s+1)
+                        eta_sd = exp(beta*lseta)
+                    }
+                }
 
+            for (i in 1:n_y){
                 ## Updatting latent scores
                 if(!uncertain){
-                    U0[Diag]<-rExp(pdist[Diag]*y0in[,i+1]*w0in[Diag[,2], i+1])
-                    U0[Diag[Z0[Diag],]]<-1
-                }else
-                    U0[Diag] <-rExp2(
-                        pdist[Diag]*y0in[,i+1]*w0in[Diag[,2],i+1],
-                        g0in[i+1], Z[Diag], Z0[Diag])
+                    U0[i, ]<-rExp(pdist[i,]*y0in[i]*w0in[, i])
+                    U0[i,Z0[i,]]<-1
+                }else NULL
+                ## U0[Diag] <-rExp2(
+                ##     pdist[i,]*y0in[i]*w0in[,i],
+                ##     g0in[i+1], Z[Diag], Z0[Diag])
                 
                 ## Updating parasite parameters
                 if(!distOnly){
-                    w0in[Diag[,2],i+2]<- raffinity.MH(w0in[Diag[,2],i+1],Z[Diag],
-                                              y0in[,i+1]*U0[Diag]*pdist[Diag],
-                                              sig=w_sd, c(a_w, b_w))
                     ## Updating host parameters
-                    y0in[,i+2]<-raffinity.MH(y0in[,i+1],Z[Diag],
-                                             U0[Diag]*pdist[Diag]*w0in[Diag[,2],i+2],
-                                             sig=y_sd, c(a_y, b_y))
+                    y0in[i]<-raffinity.MH(y0in[i],mr[i],(U0[i,]*pdist[i,])%*%w0in[,i],
+                                          sig=y_sd, c(a_y, b_y))
+                    ## Updating the parasite parameters
+                    w0in[, i+1]<-raffinity.MH(w0in[,i],Z[i,],y0in[i]*(U0[i,]*pdist[i,]),
+                                              sig=w_sd, c(a_w, b_w))
                 }
                 
                 ## updating eta
                 if(!missing(eta)){
-                    new.eta = rEta(petain[i+1],dist,pdist,
-                        Diag,Z,y0in[,i+2], w0in[Diag[,2],i+2],
+                    Diag = cbind(i, 1:n_w)
+                    new.eta = rEta(petain[i],dist,pdist,
+                        Diag,Z,y0in[i], w0in[,i+1],
                         U0[Diag], eta_sd=eta_sd)
-                    petain[i+2] = new.eta$eta
-                    pdist.right = new.eta$dist
-                    ##pdist = (dist^petain[i+2])%*%Z
+                    petain[i+1] = new.eta$eta
+                    pdist = new.eta$dist
                     ##if(i%%100==0) print(peta[i+1])
                 }
                 
@@ -262,15 +262,15 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
                 ## end of slice loop    
             }
 
-            y0[,s+1]<-rowMeans(y0in[,-1])
+            y0[,s+1]<-y0in
             peta[s+1]<-mean(petain[-1])
-            w0[,s+1]<- rowSums(w0in[,-1])/n_w
+            w0[,s+1]<- rowMeans(w0in[,-1])
             
-            g0in<-rep(0.5, n_w+1)
-            y0in<-matrix(0,nrow= n_y, ncol =n_w+1)
-            w0in<-matrix(0, nrow= n_w, ncol =n_w+1)
-            petain = rep(1, n_w+1)
-            
+            g0in<-rep(0.5, n_y+1)
+            y0in<-matrix(0,nrow= n_y, ncol =1)
+            w0in<-matrix(0, nrow= n_w, ncol =n_y+1)
+            petain = rep(1, n_y+1)
+        
             ## ## Updating Hyper parameters
             ## if(updateHyper & !distOnly){ 
             ##     new = rHyper(c(a_y, b_y),y0[,i+1],w0[,i+1],
@@ -298,7 +298,6 @@ gibbs_one<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=
     if(throw.out==0) throw.out = c(1:burn_in) else throw.out = -c(1:throw.out)
     y0 =  y0[,throw.out] 
     w0 =  w0[,throw.out]
-    
     if(!missing(eta)){
         eta = peta[throw.out]
     }else eta = NULL
