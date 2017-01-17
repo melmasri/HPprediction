@@ -4,6 +4,7 @@
 ## Global Variable
 SAVE_PARAM = TRUE
 ## DATAFILENAME = 'comEID-PS.single.RData'
+## DATAFILENAME = 'comGMPD.RData'
 ## DATAFILENAME = 'comGMPD.single.RData'
 print(DATAFILENAME)
 ## source('library.R')
@@ -35,7 +36,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     source('../gen.R', local=TRUE)
 
     slice = max(ceiling(10000/ncol(Z)), 5)
-    slice=2000
+    slice=100
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     
@@ -49,7 +50,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com_pa, dist=phy_dist,hyper=hyper, mc.preschedule = TRUE, mc.cores = tot.gr) 
+},pairs=pairs,Z = com_pa, dist=phy_dist,hyper=hyper, mc.preschedule = TRUE, mc.cores = max(tot.gr,5)) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
