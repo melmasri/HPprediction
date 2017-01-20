@@ -5,6 +5,8 @@
 SAVE_PARAM = TRUE
 ## DATAFILENAME = 'comEID-PS.single.RData'
 ## DATAFILENAME = 'comGMPD.single.RData'
+## DATAFILENAME = 'comGMPD.RData'
+
 print(DATAFILENAME)
 ## source('library.R')
 ## source('gen.R')
@@ -35,13 +37,13 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
     source('../gen.R', local=TRUE)
 
     slice = max(ceiling(10000/ncol(Z)), 5)
-    slice=2000
+    slice=5000
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     
-    param_phy = gibbs_one(com_paCross,slice=slice ,dist= dist,
+    param = gibbs_one(com_paCross,slice=slice ,dist= dist,
         eta=1, hyper = hyper, updateHyper=FALSE, AdaptiveMC=TRUE)
-    aux = getMean(param_phy)
+    aux = getMean(param)
     
     P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
