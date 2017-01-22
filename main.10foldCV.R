@@ -3,21 +3,18 @@
 
 ## Global Variable
 SAVE_PARAM = TRUE
+## TYPE = 'FULL'
 ## DATAFILENAME = 'comEID-PS.single.RData'
+## DATAFILENAME = 'comEID-PS.RData'
 ## DATAFILENAME = 'comGMPD.single.RData'
 ## DATAFILENAME = 'comGMPD.RData'
 
 print(DATAFILENAME)
+print(TYPE)
 ## source('library.R')
 ## source('gen.R')
 load(DATAFILENAME)
 library(parallel)
-
-## com=1*(com>0)
-## aux = order(rowSums(com), decreasing = TRUE)
-## com = com[aux, ]
-## phy_dist = phy_dist[aux,]
-## phy_dist = phy_dist[ ,aux]
 
 #######################
 ## set the correct prior.
@@ -28,30 +25,57 @@ colnames(com)<-1:ncol(com)
 rownames(com)<-1:nrow(com)
 colnames(phy_dist)<-1:ncol(phy_dist)
 rownames(phy_dist)<-1:nrow(phy_dist)
-com_pa = 1*(com>0)
-pairs = cross.validate.fold(com_pa, n=5)
+pairs = cross.validate.fold(1*(com>0), n=5)
 tot.gr = length(unique(pairs[,'gr']))
+com_pa = if(TYPE == 'WEIGHTED') com else com_pa = 1*(com>0)
 
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
 
-    slice = max(ceiling(10000/ncol(Z)), 5)
-    slice=5000
+    ## slice = max(ceiling(10000/ncol(Z)), 5)
+    slice=1000
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    
-    param = gibbs_one(com_paCross,slice=slice ,dist= dist,
-        eta=1, hyper = hyper, updateHyper=FALSE, AdaptiveMC=TRUE)
-    aux = getMean(param)
-    
-    P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+
+    if(TYPE == 'DISTONLY'){
+        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1,
+            hyper=hyper,updateHyper=FALSE,
+            AdaptiveMC = TRUE, uncertain=FALSE, distOnly=TRUE)
+        aux  = getMean(param)
+        P = 1-  exp(-(dist^aux$eta) %*% com_paCross)
+    }
+    if(TYPE == 'AFFINITY'){
+        param=gibbs_one(com_paCross,slice=slice,hyper=hyper,
+            AdaptiveMC = TRUE,updateHyper = FALSE)
+        aux = getMean(param)
+        P = 1-exp(-outer(aux$y,aux$w))
+    }
+    if(TYPE == 'WEIGHTED'){
+        Z=log(Z+1)/2
+        com_paCross = Z
+        com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
+        param = gibbs_one(com_paCross,slice=slice ,dist= dist, eta=1,
+            hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE)
+        aux = getMean(param)
+        P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+        Z= 1*(Z>0)
+        com_paCross = 1*(com_paCross>0)
+    }
+    if(TYPE == "10FOLD"){
+        param = gibbs_one(com_paCross,slice=slice ,dist= dist,
+            eta=1, hyper = hyper, updateHyper=FALSE, AdaptiveMC=TRUE)
+        aux = getMean(param)
+        P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+        
+    }
+
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com_pa, dist=phy_dist,hyper=hyper, mc.preschedule = TRUE, mc.cores = max(tot.gr,5)) 
+},pairs=pairs,Z = com_pa, dist=phy_dist,hyper=hyper, TYPE=TYPE, mc.preschedule = TRUE, mc.cores = min(tot.gr, 5)) 
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
