@@ -1,7 +1,7 @@
 ## what to run
 ## Rscript runscript.R runtype datatype subtype non-single
 
-## runtype: uncertain, 10fold, ALL, nodist, weighted, NN, distonly
+## runtype: uncertain, 10fold, ALL, affinity, weighted, NN, distonly
 ## datatype: GMP EID
 ## subtype: subset, anything
 ## non-single: leave empty for single, otherwise non-single
@@ -20,7 +20,7 @@ if(length(args)<3){
 runtype = args[1]
 datatype = args[2]
 subtype  = args[3]
-SINGLE = if(!is.na(args[4])) FALSE else TRUE
+SINGLE = if(is.na(args[4])) FALSE else TRUE
 
 sTime = Sys.time()
 
@@ -58,30 +58,16 @@ if(grepl('uncertain', runtype)){
     subDir <- paste0("./Uncertain-10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
 }
 
-if(grepl('10fold', runtype)){
+if(grepl('(10fold|affinity|weighted|distonly)', runtype)){
     run_script = '../main.10foldCV.R'
-    subDir <- paste0("./10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
+    TYPE = toupper(runtype)
+    EXTRA = if(TYPE=='10FOLD')  '-' else '-10FOLD-'
+    subDir <- paste0("./", TYPE,EXTRA,subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
 }
 
 if(grepl('ALL', runtype)){
     run_script = '../main.all.R'
     subDir <- paste0("./",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
-}
-
-if(grepl('nodist', runtype)){
-    run_script = '../main.10foldCV-nodist.R'
-    subDir <- paste0("./nodist-10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
-}
-
-if(grepl('weighted', runtype)){
-    run_script = '../main.10foldCV-weighted.R'
-    subDir <- paste0("./Weighted-10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
-}
-
-
-if(grepl('distonly', runtype)){
-    run_script = '../main.10foldCV-dist-only.R'
-    subDir <- paste0("./DistOnly-10foldCV-",subset, dataset, format(sTime, "-%d-%m-%Hh%M"))
 }
 
 if(grepl('NN', runtype)){
@@ -93,6 +79,7 @@ if(is.null(run_script) | is.null(subDir)){
     print('something is wrong')
     q('no')
 }
+
 ## ## No uncertain
 ## # Setting Hyper parameters
 if(SUBSET){
