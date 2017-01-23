@@ -8,7 +8,7 @@ SAVE_PARAM = TRUE
 ## DATAFILENAME = 'comEID-PS.RData'
 ## DATAFILENAME = 'comGMPD.single.RData'
 ## DATAFILENAME = 'comGMPD.RData'
-
+## DATAFILENAME = 'comSim600x200.RData'
 print(DATAFILENAME)
 print(TYPE)
 ## source('library.R')
@@ -27,7 +27,7 @@ colnames(phy_dist)<-1:ncol(phy_dist)
 rownames(phy_dist)<-1:nrow(phy_dist)
 pairs = cross.validate.fold(1*(com>0), n=5)
 tot.gr = length(unique(pairs[,'gr']))
-com_pa = if(TYPE == 'WEIGHTED') com else com_pa = 1*(com>0)
+com_pa = if(TYPE == 'WEIGHTED') com else 1*(com>0)
 
 res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE){
     source('../library.R', local=TRUE)
@@ -37,37 +37,35 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE){
     slice=1000
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-
+    
     if(TYPE == 'DISTONLY'){
-        param = gibbs_one(com_paCross,slice=slice,dist=dist, eta=1,
-            hyper=hyper,updateHyper=FALSE,
-            AdaptiveMC = TRUE, uncertain=FALSE, distOnly=TRUE)
+        param = ICM_est(com_paCross,slice=slice,dist=dist, eta=1,
+            hyper=hyper,AdaptiveMC = TRUE, distOnly=TRUE)
         aux  = getMean(param)
         P = 1-  exp(-(dist^aux$eta) %*% com_paCross)
     }
     if(TYPE == 'AFFINITY'){
-        param=gibbs_one(com_paCross,slice=slice,hyper=hyper,
-            AdaptiveMC = TRUE,updateHyper = FALSE)
+        param=ICM_est(com_paCross,slice=slice,hyper=hyper,AdaptiveMC = TRUE)
         aux = getMean(param)
         P = 1-exp(-outer(aux$y,aux$w))
     }
     if(TYPE == 'WEIGHTED'){
+        if(!all(range(Z)==c(0,1))) stop('Now a binary Z')
         Z=log(Z+1)/2
         com_paCross = Z
         com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-        param = gibbs_one(com_paCross,slice=slice ,dist= dist, eta=1,
-            hyper=hyper,updateHyper=FALSE, AdaptiveMC = TRUE)
+        param = ICM_est(com_paCross,slice=slice ,dist= dist, eta=1,
+            hyper=hyper, AdaptiveMC = TRUE)
         aux = getMean(param)
         P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
         Z= 1*(Z>0)
         com_paCross = 1*(com_paCross>0)
     }
     if(TYPE == "10FOLD"){
-        param = gibbs_one(com_paCross,slice=slice ,dist= dist,
-            eta=1, hyper = hyper, updateHyper=FALSE, AdaptiveMC=TRUE)
+        param = ICM_est(com_paCross,slice=slice ,dist= dist,eta=1,
+            hyper = hyper, AdaptiveMC=TRUE,ICM.HORIZ= FALSE)
         aux = getMean(param)
-        P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
-        
+        P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*%com_paCross))
     }
 
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
