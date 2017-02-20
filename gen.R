@@ -213,9 +213,11 @@ ICM_est<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FA
     
     if(missing(dist)) pdist.right<-pdist<- matrix(1, nrow(Z), ncol(Z)) else
     pdist = (dist^peta[1])%*%Z
+
+    temp = matrix(0, nrow=4, ncol=subItra +1)
     tryCatch(
         for(s in 1:slice){
-            if(s%%100==0)
+            if(s%%1000==0)
                 print(sprintf('Slice %d', s))
             g0in[1]= g0[s]
             y0in[,1] = y0[,s]
@@ -241,13 +243,15 @@ ICM_est<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FA
                         eta_sd = exp(beta*lseta)
                     }
                 }
-
+            
             ## Updatting latent scores
             if(!uncertain){
                 U0<-rExp(pdist*outer(y0[,s],w0[, s]))
                 U0[Z0]<-1
             }else
                 U0 <-rExp2(pdist*outer(y0[,s],w0[, s]),g0[s], Z, Z0)
+
+            temp[,1]<-hh[,s]
             
             for (i in 1:subItra){
                 ## needed only for digonal
@@ -298,6 +302,20 @@ ICM_est<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FA
                         g0in[i+1] = rg(Z, U0,l=pdist*outer(y0in[,i+1],w0in[,i+1])) 
                 }
                 ## end of slice loop
+                if(updateHyper & !distOnly){
+                    rHyper = if(ICM.HORIZ) rHyper.Horiz else rHyper.Diag
+                    ## Updating hyper parameters for Hosts
+                    new = rHyper(c(temp[1,i], temp[2,i]),
+                        (U0[i,]*pdist[i,])%*%w0in[,i+1],mr[i])
+                    temp[1, i+1] = new[1]
+                    temp[2, i+1] = new[2]
+                    ## ## Updating hyper parameters for Parasite
+                    new = rHyper(c(temp[3,i], temp[4,i]),
+                        y0in[i,1]*(U0[i,]*pdist[i,]), Z[i,])
+                    temp[3, i+1] = new[1]
+                    temp[4, i+1] = new[2]
+
+            }
             }
 
             if(!distOnly){
@@ -317,15 +335,20 @@ ICM_est<-function(Z,dist, slice = 10, eta,hyper, uncertain =FALSE,updateHyper=FA
             
             ## Hyper parameters
             if(updateHyper & !distOnly){
-                ## ## Updating hyper parameters for Parasite
                 rHyper = if(ICM.HORIZ) rHyper.Horiz else rHyper.Diag
-                new = rHyper(c(hh[3,s], hh[4,s]),y0[,s+1]%*%(U0*pdist), mc)
-                hh[3, s+1] = new[1]
-                hh[4, s+1] = new[2]
                 ## Updating hyper parameters for Hosts
-                new = rHyper(c(hh[1,s], hh[2,s]),(U0*pdist)%*%w0[,s+1],mr)
-                hh[1, s+1] = new[1]
-                hh[2, s+1] = new[2]
+                ## new = rHyper(c(hh[1,s], hh[2,s]),(U0*pdist)%*%w0[,s+1],mr)
+                ## hh[1, s+1] = new[1]
+                ## hh[2, s+1] = new[2]
+                ## ## Updating hyper parameters for Parasite
+                ## new = rHyper(c(hh[3,s], hh[4,s]),y0[,s+1]%*%(U0*pdist), mc)
+                ##     hh[3, s+1] = new[1]
+                ##     hh[4, s+1] = new[2]
+                hh[1, s+1] = mean(temp[1,-1])
+                hh[2, s+1] = mean(temp[2,-1])
+                hh[3, s+1] = mean(temp[3,-1])
+                hh[4, s+1] = mean(temp[4,-1])
+                
             }
         }
        ,warning = function(w)

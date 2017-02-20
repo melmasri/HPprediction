@@ -12,21 +12,26 @@ print(DATAFILENAME)
 load(DATAFILENAME)
 
 #######################
-## Parameters for the independent GGP
-## set the correct prior.
-print('Setting the prior.')
-## No uncertain
+## print tests
+if(length(grep('com', ls()))==0)
+    stop("no object named 'com' in the data file.")
 
-## if(dataset =='gmp')
-##     hyper = list(parasite =c(29.8, 1), host = c(0.24,1), eta = c(0.008)) # comGMPD.single.RData
+if(length(grep('phy_dist', ls()))==0)
+    stop("no object named 'phy_dist' in the data file.")
 
-## if(dataset =='eid')
-##     hyper = list(parasite= c(0.5, 1), host =c(0.1, 2), eta = c(0.01))
+if(!is.matrix(com) | is.matrix(phy_dist))
+    stop("either 'com' or 'phy_dist' are not a matrix type.")
 
-slice= ceiling(20000/ncol(com))
-slice = 10000
-param = gibbs_one(Z=1*(com>0),slice=slice,eta=1, dist=phy_dist,uncertain=FALSE,
-    hyper=hyper, AdaptiveMC= TRUE, updateHyper = FALSE)
+if(!isSymmetric(phy_dist))
+    stop("matrix 'phy_dist' is not symmetric.")
+
+if(nrow(com)!= nrow(phy_dist))
+    stop("matrix 'phy_dist' doesn't have the same number of rows as 'com'.")
+
+## slice= ceiling(20000/ncol(com))
+slice = SLICE
+param = ICM_est(Z =1*(com>0),slice=slice ,dist= dist,eta=1,
+    hyper = hyper, AdaptiveMC=TRUE,ICM.HORIZ= ICM.HORIZ)
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

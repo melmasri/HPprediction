@@ -669,10 +669,13 @@ plot_thresh<-function(i,y_est,w_est,Z,host = TRUE, ...){
 	}
 }
 
-generate_interactions<-function(r, c, eta = 0.3, aj=0.5, ai=0.5){
+generate_interactions<-function(r, c, eta = 0.3, aj=0.5, ai=0.5, D){
+
     ## Generate a sample of Z, D, w and y
     i = floor(r*1.5)
     j = floor(c*2)
+    print(sprintf('Attempting an %ix%i matrix, with (r,c)=(%i,%i) truncation', i,j,r,c))
+
     distance_matrix<-function(n){
         d = matrix(0, ncol=n, nrow=n)
         a = rexp(sum(upper.tri(d)),5)
@@ -681,17 +684,30 @@ generate_interactions<-function(r, c, eta = 0.3, aj=0.5, ai=0.5){
         d[upper.tri(d)]<-a
         d
     }
+    if(missing(D))
+        D = distance_matrix(i)
+    else{
+        print(sprintf('Passed similarity matrix of dim %ix%i', nrow(D), ncol(D)))        
+        if(i >= nrow(D)){
+            i = nrow(D)
+            warning(paste0('The number of hosts is lowered to: ', nrow(D)))
+        }else{
+            minset = sample(1:nrow(D), i)
+            D = D[minset, ]
+            D = D[, minset]
+        }
+    }
 
-    D = distance_matrix(i)
     De = D^eta
     w = rgamma(j ,aj, 1)
     y = rgamma(i, ai, 1)
     ## Setting of first interaction
     yw = outer(y,w)
-
+    
     Z=matrix(0, i,j)
+    print(sprintf('Running an MCMC for %i iterations',100*i))
     ##Sampling interactions
-    for(s in 1:1000*i){
+    for(s in 1:(100*i)){
         sam = sample(1:i, j, replace=TRUE)
         Diag = cbind(sam,1:j)
         dd= (De%*%Z)[Diag]
@@ -699,6 +715,7 @@ generate_interactions<-function(r, c, eta = 0.3, aj=0.5, ai=0.5){
         Z[Diag]<- 1*(runif(j)<= 1-exp(-yw[Diag]*dd))
     }
 
+    print('Removing single host parasites...')
     ## Removing empty or extra rows
     aux = which(colSums(Z)<=1)
     Z = Z[,-aux]
