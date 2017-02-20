@@ -4,7 +4,7 @@
 ## Global Variable
 SAVE_PARAM = TRUE
 ## TYPE = 'FULL'
- DATAFILENAME = 'comEID-PS.single.RData'
+##  DATAFILENAME = 'comEID-PS.single.RData'
 ## DATAFILENAME = 'comEID-PS.RData'
 ## DATAFILENAME = 'comGMPD.single.RData'
 ## DATAFILENAME = 'comGMPD.RData'
@@ -22,7 +22,7 @@ if(length(grep('com', ls()))==0)
 if(length(grep('phy_dist', ls()))==0)
     stop("no object named 'phy_dist' in the data file.")
 
-if(!is.matrix(com) | is.matrix(phy_dist))
+if(is.null(dim(com)) | is.null(dim(phy_dist)))
     stop("either 'com' or 'phy_dist' are not a matrix type.")
 
 if(!isSymmetric(phy_dist))
@@ -86,11 +86,11 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE, ICM.HORIZ, sli
 
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, com_paCross, roc=roc, plot=FALSE)
-    roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=TRUE, bins=400, all=TRUE)
+    roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
 },pairs=pairs,Z = com_pa, dist=phy_dist,hyper=hyper, TYPE=TYPE,
-    ICM.HORIZ = ICM.HORIZ, slice = SLICE
+    ICM.HORIZ = ICM.HORIZ, slice = SLICE,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES)) 
 
 if(SAVE_PARAM)

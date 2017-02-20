@@ -114,7 +114,7 @@ if(!is.null(opt$subset)){
 }
 
 
-print("Passed options are")
+print("Arguments:")
 print(opt)
 
 source('library.R')
@@ -138,7 +138,7 @@ print(sprintf('Start time %s.',format(sTime, "%Y-%m-%d %H:%M:%S")))
 ## print(sprintf('lambda is %0.3f and eta is %0.3f', lambda_phy, eta))
 ## Main running script
 source(run_script, echo=TRUE, max.deparse.length=1e3)
-##source('../main.100sim-10foldCV.R', echo=TRUE)
+
 ##-----------------------------------------------------------
 eTime = Sys.time()
 print(sprintf('End time %s.',format(eTime, "%Y-%m-%d %H:%M:%S")))
