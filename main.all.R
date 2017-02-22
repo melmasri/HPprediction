@@ -19,7 +19,7 @@ if(length(grep('com', ls()))==0)
 if(length(grep('phy_dist', ls()))==0)
     stop("no object named 'phy_dist' in the data file.")
 
-if(!is.matrix(com) | is.matrix(phy_dist))
+if(is.null(dim(com)) | is.null(dim(phy_dist)))
     stop("either 'com' or 'phy_dist' are not a matrix type.")
 
 if(!isSymmetric(phy_dist))
