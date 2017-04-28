@@ -36,10 +36,8 @@ if(nrow(com)!= nrow(phy_dist))
 ## Summary statistics
 cnames = colnames(com)
 rnames = rownames(com)
-colnames(com)<-1:ncol(com)
-rownames(com)<-1:nrow(com)
-colnames(phy_dist)<-1:ncol(phy_dist)
-rownames(phy_dist)<-1:nrow(phy_dist)
+com = unname(com)
+phy_dist = unname(phy_dist)
 pairs = cross.validate.fold(1*(com>0), n=5)
 tot.gr = length(unique(pairs[,'gr']))
 if(TYPE == 'WEIGHTED'){

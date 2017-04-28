@@ -12,7 +12,7 @@ option_list = list(
                 metavar="character"),
     make_option(c("-s", "--subset"), type="character",
                 default=NULL, 
-                help="possible subset choices, for GMP it is Carnivora, for and EID it is Rodentia.",
+                help="possible subset choices, for GMP it is Carnivora, for and EID it is Rodentia. [default = %default]",
                 metavar="character"),
     make_option("--output", type="character",
                 default=NULL, 
