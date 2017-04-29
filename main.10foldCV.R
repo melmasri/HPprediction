@@ -64,7 +64,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE, ICM.HORIZ, sli
         P = 1-exp(-outer(aux$y,aux$w))
     }
     if(TYPE == 'WEIGHTED'){
-        if(!all(range(Z)==c(0,1))) stop('Not a binary Z!')
+        if(all(range(Z)==c(0,1))) stop('A binary Z!')
         Z=log(Z+1)/2
         com_paCross = Z
         com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
