@@ -1,49 +1,10 @@
 #!/bin/R
 ##libraries
+library(coda)
 ## Useful function
  `%+%` <- function(a, b) paste0(a, b)
  `% %` <- function(a, b) paste(a, b)
 
-### supporting function
-# A CRM Lambda(dw , dtheta) = lambda(w)*h(theta) dw dtheta
-# h is the location density
-# lambda is the mass density
-# h is independent from lambda and is an i.i.d.
-
-## Library of functions
-lambda<-function(w){
-	# lambda is the Levy intensity of the generalize gamma process GGP
-	# Generalized Gamma process (GGP) (sigma =0)
-	# inverse Gaussian process (IG) ( sigma =0.5)
-	# stable process (SP)(tau = 0)
-	# General form: (# Default is stable GGP (sigma =0, tau=0)
-	(a/gamma(1-sigma))*w^(-sigma -1)*exp(-w*tau)
-	}
-
-
-kappa<-function(n,z, process='gamma'){
-	# General form
-	#kappa(n,z) = int_0^\infty lambda(w) w^n exp(-zw)dw
-	# for lambda(w) = a/gamma(1-sigma) w^(-sigma -1)exp(-w tau)
-	# After integration kappa(n,z) = (a/(tau +z)^(n-sigma))(gamma(n-sigma)/gamma(1-sigma))
-	switch(process, gamma 		= (a/(z+tau)^n)*(gamma(n)),
-					gen.gamma	= (a/(z+tau)^(n-sigma))*gamma(n-sigma)/gamma(1-sigma),
-					inv.gamma	= (a/(z+tau)^(n-0.5))*gamma(n-0.5)/sqrt(pi),
-					stable		= (a/z^(n-sigma))*gamma(n-sigma)/gamma(1-sigma)
-		 )
-}
-
-psi<-function(t,b=0, process='gamma'){
-	# In general $\psi(t) = (a*tau^\simga/gamma(1-simga)) \sum_{k=1}^\infty (-1)^(k+1) (t/tau)^k gamma(k-sigma)/k!
-	# for tau =1 and sigma =0, \psi(t) reduced to a*log(1+t/tau) for |t/tau|<1. Using Taylor expansion
-	# See Supplementary Material of Caron, F. (2012) Bayesian nonparametric models for bipartite graphics.off
-	tau_ = tau +b
-	# Howeve, the setting is augmented to include \tilde{psi}. Hence, tau becomes tau +b with default b=0
-	switch(process, gamma 		= a*log(1+t/tau_ ),
-					gen.gamma	= (a/sigma)*((t+tau_)^sigma - tau_^sigma)	,
-					inv.gamma	= 2*a*(sqrt(t+tau_) -sqrt(tau_)),
-					stable		= a*t^sigma/sigma)
-}
 
 sample_u<-function(m,m_ind, s,i){
 	# Sampling from the distribution of u_(n+1)|z_(n+1,j), u_(1:n,j) as in Equation (15)
@@ -790,4 +751,13 @@ ana.plot<-function(pg){
         par(mfrow=c(1,1))
         hist(pg$g[burn],xlab='Posterior estimate of g',main='', col=g_col)
     }
+    readline(prompt="Press [enter] to continue")
+    par(mfrow=c(3,1))
+    acf(pg$y[r,burn],lag.max=100, main='Host - most active')
+    text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$y[r,burn]))))
+    round(effectiveSize(pg$y[r,burn]))
+    acf(pg$w[c,burn],lag.max=100, main='Parasite - most active')
+    text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$w[c,burn]))))
+    acf(pg$eta[burn],lag.max=100, main='Scale parameter')
+    text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$eta[burn]))))
 }
