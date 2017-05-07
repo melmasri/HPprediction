@@ -381,43 +381,53 @@ cross.validate.set<-function(Z, rate= 0.2){
 }
 
 cross.validate.fold<-function(Z, n= 10){
-    ##  n-fold cross validation
+    ## n-fold cross validation
     ## Returns a matrix of 3 columns, the first two are the (row,col) index of the pair,
     ## the third is the group
     if(max(range(Z))>1) Z[Z>0]<-1
     pairs = which(Z==1, arr.ind=T)
-    col1 = which(colSums(Z)<3)
-    col2 = which(colSums(Z)==3)
     if(length(col1)>0)
-        pairs = pairs[-which(pairs[,'col'] %in% col1),]
-    size = floor(nrow(pairs)/n)
-    gr = rep(1:n, each = size)
-    if(nrow(pairs) %% size!=0)
-        gr = c(gr, rep(n,(nrow(pairs) %% size) ))
-    pairs = cbind(pairs[sample(nrow(pairs), nrow(pairs)), ], gr = gr)
+        pairs = pairs[-which(pairs[,'col'] %in% which(colSums(Z)<3)),]
+        
+    colm = pmax(colSums(Z) -2 , 0)
+    size = floor(sum(colm)/n)
+    gr = rep(size, n)
+    if(sum(colm) %% size!=0)
+        gr[n] =  gr[n] + sum(colm) %% size
 
-    col.good = setdiff(unique(pairs[,'col']), col2)
+    pair.list = list()
+    for(i in 1:n){
+        bank=c()
+        for(k in 1:gr[i]){
+            a = which(colm>0)
+            b = a[sample(length(a),1)]
+            bank = c(bank, b)
+            colm[b] = colm[b]-1
+        }
+        pair.list[[i]]<-bank
+    }
+
     
-    aux = lapply(as.vector(col2), function(r){
-        s =as.vector(which(pairs[,'col'] == r))
-        same  = pairs[s, 'gr']
-        l = same
-        if(same[2]==same[1])
-            l =  c(same[1],sample((1:n)[-same[1]],1), same[3])
-        if(same[3]==same[1])
-            l =  c(l[1],l[2], sample((1:n)[-l[1:2]],1))
-        if(l[3]==l[2])
-            l =  c(l[1],l[2], sample((1:n)[-l[1:2]],1))
-        cbind(s, l) 
-    })
+    gr.list= list()
+    bank= c()
+    for(i in 1:n){
+        a= table(pair.list[[i]])
+        gr.rows = unlist(sapply(1:length(a), function(r){
+            b = which(pairs[,'col']== as.numeric(names(a[r])))
+            b =setdiff(b, bank)
+            b[sample.int(length(b), a[r])]
+        }))
+        bank = c(bank, gr.rows)
+        gr.list[[i]]<-cbind(gr.rows, i)
+    }
+
+    aux = do.call('rbind', gr.list)
+    pairs = cbind(pairs[aux[,1], ],gr= aux[,2])
     
-    aux = do.call('rbind', aux)
-    pairs[aux[,1], 'gr']<-aux[,2]
     print(sprintf("Actual cross-validation rate is %0.3f" , table(pairs[,'gr'])/sum(1*(Z>0))))
     pairs[order(pairs[,'gr']),]
     
 }
-
 
 
 postertior.predictive<-function(Z,Z_cross, param, dist, lambda.old){
