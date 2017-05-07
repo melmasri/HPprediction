@@ -386,7 +386,7 @@ cross.validate.fold<-function(Z, n= 10){
     ## the third is the group
     if(max(range(Z))>1) Z[Z>0]<-1
     pairs = which(Z==1, arr.ind=T)
-    if(length(col1)>0)
+    if(length(which(colSums(Z)<3))>0)
         pairs = pairs[-which(pairs[,'col'] %in% which(colSums(Z)<3)),]
         
     colm = pmax(colSums(Z) -2 , 0)
