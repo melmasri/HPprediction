@@ -217,14 +217,12 @@ for (i in seq_along(rates)){
 
 ls()
 # save.image("tree_transforms.RData")
-load("tree_transforms.RData")
+load("GMPD_tree_transforms.RData")
 
 # Results table
 # res <- list(lambda=res_lambda, delta=res_delta, kappa=res_kappa, ou=res_ou, eb=res_eb)
 res <- c(res_lambda, res_delta, res_kappa, res_ou, res_eb)
 trans_name <- c("lambda", "delta", "kappa", "ou", "eb")
-
-unlist(m.auc)
 
 df_trans_gmpd <- NULL
 
@@ -259,7 +257,7 @@ str(df_trans_gmpd)
 # Plotting
 for (i in 1:length(unique(df_trans_gmpd$trans))) {
 	transf <- unique(df_trans_gmpd$trans)[i]
-	pdf(paste("trans",transf,"5foldCV.pdf", sep="_"))
+	pdf(paste("GMPD",transf,"5foldCV.pdf", sep="_"))
 	dat <- df_trans_gmpd[df_trans_gmpd$trans==transf,]
 	plot(dat$m.auc ~ dat$value, xlab=paste(transf), ylab="Mean AUC across 5 folds", main=paste0("AUC for phylogenetic distance transformed by ",transf))
 	lines(dat$m.auc ~ dat$value)
@@ -284,3 +282,131 @@ for (i in 1:length(unique(df_trans_gmpd$trans))) {
 
 # m.auc = lapply(res_eb, function(x) mean(sapply(x, function(r) r$tb$auc)))
 # plot(unlist(m.auc)~rates)
+
+
+
+### EID
+
+load("comEID-PS.RData")
+
+
+# Convert count to binary
+com[com>1] <- 1
+
+#!~/bin/R
+#################################3
+## loading Distance
+## Phylogenetic Distance Matrix
+obj.names = ls()
+library(ape)
+library(geiger)
+
+tree <- read.tree('../../Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+# com <- unname(com)
+
+#######################
+## set the correct prior.
+## Summary statistics
+cnames = colnames(com)
+rnames = rownames(com)
+# com = unname(com)
+# phy_dist = unname(phy_dist)
+
+source('../library.R', local=TRUE)
+pairs = cross.validate.fold(1*(com>0), n=5)
+tot.gr = length(unique(pairs[,'gr']))
+
+# par(mfrow=c(1,1))
+
+# Pagel's Lambda
+lambdas <- seq(0,1,0.05)
+res_lambda <- list(NULL)
+for (i in seq_along(lambdas)){
+    res_lambda[i] <- list(lapply(1:tot.gr, est_transform, pairs=pairs, Z = com, tree=tree, trans_type="lambda", trans_param=lambdas[i])) 
+}
+
+# Pagel's Delta 
+deltas <- seq(0.1,40,1.5)
+res_delta <- list(NULL)
+for (i in seq_along(deltas)){
+    res_delta[i] <- list(lapply(1:tot.gr, est_transform, pairs=pairs, Z = com, tree=tree, trans_type="delta", trans_param=deltas[i])) 
+}
+
+# Pagel's Kappa
+kappas <- c(seq(0,1.8,0.2),seq(2,6,0.4))
+length(kappas)
+res_kappa <- list(NULL)
+for (i in seq_along(kappas)){
+    res_kappa[i] <- list(lapply(1:tot.gr, est_transform, pairs=pairs, Z = com, tree=tree, trans_type="kappa", trans_param=kappas[i])) 
+}
+
+
+# OU model
+alphas <- seq(0.1,10,0.2)
+length(alphas)
+res_ou <- list(NULL)
+for (i in seq_along(alphas)){
+    res_ou[i] <- list(lapply(1:tot.gr, est_transform, pairs=pairs, Z = com, tree=tree, trans_type="OU", trans_param=alphas[i])) 
+}
+
+
+# EB model
+# Rate (a) of zero returns original tree
+rates <- seq(-0.1,0.05,0.005)
+length(rates)
+res_eb <- list(NULL)
+for (i in seq_along(rates)){
+    res_eb[i] <- list(lapply(1:tot.gr, est_transform, pairs=pairs, Z = com, tree=tree, trans_type="EB", trans_param=rates[i])) 
+}
+
+ls()
+# save.image("EID_tree_transforms.RData")
+# load("EID_tree_transforms.RData")
+
+# Results table
+# res <- list(lambda=res_lambda, delta=res_delta, kappa=res_kappa, ou=res_ou, eb=res_eb)
+res <- c(res_lambda, res_delta, res_kappa, res_ou, res_eb)
+trans_name <- c("lambda", "delta", "kappa", "ou", "eb")
+
+df_trans_eid <- NULL
+
+for (i in seq_along(res)){
+
+	# name <- trans_name[i]
+
+	m.auc = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb$auc)))
+	m.thresh = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb$thres)))
+	m.pred = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb$pred)))
+	m.hold.out = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb$hold.out)))
+
+	m.auc.all = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb.all$auc)))
+	m.thresh.all = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb.all$thres)))
+	m.pred.all = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb.all$pred)))
+	m.hold.out.all = lapply(res[i], function(x) mean(sapply(x, function(r) r$tb.all$hold.out)))
+	
+	df <- data.frame(Database="EID", m.auc=unlist(m.auc),m.thresh=unlist(m.thresh),m.pred=unlist(m.pred),m.hold.out=unlist(m.hold.out),
+                 m.auc.all=unlist(m.auc.all),m.thresh.all=unlist(m.thresh.all),m.pred.all=unlist(m.pred.all),m.hold.out.all=unlist(m.hold.out.all))
+	df_trans_eid <- rbind(df_trans_eid, df)
+}
+
+df_trans_eid <- cbind(value = c(lambdas,deltas,kappas,alphas,rates),df_trans_eid)
+df_trans_eid <- cbind(trans = c(rep("lambda", length(lambdas)),
+								 rep("delta", length(deltas)),
+								 rep("kappa", length(kappas)),
+								 rep("ou", length(alphas)),
+								 rep("eb", length(rates))),df_trans_eid)
+
+str(df_trans_eid)
+
+# Plotting
+for (i in 1:length(unique(df_trans_eid$trans))) {
+	transf <- unique(df_trans_eid$trans)[i]
+	pdf(paste("EID",transf,"5foldCV.pdf", sep="_"))
+	dat <- df_trans_eid[df_trans_eid$trans==transf,]
+	plot(dat$m.auc ~ dat$value, xlab=paste(transf), ylab="Mean AUC across 5 folds", main=paste0("AUC for phylogenetic distance transformed by ",transf))
+	lines(dat$m.auc ~ dat$value)
+	with(dat, abline(v=value[m.auc==max(m.auc)], col=2, lty=2))
+	dev.off()
+}
