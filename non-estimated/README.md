@@ -7,7 +7,7 @@ Testing AUC results when using the option `ALL` in rocCurves, without using any 
 ## Lambda transformation
 
 
-```
+```r
 load('comGMPD.RData')
 com=unname(com)
 phy_dist = unname(phy_dist)
@@ -37,10 +37,11 @@ plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter'
 
 ![comEID-PS file](img/lambda_trans_EID.png)
 
+
 | Data   | AUC max | Pred all max |
+|--------|---------|--------------|
 | GMPD   |   81.43 |        0.869 |
 | EID-PS |   82.77 |         0.76 |
-
 
 
 
