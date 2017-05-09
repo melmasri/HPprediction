@@ -48,7 +48,7 @@ plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter'
 ## Kappa transformation
 
 
-```
+```r
 load('comGMPD.RData')
 tree <- read.tree('../Data/mammals.tre')
 tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
@@ -69,9 +69,12 @@ aux =sapply(grid, function(eta){
 
 ```
 
-| Data   | AUC max | Pred all max | eta | 
-| GMPD   |   82.6  |        0.695 | 1.7 | 
+
+| Data   | AUC max | Pred all max | eta |
+|--------|---------|--------------|-----|
+| GMPD   |    82.6 |        0.695 | 1.7 |
 | EID-PS |   80.19 |         0.73 | 1.7 |
+
 
 ![comGMPD file](img/kappa_trans_GMPD.png)
 ![comGMPD file](img/kappa_trans_EID.png)
