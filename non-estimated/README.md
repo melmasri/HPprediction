@@ -4,7 +4,7 @@
 ## Settings
 Testing AUC results when using the option `ALL` in rocCurves, without using any cross validation
 
-## Lambda transformation
+## Lambda transformation - Self coding in R
 
 
 ```r
@@ -33,17 +33,54 @@ plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter'
 
 ```
 
-![comGMPD file](img/lambda_trans_GMPD.png)
-
-![comEID-PS file](img/lambda_trans_EID.png)
-
-
 | Data   | AUC max | Pred all max |
 |--------|---------|--------------|
 | GMPD   |   81.43 |        0.869 |
 | EID-PS |   82.77 |         0.76 |
 
 
+![comGMPD file](img/lambda_trans_GMPD.png)
+
+![comEID-PS file](img/lambda_trans_EID.png)
+
+### Lambda transform using geiger
+
+
+```r
+library(geiger)
+load('comGMPD.RData')
+tree <- read.tree('../Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+Z= 1*(com>0)
+
+grid=seq(0.1,1,0.05)
+aux =sapply(grid, function(eta){
+    print(eta)
+    phy_dist<- cophenetic(rescale(tree, "lambda", eta))
+    phy_dist = dist_ordering(phy_dist, com)
+    dd =1/(phy_dist)
+    diag(dd)<-0
+    pdist = dd %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    cbind(eta=eta, tb=tb)
+})
+
+png('img/lambda_trans_GMP-geiger.png')
+plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
+dev.off()
+
+```
+
+| Data   | AUC max | Pred all max | eta | 
+|--------|---------|--------------|-----|
+| GMPD   |   81.36 |        0.71 | 1 | 
+| EID-PS |   81.38 |         0.71 | 1 |
+
+![comGMPD file](img/lambda_trans_GMPD-geiger.png)
+
+![comEID-PS file](img/lambda_trans_EID-geiger.png)
 
 ## Kappa transformation
 
