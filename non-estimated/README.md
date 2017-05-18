@@ -115,3 +115,115 @@ aux =sapply(grid, function(eta){
 
 ![comGMPD file](img/kappa_trans_GMPD.png)
 ![comGMPD file](img/kappa_trans_EID.png)
+
+
+
+## BM transformation
+
+
+```r
+library(geiger)
+source('library.R')
+load('comGMPD.RData')
+tree <- read.tree('../Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+grid=seq(0.1,4,0.1)
+Z= 1*(com>0)
+aux =sapply(grid, function(eta){
+    print(eta)
+    phy_dist<- cophenetic(rescale(tree, "BM", eta))
+    phy_dist = dist_ordering(phy_dist, com)
+    dd =1/phy_dist
+    diag(dd)<-0
+    pdist = dd %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    cbind(eta=eta, tb=tb)
+})
+
+png('BM_trans_GMP-geiger.png')
+plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
+dev.off()
+```
+
+
+| Data   | AUC max | Pred all max | eta |
+|--------|---------|--------------|-----|
+| GMPD   |    81.66 |        0.71 | 2.4 |
+
+
+
+![comGMPD file](img/BM_trans_GMP-geiger.png)
+
+## OU transformation
+
+
+```r
+library(geiger)
+source('library.R')
+load('comGMPD.RData')
+tree <- read.tree('../Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+grid=seq(0.1,4,0.1)
+Z= 1*(com>0)
+aux =sapply(grid, function(eta){
+    print(eta)
+    phy_dist<- cophenetic(rescale(tree, "OU", eta))
+    phy_dist = dist_ordering(phy_dist, com)
+    dd =1/phy_dist
+    diag(dd)<-0
+    pdist = dd %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    cbind(eta=eta, tb=tb)
+})
+
+png('OU_trans_GMP-geiger.png')
+plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
+dev.off()
+```
+
+![comGMPD file](img/OU_trans_GMP-geiger.png)
+
+
+## EB transformation
+
+```r
+library(geiger)
+source('library.R')
+load('comGMPD.RData')
+tree <- read.tree('../Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+grid=seq(-.05,0.05,0.001)
+Z= 1*(com>0)
+aux =sapply(grid, function(eta){
+    print(eta)
+    phy_dist<- cophenetic(rescale(tree, "EB", eta))
+    phy_dist = dist_ordering(phy_dist, com)
+    dd =1/phy_dist
+    diag(dd)<-0
+    pdist = dd %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    cbind(eta=eta, tb=tb)
+})
+
+png('EB_trans_GMP-geiger.png')
+plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
+dev.off()
+
+```
+
+
+| Data   | AUC max | Pred all max | eta |
+|--------|---------|--------------|-----|
+| GMPD   |    84.09 |        0.77 | -0.025 |
+
+
+![comGMPD file](img/EB_trans_GMP-geiger.png)
