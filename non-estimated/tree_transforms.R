@@ -1,7 +1,7 @@
 # tree transformations
 
 require(ape)
-require(geiger)
+# require(geiger)
 
 set.seed(20150508)
 
@@ -18,6 +18,7 @@ lambda_trees <- list(NULL)
 for (i in seq_along(lambdas)){
 	lambda_trees[i] <- list(rescale(tree, "lambda", lambdas[i]))
 }
+
 
 par(mfrow=c(1,4))
 plot(lambda_trees[[1]])
@@ -105,6 +106,12 @@ plot(rate_trees[[21]])
 title("rate: 1.0")
 plot(rate_trees[[31]])
 title("rate: 2.0")
+
+par(mfrow=c(1,1))
+plot(rate_trees[[31]])
+
+is.ultrametric(rate_trees[[31]])
+is.ultrametric(rate_trees[[1]])
 
 
 
@@ -216,7 +223,7 @@ for (i in seq_along(rates)){
 }
 
 ls()
-# save.image("tree_transforms.RData")
+# save.image("GMPD_tree_transforms.RData")
 load("GMPD_tree_transforms.RData")
 
 # Results table
@@ -410,3 +417,42 @@ for (i in 1:length(unique(df_trans_eid$trans))) {
 	with(dat, abline(v=value[m.auc==max(m.auc)], col=2, lty=2))
 	dev.off()
 }
+
+
+### table
+
+# top m.auc
+df_trans_eid[df_trans_eid$m.auc==max(df_trans_eid$m.auc),]
+df_trans_gmpd[df_trans_gmpd$m.auc==max(df_trans_gmpd$m.auc),]
+
+# top m.auc.all
+df_trans_eid[df_trans_eid$m.auc.all==max(df_trans_eid$m.auc.all),]
+df_trans_gmpd[df_trans_gmpd$m.auc.all==max(df_trans_gmpd$m.auc.all),]
+
+df_full <- rbind(df_trans_gmpd, df_trans_eid)
+
+library(xtable)
+tab <- xtable(df_full)
+print(tab, file="tree_trans_table.tex")
+
+# EB model
+# Rate (a) of zero returns original tree
+rates <- c(-0.035, -0.02, 0, 0.02)
+eb_trees <- list(NULL)
+for (i in seq_along(rates)){
+	eb_trees[i] <- list(rescale(tree, "EB", rates[i]))
+}
+
+par(mfrow=c(1,4))
+plot(eb_trees[[1]], tip.label=FALSE)
+title("rate: -0.035")
+plot(eb_trees[[2]], tip.label=FALSE)
+title("rate: -0.02")
+plot(eb_trees[[3]], tip.label=FALSE)
+title("rate: 0.00")
+plot(eb_trees[[4]], tip.label=FALSE)
+title("rate: 0.02")
+
+# interpretation...
+df_full[df_full$m.auc>87,]
+df_full[df_full$m.auc.all>82,]
