@@ -56,7 +56,7 @@ Z= 1*(com>0)
 grid=seq(0.1,1,0.05)
 aux =sapply(grid, function(eta){
     print(eta)
-    phy_dist<- cophenetic(rescale(tree, "lambda", eta))
+    phy_dist<- cophenetic(rescale(rescale(tree, "lambda", eta)), "depth", depth=1)
     phy_dist = dist_ordering(phy_dist, com)
     dd =1/(phy_dist)
     diag(dd)<-0
@@ -93,7 +93,7 @@ Z= 1*(com>0)
 
 grid=seq(0,4,0.1)
 aux =sapply(grid, function(eta){
-    phy_dist<- cophenetic(rescale(tree, "kappa", eta))
+    phy_dist<- cophenetic(rescale(rescale(tree, "kappa", eta)), "depth", depth=1)
     phy_dist = dist_ordering(phy_dist, com)
     dd =1/phy_dist
     diag(dd)<-0
@@ -132,7 +132,7 @@ grid=seq(0.1,4,0.1)
 Z= 1*(com>0)
 aux =sapply(grid, function(eta){
     print(eta)
-    phy_dist<- cophenetic(rescale(tree, "BM", eta))
+    phy_dist<- cophenetic(rescale(rescale(tree, "BM", eta)), "depth", depth=1)
     phy_dist = dist_ordering(phy_dist, com)
     dd =1/phy_dist
     diag(dd)<-0
@@ -171,7 +171,7 @@ grid=seq(0.1,4,0.1)
 Z= 1*(com>0)
 aux =sapply(grid, function(eta){
     print(eta)
-    phy_dist<- cophenetic(rescale(tree, "OU", eta))
+    phy_dist<- cophenetic(rescale(rescale(tree, "OU", eta)), "depth", depth=1)
     phy_dist = dist_ordering(phy_dist, com)
     dd =1/phy_dist
     diag(dd)<-0
@@ -203,7 +203,7 @@ grid=seq(-.05,0.05,0.001)
 Z= 1*(com>0)
 aux =sapply(grid, function(eta){
     print(eta)
-    phy_dist<- cophenetic(rescale(tree, "EB", eta))
+    phy_dist<- cophenetic(rescale(rescale(tree, "EB", eta)), "depth", depth=1)
     phy_dist = dist_ordering(phy_dist, com)
     dd =1/phy_dist
     diag(dd)<-0
