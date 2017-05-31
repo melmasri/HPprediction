@@ -270,3 +270,61 @@ plot(rescale(tree,"depth",depth=1000))
 EB with tree scaled to depth of 1000
 
 ![comGMPD file](img/EB_trans_GMP-geiger_depth1000.png)
+
+
+
+# Testing ICM likelihood for dist only model
+
+
+
+```r
+load('~/Github/ICM/comGMPD.RData')
+tree <- read.tree('~/Github/Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+# Testing all names in hosts in com exist in tree
+if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
+		print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
+		com <- com[rownames(com)%in%tree$tip.label,]
+}
+
+source('library.R')
+source('gen.R')
+dd = cophenetic(rescale(tree, 'EB', 0))
+aux <- sapply(rownames(dd), function(r) which(r==rownames(com)))
+com = com[aux,]
+Z= unname(com)
+Z = 1*(Z>0)
+tree = rescale(tree, 'depth',1)
+
+tree.ht = arrange.tree(tree)
+grid=seq(0, 10,.01)
+aa = sapply(1:nrow(Z), function(i){
+aux =sapply(grid, function(eta){
+    print(eta)
+    pdist.new = cophenetic(eb.phylo(tree, tree.ht, eta))
+    pdist.new =1/pdist.new
+    diag(pdist.new)<-0
+    pdist.new = c(pdist.new[i,]%*% Z)
+    U <- rExp.mean(pdist.new)
+    U[Z[i,]==0]<-1
+    likeli = sum(log(pdist.new)*Z[i,] ) - sum(U*(pdist.new))
+    likeli1 = sum(log(pdist.new)*Z[i,] )
+    likeli3= -sum(U*(pdist.new))
+    c(eta,likeli, likeli1, likeli3, range(pdist.new))
+})
+aux[,which.max(aux[2,])]
+
+})
+
+png('likei-ICM-distOnly.png')
+plot(aa[1,],aa[2,])
+dev.off()
+
+> rowMeans(aa)
+[1]   7.751422764 -58.544774142 -41.644924361 -16.899849781   0.005214484
+[6]   0.356118372
+
+```
+
+![comGMPD file](img/likei-ICM-distOnly.png)
