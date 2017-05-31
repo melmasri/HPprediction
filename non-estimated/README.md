@@ -259,7 +259,7 @@ aux =sapply(grid, function(eta){
     cbind(eta=eta, tb=tb)
 })
 
-png('EB_trans_GMP-geiger_depth1000.png')
+png('img/EB_trans_GMP-geiger_depth1000.png')
 plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
 dev.off()
 
