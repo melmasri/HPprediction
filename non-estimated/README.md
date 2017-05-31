@@ -149,7 +149,7 @@ aux =sapply(grid, function(eta){
     cbind(eta=eta, tb=tb)
 })
 
-png('BM_trans_GMP-geiger.png')
+png('img/BM_trans_GMP-geiger.png')
 plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
 dev.off()
 ```
@@ -188,7 +188,7 @@ aux =sapply(grid, function(eta){
     cbind(eta=eta, tb=tb)
 })
 
-png('OU_trans_GMP-geiger.png')
+png('img/OU_trans_GMP-geiger.png')
 plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
 dev.off()
 ```
@@ -220,7 +220,7 @@ aux =sapply(grid, function(eta){
     cbind(eta=eta, tb=tb)
 })
 
-png('EB_trans_GMP-geiger.png')
+png('img/EB_trans_GMP-geiger.png')
 plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
 dev.off()
 
@@ -262,6 +262,8 @@ aux =sapply(grid, function(eta){
 png('img/EB_trans_GMP-geiger_depth1000.png')
 plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
 dev.off()
+
+plot(rescale(tree,"depth",depth=1000))
 
 ```
 
