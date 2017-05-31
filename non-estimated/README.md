@@ -104,6 +104,10 @@ aux =sapply(grid, function(eta){
     cbind(eta=eta, tb=tb)
 })
 
+png('img/kappa_trans_GMP-geiger.png')
+plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
+dev.off()
+
 ```
 
 
@@ -116,6 +120,8 @@ aux =sapply(grid, function(eta){
 ![comGMPD file](img/kappa_trans_GMPD.png)
 ![comGMPD file](img/kappa_trans_EID.png)
 
+Kappa geiger
+![comGMPD file](img/kappa_trans_GMP-geiger.png)
 
 
 ## BM transformation
