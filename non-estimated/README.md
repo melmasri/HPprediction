@@ -233,3 +233,38 @@ dev.off()
 
 
 ![comGMPD file](img/EB_trans_GMP-geiger.png)
+
+
+## EB transformation - depth 1000
+
+```r
+library(geiger)
+source('library.R')
+load('comGMPD.RData')
+tree <- read.tree('../Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+grid=seq(-.05,0.05,0.001)
+Z= 1*(com>0)
+aux =sapply(grid, function(eta){
+    print(eta)
+    phy_dist<- cophenetic(rescale(rescale(tree, "EB", eta), "depth", depth=1000))
+    phy_dist = dist_ordering(phy_dist, com)
+    dd =1/phy_dist
+    diag(dd)<-0
+    pdist = dd %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    cbind(eta=eta, tb=tb)
+})
+
+png('EB_trans_GMP-geiger_depth1000.png')
+plot(unlist(aux['eta',]), unlist(aux['tb.auc',]), ylab = 'AUC', xlab='parameter')
+dev.off()
+
+```
+
+EB with tree scaled to depth of 1000
+
+![comGMPD file](img/EB_trans_GMP-geiger_depth1000.png)
