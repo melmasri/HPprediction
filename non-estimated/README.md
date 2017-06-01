@@ -427,8 +427,9 @@ dev.off()
 ## GMPD ICM with EB model
 
 held out interactions are kept the same accross all runs in the following table
-|----------------------------+-------+-------------+-------+----------+-----------------+-----------+------------|
+
 | Description                |   AUC |   Threshold | Total | Hold out | Pred (hold out) |  Pred all |        Eta |
+|----------------------------|-------|-------------|-------|----------|-----------------|-----------|------------|
 | Dist-only (orginial depth) | 81.47 |   0.2180451 |  3966 |      496 |        0.828629 |  0.774584 | 0.03457597 |
 | Full (orginial depth)      | 88.02 |   0.8721805 |  3966 |      496 |       0.8427419 | 0.8250126 | 0.03278149 |
 | Full (depth=1)             | 84.35 |  0.02506266 |  3966 |      496 |       0.7379032 | 0.7302068 |   7.660382 |
