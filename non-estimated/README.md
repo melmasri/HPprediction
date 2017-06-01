@@ -328,3 +328,94 @@ dev.off()
 ```
 
 ![comGMPD file](img/likei-ICM-distOnly.png)
+
+
+# AUC vs. log-likelihood plot for GMPD EB model
+
+```r
+### GMPD
+load('~/Github/ICM/comGMPD.RData')
+tree <- read.tree('~/Github/Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+
+# Testing all names in hosts in com exist in tree
+if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
+		print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
+		com <- com[rownames(com)%in%tree$tip.label,]
+}
+source('library.R')
+source('gen.R')
+dd = cophenetic(rescale(tree, 'EB', 0))
+aux <- sapply(rownames(dd), function(r) which(r==rownames(com)))
+com = com[aux,]
+Z= unname(com)
+Z = 1*(Z>0)
+
+grid=seq(-1, 1, 0.1)
+aux =sapply(grid, function(eta){
+    print(eta)
+    ##  phy_dist = cophenetic(eb.phylo(tree, tree.ht, eta))
+    phy_dist = cophenetic(rescale(tree, 'EB', eta))
+    phy_dist =1/phy_dist
+    diag(phy_dist)<-0
+    pdist = phy_dist %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=600, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    U <- rExp(pdist)
+    likeli = sum((log(pdist))*Z)- sum(U*(pdist))
+    cbind(eta=eta, tb=tb, likeli = likeli)
+})
+aux = t(aux)
+aux = data.frame(aux)
+
+png('AUC-log-liekihood-originalTree.png')
+par(mar = c(5,5,2,5))
+with(aux, plot(eta, tb.auc, col='red', ylab = 'AUC', xlab = 'eta'))
+par(new = TRUE)
+with(aux, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2))
+axis(side = 4)
+mtext(side = 4, line = 3, 'log-likelihood')
+legend('topleft', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+dev.off()
+
+```
+
+![comGMPD file](img/AUC-log-liekihood-originalTree.png)
+
+
+
+## Depth 1
+
+```r
+tree= rescale(tree, 'depth', 1)
+grid=seq(-5, 10, 1)
+aux =sapply(grid, function(eta){
+    print(eta)
+    ##  phy_dist = cophenetic(eb.phylo(tree, tree.ht, eta))
+    phy_dist = cophenetic(rescale(tree, 'EB', eta))
+    phy_dist =1/phy_dist
+    diag(phy_dist)<-0
+    pdist = phy_dist %*% Z
+    P = 1-exp(-pdist)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=600, all=TRUE)
+    tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
+    U <- rExp(pdist)
+    likeli = sum((log(pdist))*Z)- sum(U*(pdist))
+    cbind(eta=eta, tb=tb, likeli = likeli)
+})
+aux = t(aux)
+aux = data.frame(aux)
+
+png('AUC-log-liekihood-originalTree-depth-1.png')
+par(mar = c(5,5,2,5))
+with(aux, plot(eta, tb.auc, col='red', ylab = 'AUC', xlab = 'eta'))
+par(new = TRUE)
+with(aux, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2))
+axis(side = 4)
+mtext(side = 4, line = 3, 'log-likelihood')
+legend('topleft', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+dev.off()
+```
+
+![comGMPD file](img/AUC-log-liekihood-originalTree-depth-1.png)
