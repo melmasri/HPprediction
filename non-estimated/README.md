@@ -331,6 +331,8 @@ dev.off()
 
 
 # AUC vs. log-likelihood plot for GMPD EB model
+The parameters estimates at highest predictive accuracy does not match the one at highest pseudo log-likelihood. This is an expected behaviour since the pseudo metohd is used. Examples with original and depth =1 are given below. 
+
 
 ```r
 ### GMPD
@@ -343,6 +345,7 @@ if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
 		print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
 		com <- com[rownames(com)%in%tree$tip.label,]
 }
+
 source('library.R')
 source('gen.R')
 dd = cophenetic(rescale(tree, 'EB', 0))
@@ -350,8 +353,7 @@ aux <- sapply(rownames(dd), function(r) which(r==rownames(com)))
 com = com[aux,]
 Z= unname(com)
 Z = 1*(Z>0)
-
-grid=seq(-1, 1, 0.1)
+grid=seq(-0.04, 0.02, 0.005)
 aux =sapply(grid, function(eta){
     print(eta)
     ##  phy_dist = cophenetic(eb.phylo(tree, tree.ht, eta))
@@ -360,9 +362,10 @@ aux =sapply(grid, function(eta){
     diag(phy_dist)<-0
     pdist = phy_dist %*% Z
     P = 1-exp(-pdist)
-    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=600, all=TRUE)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
     tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
-    U <- rExp(pdist)
+    U <- rExp.mean(pdist)
+    U[Z==0]<-1
     likeli = sum((log(pdist))*Z)- sum(U*(pdist))
     cbind(eta=eta, tb=tb, likeli = likeli)
 })
@@ -371,25 +374,40 @@ aux = data.frame(aux)
 
 png('AUC-log-liekihood-originalTree.png')
 par(mar = c(5,5,2,5))
-with(aux, plot(eta, tb.auc, col='red', ylab = 'AUC', xlab = 'eta'))
-par(new = TRUE)
-with(aux, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2))
-axis(side = 4)
-mtext(side = 4, line = 3, 'log-likelihood')
-legend('topleft', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+plot(unlist(aux$eta), unlist(aux$tb.auc),  xlab="eta",ylab="AUC", col='red')
+par(new=T)
+plot(unlist(aux$eta), unlist(aux$likeli), axes=F, xlab="",ylab="", col='blue')
+axis(4, ylim=c(0,max(unlist(aux$likeli))),lwd=2)
+mtext(4,text="Likeli", line=2)
+legend('bottomright', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
 dev.off()
+
+aux[which.max(aux$likeli),]
+aux[which.max(aux$tb.auc),]
+
+> aux[which.max(aux$likeli),]
+    eta tb.auc  tb.thresh tb.tot.inter tb.hold.out tb.pred tb.pred.all
+11 0.01   79.6 0.02005013         3966           0     NaN   0.6984367
+      likeli
+11 -16413.98
+> aux[which.max(aux$tb.auc),]
+     eta tb.auc tb.thresh tb.tot.inter tb.hold.out tb.pred tb.pred.all
+4 -0.025  84.09  0.716792         3966           0     NaN   0.7849218
+     likeli
+4 -234301.4
+> 
 
 ```
 
 ![comGMPD file](img/AUC-log-liekihood-originalTree.png)
 
 
-
 ## Depth 1
 
 ```r
-tree= rescale(tree, 'depth', 1)
-grid=seq(-5, 10, 1)
+tree=rescale(tree, 'depth',1)
+
+grid=seq(-1, 10, 0.5)
 aux =sapply(grid, function(eta){
     print(eta)
     ##  phy_dist = cophenetic(eb.phylo(tree, tree.ht, eta))
@@ -398,9 +416,10 @@ aux =sapply(grid, function(eta){
     diag(phy_dist)<-0
     pdist = phy_dist %*% Z
     P = 1-exp(-pdist)
-    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=600, all=TRUE)
+    roc = rocCurves(Z=Z, Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
     tb  = ana.table(Z, Z, roc=roc, plot=FALSE)
-    U <- rExp(pdist)
+    U <- rExp.mean(pdist)
+    U[Z==0]<-1
     likeli = sum((log(pdist))*Z)- sum(U*(pdist))
     cbind(eta=eta, tb=tb, likeli = likeli)
 })
@@ -409,13 +428,21 @@ aux = data.frame(aux)
 
 png('AUC-log-liekihood-originalTree-depth-1.png')
 par(mar = c(5,5,2,5))
-with(aux, plot(eta, tb.auc, col='red', ylab = 'AUC', xlab = 'eta'))
-par(new = TRUE)
-with(aux, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2))
-axis(side = 4)
-mtext(side = 4, line = 3, 'log-likelihood')
-legend('topleft', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+plot(unlist(aux$eta), unlist(aux$tb.auc),  xlab="eta",ylab="AUC", col='red')
+par(new=T)
+plot(unlist(aux$eta), unlist(aux$likeli), axes=F, xlab="",ylab="", col='blue')
+axis(4, ylim=c(0,max(unlist(aux$likeli))),lwd=2)
+mtext(4,text="Likeli", line=2)
+legend('bottomright', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
 dev.off()
+> aux[which.max(aux$likeli),]
+   eta tb.auc  tb.thresh tb.tot.inter tb.hold.out tb.pred tb.pred.all    likeli
+17   7  73.74 0.02255639         3966           0     NaN   0.6464952 -17228.98
+> aux[which.max(aux$tb.auc),]
+  eta tb.auc tb.thresh tb.tot.inter tb.hold.out tb.pred tb.pred.all    likeli
+6 1.5  79.18 0.9448622         3966           0     NaN   0.6991931 -419610.4
+> 
+
 ```
 
 ![comGMPD file](img/AUC-log-liekihood-originalTree-depth-1.png)
