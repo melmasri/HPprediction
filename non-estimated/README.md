@@ -448,6 +448,58 @@ dev.off()
 ![comGMPD file](img/AUC-log-liekihood-originalTree-depth-1.png)
 
 
+# Analysis of difference between prediction accuracy and max liklihood parameter
+
+## Row sums of Z versus maximum log-likelihood estimator of eta
+
+```r
+load('~/Github/ICM/comGMPD.RData')
+tree <- read.tree('~/Github/Data/mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
+# Testing all names in hosts in com exist in tree
+if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
+		print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
+		com <- com[rownames(com)%in%tree$tip.label,]
+}
+
+source('library.R')
+source('gen.R')
+Z = 1*(com>0)
+
+grid=seq(-0.06, 0.05,.005)
+aa = sapply(1:nrow(Z), function(i){
+    aux =sapply(grid, function(eta){
+        print(eta)
+        pdist.new = cophenetic(rescale(tree, 'EB', eta))
+        pdist.new = dist_ordering(pdist.new, Z)
+        pdist.new =1/pdist.new
+        diag(pdist.new)<-0
+        pdist.new = c(pdist.new[i,]%*% Z)
+        U <- rExp.mean(pdist.new)
+        U[Z[i,]==0]<-1
+        likeli = sum(log(pdist.new)*Z[i,] ) - sum(U*(pdist.new))
+        c(eta,likeli)
+    })
+    aux[,which.max(aux[2,])]
+})
+
+aa = data.frame(t(aa))
+aa = cbind(aa, mr = rowSums(Z))
+colnames(aa)<-c('eta', 'likeli', 'mr')
+
+png('RowSums-vs-log-likeli-max-eta.png')
+par(mar = c(5,5,2,5))
+with(aa, plot(eta, mr, col='red', ylab = 'rowSums Z', xlab = 'eta'))
+par(new = TRUE)
+with(aa, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2, col='blue'))
+axis(side = 4)
+mtext(side = 4, line = 3, 'log-likelihood')
+legend('bottomright', legend = c('rowSums Z', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+dev.off()
+
+```
+
+![comGMPD file](img/RowSums-vs-log-likeli-max-eta.png)
 
 # Some table results
 
