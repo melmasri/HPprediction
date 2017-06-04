@@ -460,9 +460,9 @@ aux =sapply(grid, function(eta){
     pdist.new = dist_ordering(pdist.new, Z)
     pdist.new =1/pdist.new
     diag(pdist.new)<-0
+    P  = 1-exp(-pdist.new%*%Z)
     pdist.new = t(sapply(1:nrow(Z), function(r) pdist.new[r, 1:r]%*%Z[1:r, ]))
     pd0= !(pdist.new==0)
-    P  = 1-exp(-pdist.new)
     U <- rExp.mean(pdist.new)
     U[Z==0]<-1
     roc = rocCurves(Z=1*(com>0), Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
@@ -485,15 +485,16 @@ legend('bottomright', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lt
 dev.off()
 
 > aux[which.max(aux$likeli), ]
-     eta    likeli   auc     thresh tot.inter hold.out pred  pred.all V9
-14 0.005 -13129.72 70.83 0.02255639      3966        0  NaN 0.5590015  0
-         V10 V11       V12
-14 0.5694468   0 0.8426845
+     eta    likeli   auc     thresh tot.inter hold.out pred  pred.all
+14 0.005 -13129.72 80.41 0.03759398      3966        0  NaN 0.7072617
+            V9       V10 V11       V12
+14 0.003441657 0.7526167   0 0.8426845
 > aux[which.max(aux$auc), ]
-     eta    likeli   auc    thresh tot.inter hold.out pred  pred.all V9 V10 V11
-6 -0.035 -407635.3 73.29 0.8546366      3966        0  NaN 0.6802824  0   1   0
-       V12
-6 278.1383
+     eta    likeli   auc   thresh tot.inter hold.out pred  pred.all         V9
+8 -0.025 -113613.5 84.09 0.716792      3966        0  NaN 0.7849218 0.02532242
+  V10 V11      V12
+8   1   0 64.50747
+> 
 
 ```
 
@@ -504,6 +505,7 @@ dev.off()
 Original tree depth
 
 ```r
+
 grid=seq(-.06,0.05, 0.005)
 aux =sapply(grid, function(eta){
     print(eta)
@@ -512,6 +514,7 @@ aux =sapply(grid, function(eta){
     pdist.new = dist_ordering(pdist.new, Z)
     pdist.new =1/pdist.new
     diag(pdist.new)<-0
+    P  = 1-exp(-pdist.new%*%Z)
     zero.r = rep(0, nrow(Z))
     dd2 = lapply(1:ncol(Z), function(r){
         r=Z[,r]
@@ -526,7 +529,6 @@ aux =sapply(grid, function(eta){
     pdist.right= sapply(dd2, function(r) colSums(r))
     pdist.new = pdist.right
     pd0= !(pdist.new==0)
-    P  = 1-exp(-pdist.new)
     U <- rExp.mean(pdist.new)
     U[Z==0]<-1
     roc = rocCurves(Z=1*(com>0), Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
@@ -547,18 +549,17 @@ axis(side = 4)
 mtext(side = 4, line = 3, 'log-likelihood')
 legend('bottomright', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
 dev.off()
-
 > aux[which.max(aux$likeli), ]
-    eta    likeli  auc     thresh tot.inter hold.out pred pred.all         V9
-15 0.01 -15777.62 74.8 0.02255639      3966        0  NaN 0.580938 0.00199782
-         V10         V11 V12
-15 0.6321206 0.001999818   1
+     eta    likeli  auc     thresh tot.inter hold.out pred  pred.all         V9
+X15 0.01 -15777.62 79.6 0.02005013      3966        0  NaN 0.6984367 0.00199782
+          V10         V11 V12
+X15 0.4962578 0.001999818   1
 > aux[which.max(aux$auc), ]
-     eta    likeli   auc    thresh tot.inter hold.out pred  pred.all         V9
-11 -0.01 -40671.33 78.17 0.1629073      3966        0  NaN 0.7244075 0.01289798
-         V10        V11      V12
-         11 0.9999931 0.01298188 11.88622
-         
+      eta    likeli   auc   thresh tot.inter hold.out pred  pred.all         V9
+X8 -0.025 -236362.1 84.09 0.716792      3966        0  NaN 0.7849218 0.02532242
+   V10        V11      V12
+   X8   1 0.02564855 102.2754
+            
 ```
 
 ![comGMPD file](img/AUC-log-liekihood-originalTree-full-likeli-full-order.png)
