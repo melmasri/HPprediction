@@ -499,6 +499,70 @@ dev.off()
 
 ![comGMPD file](img/AUC-log-liekihood-originalTree-full-likeli-random-order.png)
 
+## Using Full likelihood with full order
+
+Original tree depth
+
+```r
+grid=seq(-.06,0.05, 0.005)
+aux =sapply(grid, function(eta){
+    print(eta)
+    ##pdist.new = cophenetic(eb.phylo(tree, tree.ht, eta))
+    pdist.new = cophenetic(rescale(tree, 'EB', eta))
+    pdist.new = dist_ordering(pdist.new, Z)
+    pdist.new =1/pdist.new
+    diag(pdist.new)<-0
+    zero.r = rep(0, nrow(Z))
+    dd2 = lapply(1:ncol(Z), function(r){
+        r=Z[,r]
+            a = order(r, decreasing=TRUE)
+            ord.dist=pdist.new[a,a]
+            r= r[a]
+        cc = sapply(2:(nrow(Z)-1), function(x) ord.dist[x, ]*c(r[1:x],zero.r[(x+1):n_y] ))
+        cc = cbind(0, cc, ord.dist[n_y, ]*r)
+        cc[1,1]<-1
+        cc[,order(a)]
+    })
+    pdist.right= sapply(dd2, function(r) colSums(r))
+    pdist.new = pdist.right
+    pd0= !(pdist.new==0)
+    P  = 1-exp(-pdist.new)
+    U <- rExp.mean(pdist.new)
+    U[Z==0]<-1
+    roc = rocCurves(Z=1*(com>0), Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(1*(com>0), Z, roc=roc, plot=FALSE)
+    likeli = sum(log((pdist.new[pd0]))*Z[pd0])- sum((U*(pdist.new))[pd0]) 
+    c(eta,likeli, tb, range(P), range(pdist.new))
+})
+
+aux = data.frame(t(aux))
+colnames(aux)[c(1,2)]<-c('eta', 'likeli')
+
+png('AUC-log-liekihood-originalTree-full-likeli-full-order.png')
+par(mar = c(5,5,2,5))
+with(aux, plot(eta, auc, col='red', ylab = 'AUC', xlab = 'eta'))
+par(new = TRUE)
+with(aux, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2, col='blue'))
+axis(side = 4)
+mtext(side = 4, line = 3, 'log-likelihood')
+legend('bottomright', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+dev.off()
+
+> aux[which.max(aux$likeli), ]
+    eta    likeli  auc     thresh tot.inter hold.out pred pred.all         V9
+15 0.01 -15777.62 74.8 0.02255639      3966        0  NaN 0.580938 0.00199782
+         V10         V11 V12
+15 0.6321206 0.001999818   1
+> aux[which.max(aux$auc), ]
+     eta    likeli   auc    thresh tot.inter hold.out pred  pred.all         V9
+11 -0.01 -40671.33 78.17 0.1629073      3966        0  NaN 0.7244075 0.01289798
+         V10        V11      V12
+         11 0.9999931 0.01298188 11.88622
+         
+```
+
+![comGMPD file](img/AUC-log-liekihood-originalTree-full-likeli-full-order.png)
+
 
 # Analysis of difference between prediction accuracy and max liklihood parameter
 
