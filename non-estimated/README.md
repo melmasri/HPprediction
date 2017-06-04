@@ -331,10 +331,52 @@ dev.off()
 
 
 # AUC vs. log-likelihood plot for GMPD EB model
-The parameters estimates at highest predictive accuracy does not match the one at highest pseudo log-likelihood. This is an expected behaviour since the pseudo metohd is used. Examples with original and depth =1 are given below. 
+The parameters estimates at highest predictive accuracy does not match the one at highest pseudo log-likelihood. This is an expected behaviour since the pseudo method is used. Examples with original and depth =1 are given below.
+
+
+>   After lengthy analysis and looking at few research papers. The discrepancy between the parameters estimate that achieves highest AUC versus highest log-likelihood is is due to some theoretical issues. First the AUC method does not depend on any model assumption, expect the probability of 1 function of 1-exp(-delta(x)), where delta(x) is a tree transformation. This suggest that the distance only model parametrization, though achieves high predictive accuracy, is not the best model for the data, thus the discrepancy. Nonetheless, by adding affinity parameters, the model seems to have higher predictive accuracy than naive point estimate (1-exp(-delta(eta))), though the eta parameter discrepancy still exits.
+
+> The maximum AUC parameter estimate represents the best cut-off value between the categories 0 and 1. The maximum-likelihood estimator maximized the given model's likelihood. See the following section plots for log-probability densities of the 0 and 1 categories under eta estimates.
+
+
+
+## Log-probabilities for 0 and 1 categories, for ROC and Log-Likeli eta parameters
 
 
 ```r
+pdist.new = cophenetic(rescale(tree, 'EB', 0.01))
+pdist.new =1/pdist.new
+diag(pdist.new)<-0
+pdist.new = pdist.new%*% Z
+P = 1-exp(-pdist.new)
+
+colass = rgb(0,0.8,0.8,0.5)
+colnoass = rgb(1,0,0.4,0.4,0.5)
+png('AUC-log-likeli-prob-likelihood-method.png')
+hist(log(P[com>0]),col=colass,main ='Log-likeli method', ylab = 'Probability', freq=FALSE, xlab='Log of probability', ylim = c(0,2), xlim=c(-8,0), breaks=25)
+hist(log(P[com==0]),col=colnoass,freq=FALSE, add=TRUE, breaks=25)
+legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass))
+dev.off()
+
+pdist.new = cophenetic(rescale(tree, 'EB', -0.025))
+pdist.new =1/pdist.new
+diag(pdist.new)<-0
+pdist.new = pdist.new%*% Z
+P = 1-exp(-pdist.new)
+
+png('AUC-log-likeli-prob-ROC-method.png')
+hist(log(P[com>0]),col=colass,main ='ROC-method', ylab = 'Probability', freq=FALSE, xlab='Log of probability', ylim = c(0,4), xlim=c(-4,0), breaks=25)
+hist(log(P[com==0]),col=colnoass,freq=FALSE, add=TRUE, breaks=40)
+legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass))
+dev.off()
+
+```
+
+![comGMPD file](img/AUC-log-likeli-prob-likelihood-method.png)
+
+![comGMPD file](img/AUC-log-likeli-prob-ROC-method.png)
+
+
 ### GMPD
 load('~/Github/ICM/comGMPD.RData')
 tree <- read.tree('~/Github/Data/mammals.tre')
