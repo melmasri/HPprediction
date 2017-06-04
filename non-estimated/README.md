@@ -447,6 +447,58 @@ dev.off()
 
 ![comGMPD file](img/AUC-log-liekihood-originalTree-depth-1.png)
 
+## Using full-likelihood with random order
+
+Using original depth
+
+```r
+grid=seq(-.06,0.05, 0.005)
+aux =sapply(grid, function(eta){
+    print(eta)
+    ##pdist.new = cophenetic(eb.phylo(tree, tree.ht, eta))
+    pdist.new = cophenetic(rescale(tree, 'EB', eta))
+    pdist.new = dist_ordering(pdist.new, Z)
+    pdist.new =1/pdist.new
+    diag(pdist.new)<-0
+    pdist.new = t(sapply(1:nrow(Z), function(r) pdist.new[r, 1:r]%*%Z[1:r, ]))
+    pd0= !(pdist.new==0)
+    P  = 1-exp(-pdist.new)
+    U <- rExp.mean(pdist.new)
+    U[Z==0]<-1
+    roc = rocCurves(Z=1*(com>0), Z_cross= Z, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb  = ana.table(1*(com>0), Z, roc=roc, plot=FALSE)
+    likeli = sum(log((pdist.new[pd0]))*Z[pd0])- sum((U*(pdist.new))[pd0]) 
+    c(eta,likeli, tb, range(P), range(pdist.new))
+})
+
+aux = data.frame(t(aux))
+colnames(aux)[c(1,2)]<-c('eta', 'likeli')
+
+png('AUC-log-liekihood-originalTree-full-likeli-random-order.png)')
+par(mar = c(5,5,2,5))
+with(aux, plot(eta, auc, col='red', ylab = 'AUC', xlab = 'eta'))
+par(new = TRUE)
+with(aux, plot(eta, likeli, axes=FALSE, xlab=NA, ylab=NA, cex=1.2, col='blue'))
+axis(side = 4)
+mtext(side = 4, line = 3, 'log-likelihood')
+legend('bottomright', legend = c('Pred Acc', 'likeli'), col=c('red', 'blue'), lty=c(1,1))
+dev.off()
+
+> aux[which.max(aux$likeli), ]
+     eta    likeli   auc     thresh tot.inter hold.out pred  pred.all V9
+14 0.005 -13129.72 70.83 0.02255639      3966        0  NaN 0.5590015  0
+         V10 V11       V12
+14 0.5694468   0 0.8426845
+> aux[which.max(aux$auc), ]
+     eta    likeli   auc    thresh tot.inter hold.out pred  pred.all V9 V10 V11
+6 -0.035 -407635.3 73.29 0.8546366      3966        0  NaN 0.6802824  0   1   0
+       V12
+6 278.1383
+
+```
+
+![comGMPD file](img/AUC-log-liekihood-originalTree-full-likeli-random-order.png)
+
 
 # Analysis of difference between prediction accuracy and max liklihood parameter
 
@@ -500,6 +552,9 @@ dev.off()
 ```
 
 ![comGMPD file](img/RowSums-vs-log-likeli-max-eta.png)
+
+
+
 
 # Some table results
 
