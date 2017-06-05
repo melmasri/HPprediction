@@ -7,8 +7,8 @@ option_list = list(
                 help="dataset file name, or an identifiable portion of it, if multiple files the first one is used. The file should have the RData extension.",
                 metavar="character"),
 	make_option(c("-r", "--runtype"), type="character",
-                default="10fold", 
-                help="possible run types, ALL, 10fold, affinity, distonly, weighted [default= %default]",
+                default="fold", 
+                help="possible run types, ALL, fold, affinity, distonly, weighted [default= %default]",
                 metavar="character"),
     make_option(c("-s", "--subset"), type="character",
                 default=NULL, 
@@ -26,10 +26,6 @@ option_list = list(
                 default=5, 
                 help="number of cores to use (1, 2, ..) [default= %default].",
                 metavar="integer"),
-    make_option("--icm.horiz", type="logical",
-                default=TRUE, 
-                help="block updates are done horizontally (ICM.HORIZ=TRUE), else diagonally [default= %default].",
-                metavar="logical"),
     make_option("--email", type="character",
                 default=NULL,
                 help="end-of-run email notification is sent to the supplied email if mailx is installed and configured",
@@ -45,7 +41,6 @@ if (is.null(opt$file)){
 }
 
 NO.CORES = opt$no.cores
-ICM.HORIZ = opt$icm.horiz
 SLICE = opt$no.cycles
 ## Setting up the file name 
 if(any(grepl(opt$file, list.files(recursive=FALSE), ignore.case = TRUE))){
@@ -84,7 +79,7 @@ if(grepl('uncertain', opt$runtype, ignore.case=TRUE)){
     run_script = '../main.10foldCV-uncertain.R'
     stop('this method is not yet implemented in this branch!')
 }
-if(grepl('(10fold|affinity|weighted|distonly)', opt$runtype, ignore.case =TRUE)){
+if(grepl('(fold|affinity|weighted|distonly)', opt$runtype, ignore.case =TRUE)){
     run_script = '../main.10foldCV.R'
     TYPE = toupper(opt$runtype)
 }

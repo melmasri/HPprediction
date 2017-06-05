@@ -15,21 +15,27 @@ print(TYPE)
 ## source('gen.R')
 load(DATAFILENAME)
 library(parallel)
+library(ape)
+library(geiger)
 
 if(length(grep('com', ls()))==0)
     stop("no object named 'com' in the data file.")
 
-if(length(grep('phy_dist', ls()))==0)
-    stop("no object named 'phy_dist' in the data file.")
+if(length(grep('tree', ls()))==0)
+    stop("no object named 'tree' in the data file.")
 
-if(is.null(dim(com)) | is.null(dim(phy_dist)))
-    stop("either 'com' or 'phy_dist' are not a matrix type.")
+tree <- read.tree('../mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
 
-if(!isSymmetric(phy_dist))
-    stop("matrix 'phy_dist' is not symmetric.")
+# Testing all names in hosts in com exist in tree
+if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
+		print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
+		com <- com[rownames(com)%in%tree$tip.label,]
+}
 
-if(nrow(com)!= nrow(phy_dist))
-    stop("matrix 'phy_dist' doesn't have the same number of rows as 'com'.")
+dd = cophenetic(rescale(tree, 'EB', 0))
+host.order <- sapply(rownames(dd), function(r) which(r==rownames(com)))
+com = com[host.order,]
 
 #######################
 ## set the correct prior.
@@ -37,49 +43,60 @@ if(nrow(com)!= nrow(phy_dist))
 cnames = colnames(com)
 rnames = rownames(com)
 com = unname(com)
-phy_dist = unname(phy_dist)
-pairs = cross.validate.fold(1*(com>0), n=5)
+pairs = cross.validate.fold(1*(com>0), n=4,2)
 tot.gr = length(unique(pairs[,'gr']))
+
 if(TYPE == 'WEIGHTED'){
     if(all(range(com)==c(0,1))) stop('command weighted was passed with a binary Z!')
     com_pa = com  
 }else com_pa=  1*(com>0)
 
-res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE, ICM.HORIZ, slice){
+res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, hyper, TYPE, ICM.HORIZ, slice){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
+    library(ape)
+    library(geiger)
 
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     
     if(TYPE == 'DISTONLY'){
-        param = ICM_est(com_paCross,slice=slice,dist=dist, eta=1,
-            hyper=hyper,AdaptiveMC = TRUE, distOnly=TRUE, ICM.HORIZ = ICM.HORIZ)
+        param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
+            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7, distonly= TRUE)
         aux  = getMean(param)
-        P = 1-  exp(-(dist^aux$eta) %*% com_paCross)
-    }
-    if(TYPE == 'AFFINITY'){
-        param=ICM_est(com_paCross,slice=slice,hyper=hyper,AdaptiveMC = TRUE, ICM.HORIZ = ICM.HORIZ)
-        aux = getMean(param)
-        P = 1-exp(-outer(aux$y,aux$w))
+        pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
+        diag(pdist)<-0
+        pdist = pdist%*%com_paCross
+        pdist[pdist==0] <-  Inf
+        P = 1- exp(-pdist)
     }
     if(TYPE == 'WEIGHTED'){
         if(all(range(Z)==c(0,1))) stop('A binary Z!')
         Z=log(Z+1)/2
         com_paCross = Z
         com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-        param = ICM_est(com_paCross,slice=slice ,dist= dist, eta=1,
-            hyper=hyper, AdaptiveMC = TRUE,ICM.HORIZ = ICM.HORIZ)
+         param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
+            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7)
         aux = getMean(param)
-        P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*% com_paCross))
+        pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
+        diag(pdist)<-0
+        pdist = pdist%*%com_paCross
+        pdist[pdist==0] <-  1
+        P = 1- exp(-outer(aux$y, aux$w)*pdist)
         Z= 1*(Z>0)
         com_paCross = 1*(com_paCross>0)
     }
-    if(TYPE == "10FOLD"){
-        param = ICM_est(com_paCross,slice=slice ,dist= dist,eta=1,
-            hyper = hyper, AdaptiveMC=TRUE,ICM.HORIZ= ICM.HORIZ)
+    if(TYPE == "FOLD"){
+        param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
+            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7)
         aux = getMean(param)
-        P = 1-  exp(-outer(aux$y, aux$w)*((dist^aux$eta)%*%com_paCross))
+        pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
+        diag(pdist)<-0
+        pdist = pdist%*%com_paCross
+        pdist[pdist==0] <-  1
+        P = 1- exp(-outer(aux$y, aux$w)*pdist)
+        Z= 1*(Z>0)
+        com_paCross = 1*(com_paCross>0)
     }
 
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
@@ -87,8 +104,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, dist, hyper, TYPE, ICM.HORIZ, sli
     roc.all = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, com_paCross, roc=roc.all, plot=FALSE)
     list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=pairs,Z = com_pa, dist=phy_dist,hyper=hyper, TYPE=TYPE,
-    ICM.HORIZ = ICM.HORIZ, slice = SLICE,
+},pairs=pairs,Z = com_pa, tree=tree, TYPE=TYPE, slice = SLICE,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES)) 
 
 if(SAVE_PARAM)
