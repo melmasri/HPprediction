@@ -262,15 +262,10 @@ get.P.mode <-function(param,Z, dist, lambda.old){
     1 - exp(-P)
 }
 
-rocCurves<-function(param,Z,Z_cross, dist, lambda.old,plot=TRUE,P,bins=200, all=FALSE){
+rocCurves<-function(Z,Z_cross,plot=TRUE,P,bins=200, all=FALSE){
     ## Computes the ROC curves as x = FPR and y = TPR
     ##  FPR = FP/(FP +TN)
     ##  TPR = TP/(TP+FN)
-    if(missing(P)){
-        if(missing(Z_cross))
-            P = get.P.mode(param, Z, dist, lambda.old) else
-    P = get.P.mode(param, Z_cross, dist,lambda.old)
-    }
 
     if(length(unique(as.vector(Z)))!=2) Z = 1*(Z>0)
     if(length(unique(as.vector(Z_cross)))!=2) Z_cross = 1*(Z_cross>0)
@@ -380,16 +375,17 @@ cross.validate.set<-function(Z, rate= 0.2){
     Z
 }
 
-cross.validate.fold<-function(Z, n= 10){
+cross.validate.fold<-function(Z, n= 10, min.per.col = 1){
     ## n-fold cross validation
     ## Returns a matrix of 3 columns, the first two are the (row,col) index of the pair,
     ## the third is the group
     if(max(range(Z))>1) Z[Z>0]<-1
     pairs = which(Z==1, arr.ind=T)
-    if(length(which(colSums(Z)<3))>0)
-        pairs = pairs[-which(pairs[,'col'] %in% which(colSums(Z)<3)),]
-        
-    colm = pmax(colSums(Z) -2 , 0)
+    
+    if(length(which(colSums(Z)<min.per.col))>0)
+        pairs = pairs[-which(pairs[,'col'] %in% which(colSums(Z)<min.per.col)),]
+    
+    colm = pmax(colSums(Z) -min.per.col , 0)
     size = floor(sum(colm)/n)
     gr = rep(size, n)
     if(sum(colm) %% size!=0)
@@ -750,19 +746,23 @@ ana.plot<-function(pg){
     burn = burn[burn>0]
 
     burn = -c(1:3)
-    if(!is.null(pg$eta)) par(mfrow=c(3,1)) else
-    par(mfrow=c(2,1))
+    nrow=2
+    if(!is.null(pg$eta)) nrow=nrow+1
+    
+    par(mfrow=c(nrow,1))
     
     plot(pg$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host parameter')
     plot(pg$w[c,burn], type='l', main = '', col=rho_col,  xlab = 'Iteration', ylab='Parasite parameter')
     if(!is.null(pg$eta))
         plot(pg$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Scaling parameter')
+
     if(!is.null(pg$g)){
         par(mfrow=c(1,1))
         hist(pg$g[burn],xlab='Posterior estimate of g',main='', col=g_col)
     }
+
     readline(prompt="Press [enter] to continue")
-    par(mfrow=c(3,1))
+    par(mfrow=c(nrow,1))
     acf(pg$y[r,burn],lag.max=100, main='Host - most active')
     text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$y[r,burn]))))
     round(effectiveSize(pg$y[r,burn]))

@@ -677,3 +677,15 @@ held out interactions are kept the same accross all runs in the following table
 | Dist-only (depth=1)        | 70.74 | 0.005012531 |  3966 |      496 |        0.828629 | 0.7695411 |     7.7467 |
 
 
+
+
+# Extra points
+
+
+## On single-host parasites
+
+When allowing for single-host parasites (comGMPD.single.RData), one needs to specify delta(eta) for these singel-host parasites. In case the full model is used, a possible option is delta(eta)=1, which implies the affinity only model applies for when z_hj=1. When the distance only model is used, setting delta(eta)=1 does not make sense, sine there are no affinity parameters, such that P( z_hj=1)= 1-exp(-1), a fixed probability ratio. The more sensebile option here is setting delta(eta)=Inf, such tha 1-exp(-Inf)=1.
+
+In terms of the full model, the performace of the
+
+
