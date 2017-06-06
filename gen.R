@@ -36,7 +36,7 @@ rEta.cophenetic<-function(eta.old,tree,tree.ht,pdist.old, pd0,i, Z, ywU, eta_sd 
         pdist.new = c(dist[i,]%*%Z)
         no0 = which(pd0)
         if(length(no0)){
-            if(length(n0)==sum(Z[i,])) likeli = -Inf else 
+            if(length(no0)==sum(Z[i,])) likeli = -Inf else 
             likeli = sum(((log(pdist.new)- log(pdist.old))*Z[i,])[-no0])-
                 sum((ywU*(pdist.new - pdist.old))[-no0]) 
         }else{
