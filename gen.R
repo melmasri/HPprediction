@@ -146,7 +146,7 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
     s=1
     tryCatch(
         for(s in 1:slice){
-            if(s%%1000==0)
+            if(s%%100==0)
                 print(sprintf('Slice %d', s))
             petain[1] = peta[s]
             if(!is.null(el$tree)){

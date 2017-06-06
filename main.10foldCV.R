@@ -29,8 +29,8 @@ tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
 
 # Testing all names in hosts in com exist in tree
 if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
-		print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
-		com <- com[rownames(com)%in%tree$tip.label,]
+    print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
+    com <- com[rownames(com)%in%tree$tip.label,]
 }
 
 dd = cophenetic(rescale(tree, 'EB', 0))
@@ -43,7 +43,7 @@ com = com[host.order,]
 cnames = colnames(com)
 rnames = rownames(com)
 com = unname(com)
-pairs = cross.validate.fold(1*(com>0), n=4,2)
+pairs = cross.validate.fold(1*(com>0), n=5,2)
 tot.gr = length(unique(pairs[,'gr']))
 
 if(TYPE == 'WEIGHTED'){
@@ -59,10 +59,14 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, hyper, TYPE, ICM.HORIZ, sli
 
     com_paCross = Z
     com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
+
+    eta_sd = 0.005
+    a_y = a_w = 0.15
+    beta = 0.5
     
     if(TYPE == 'DISTONLY'){
         param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
-            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7, distOnly= TRUE)
+            burn=0.5,eta_sd = eta_sd, distOnly= TRUE, beta =beta)
         aux  = getMean(param)
         pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
         diag(pdist)<-0
@@ -76,7 +80,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, hyper, TYPE, ICM.HORIZ, sli
         com_paCross = Z
         com_paCross[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
          param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
-            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7)
+            burn=0.5,eta_sd = eta_sd, a_w =a_w, a_y= a_y, beta=beta)
         aux = getMean(param)
         pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
         diag(pdist)<-0
@@ -88,7 +92,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, hyper, TYPE, ICM.HORIZ, sli
     }
     if(TYPE == "FOLD"){
         param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
-            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7)
+            burn=0.5,eta_sd = eta_sd, a_w =a_w, a_y = a_y, beta=beta)
         aux = getMean(param)
         pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
         diag(pdist)<-0
