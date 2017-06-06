@@ -62,7 +62,7 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, hyper, TYPE, ICM.HORIZ, sli
     
     if(TYPE == 'DISTONLY'){
         param = ICM_est(Z=com_paCross,slice=slice, tree=tree,eta=0,
-            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7, distonly= TRUE)
+            burn=0.5,eta_sd = 0.01, a_w =0.7, a_y = 0.7, distOnly= TRUE)
         aux  = getMean(param)
         pdist= 1/cophenetic(rescale(tree, 'EB', aux$eta))
         diag(pdist)<-0
@@ -95,8 +95,6 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, hyper, TYPE, ICM.HORIZ, sli
         pdist = pdist%*%com_paCross
         pdist[pdist==0] <-  1
         P = 1- exp(-outer(aux$y, aux$w)*pdist)
-        Z= 1*(Z>0)
-        com_paCross = 1*(com_paCross>0)
     }
 
     roc = rocCurves(Z=Z, Z_cross= com_paCross, P=P, plot=FALSE, bins=400, all=FALSE)
