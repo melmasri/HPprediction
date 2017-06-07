@@ -10,7 +10,6 @@ print(DATAFILENAME)
 ## source('library.R')
 ## source('gen.R')
 load(DATAFILENAME)
-print(TYPE)
 #######################
 ## print tests
 library(ape)
