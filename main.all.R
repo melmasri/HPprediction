@@ -10,29 +10,35 @@ print(DATAFILENAME)
 ## source('library.R')
 ## source('gen.R')
 load(DATAFILENAME)
-
+print(TYPE)
 #######################
 ## print tests
+library(ape)
+library(geiger)
+
 if(length(grep('com', ls()))==0)
     stop("no object named 'com' in the data file.")
 
-if(length(grep('phy_dist', ls()))==0)
-    stop("no object named 'phy_dist' in the data file.")
+if(length(grep('tree', ls()))==0)
+    stop("no object named 'tree' in the data file.")
 
-if(is.null(dim(com)) | is.null(dim(phy_dist)))
-    stop("either 'com' or 'phy_dist' are not a matrix type.")
+tree <- read.tree('../mammals.tre')
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
 
-if(!isSymmetric(phy_dist))
-    stop("matrix 'phy_dist' is not symmetric.")
+# Testing all names in hosts in com exist in tree
+if(! all(sapply(rownames(com), function(r) r %in% tree$tip.label))) {
+    print('Warning! Not all hosts in com exist in tree. Hosts not found in tree will be removed.')
+    com <- com[rownames(com)%in%tree$tip.label,]
+}
 
-if(nrow(com)!= nrow(phy_dist))
-    stop("matrix 'phy_dist' doesn't have the same number of rows as 'com'.")
+dd = cophenetic(rescale(tree, 'EB', 0))
+host.order <- sapply(rownames(dd), function(r) which(r==rownames(com)))
+com = com[host.order,]
 
-## slice= ceiling(20000/ncol(com))
-slice = SLICE
-param = ICM_est(Z =1*(com>0),slice=slice ,dist= dist,eta=1,
-    hyper = hyper, AdaptiveMC=TRUE,ICM.HORIZ= ICM.HORIZ)
 
+param = ICM_est(Z =1*(com>0),slice=SLICE, tree=tree, eta=0, beta=0.5,
+    eta_sd=0.005, a_y = 0.15, a_w= 0.15)
+    
 if(SAVE_PARAM)
     save.image(file = 'param.RData')
 ##################################################
