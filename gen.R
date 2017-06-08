@@ -14,6 +14,26 @@ rExp.mean<-function(l){
     (1 - (l+1)*exp(-l))/(l*(1-exp(-l)))
 }
 
+rExp2<-function(l, g, Z, Z0){
+    p = 1- exp(-l)
+    unif = matrix(runif(length(l)), dim(p))
+    ## Method one P(z=0|g) = 1\delta_{s<0} + g\delta_{s>=0}
+    U = 1 + 0*p
+    U[!Z0] = -log(1- unif[!Z0]*p[!Z0])/(l[!Z0] + tol.err)
+    aa = (unif < g*p/(g*p + 1-p)) & Z0
+    U[aa] =  -log(1 - unif[aa]*(g*p[aa] + 1-p[aa])/g)/l[aa]
+    ## End of Method one
+    ## ## U = -log(unif*(1-Z) + (1-unif)*Z )/(l+tol.err)
+    ## aa = 1*(runif(sum(Z0))<= ((1-p)/(1-p + g*p))[Z0])
+    ## U[Z0]<-    U[Z0]^(1-aa) 
+    ## U
+    ## Method two P(z=1|g) = g\delta_{s<0} + 1\delta_{s>=0}
+    ## U = 1 + 0*p
+    ## aa = (unif < p/(p + g*(1-p))) & !Z0
+    ## U[aa] = -log(1- unif[aa]*(p[aa] + g*(1-p[aa])))/(l[aa])
+    U
+}
+
 raffinity.MH<-function(old, z, Ud, sig=0.1, hyper){
     a = hyper[1]
     b = hyper[2]
@@ -82,46 +102,72 @@ rHyper.Horiz<-function(old,Psi, m, sig = 0.1){
     u*new + (1-u)*old
 }
 
-ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
+rg<-function(Z,l,Y=0){
+    ## Method 1 P(Z=0|g) = 1 \delta(s<0) + g \delta(s>=0)
+    ##S = log(l) #- 0.5772
+    S = l
+    ZZ = 1*(S<1)
+    ## Method 1
+    ##ZZ = 1*(Y<1)
+    M = sum(ZZ*Z)         #Y >0 , Z=1,  N++ OR U<1(S>0) and Z=1
+    N = sum((1-Z)*ZZ) # Y=0, Z =1 , N-+   OR U<1(S>0) and Z=0
+    g = rbeta(1 , N + 1, M + 1)
+    ## End of method 1
+    ## Method 2
+    ## ZZ = 1*(S<0)
+    ## #ZZ = 1*(Y==1)
+    ## M = sum(ZZ*Z)         #Y >0 , Z=1,  N++
+    ## N = sum((1-Z)*ZZ) # Y=0, Z =1 , N-+
+    ## g = rbeta(1 , M + 1, N+ 1)
+    g
+}
 
+ICM_est<-function(Z, slice = 10, eta = 0, distOnly = FALSE, ...){
+    
     ## Warnings
     if(missing(Z)) stop('Interaction matrix is missing!')
 
+    
     ## Setting up parameters
 	n_w = ncol(Z);n_y = nrow(Z)
     n = n_w*n_y
 
-    ## Hyper parameters
     el <-list(...)
-    throw.out = if(is.null(el$burn)) floor(0.5*slice) else floor(el$burn*slice)
-    a_w = if(!is.null(el$a_w)) el$a_w else 1
-    a_y = if(!is.null(el$a_w)) el$a_y else 1
+    ## tree set-up
+    tree = if(!is.null(el$tree)) el$tree else
+    warning('No tree found, advised against using for affinity only model')
+    eta_sd = ifelse(!is.null(el$eta_sd), el$eta_sd, 0.005)
+    
+    ## Affinity parameter set-up
+    y = ifelse(!is.null(el$y), el$y , 1)
+    w = ifelse(!is.null(el$w), el$w , 1)
+    a_w = ifelse(!is.null(el$a_w), el$a_w, 1)
+    a_y = ifelse(!is.null(el$a_w), el$a_y,  1)
     b_w = b_y = 1;
-    tree = if(!is.null(el$tree)) el$tree else stop('no tree passed')
-    y = if(!is.null(el$y)) el$y else 1
-    w = if(!is.null(el$w)) el$w else 1
-    
-    y_sd = if(!is.null(el$y_sd)) el$y_sd else 1
-    w_sd = if(!is.null(el$wd_sd)) el$wd_sd else apply(Z, 2,sd)
-    
-    eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.1
-    beta = if(!is.null(el$beta)) el$beta else 1
+    y_sd = ifelse(!is.null(el$y_sd), el$y_sd, 0.2)
+    w_sd = ifelse(!is.null(el$wd_sd) ,el$wd_sd,0.2)
+
+    ## Burn in set-up
+    beta = ifelse(!is.null(el$beta), el$beta , 1)
+    throw.out = ifelse(is.null(el$burn), floor(0.5*slice), floor(el$burn*slice))
 
     print(sprintf("Run for %i slices, and %i burn ins",slice, throw.out))
     print(sprintf("Using affinity parameters: %s",!distOnly))
     print(sprintf("Using Similarity matrix: %s",!is.null(el$tree)))
     print(sprintf("Updating eta: %s",!missing(eta)))
+    print(sprintf("Using uncertainty: %s",!is.null(el$g)))
     print(sprintf('Input matrix is Binary: %s, with dimension:', all(range(Z)==c(0,1))))
     print(dim(Z))
 
     ## Variable holders
     y0<-matrix(y, nrow= n_y, ncol =slice+1)
     w0<-matrix(w, nrow= n_w, ncol =slice+1)
-
+    g0<-rep(0, slice+1)
     subItra = n_y 
-    w0in<-matrix(w, nrow= n_w, ncol =subItra+1)
-    y0in<-matrix(y, nrow= n_y, ncol =subItra+1)
+    w0in = matrix(w, nrow= n_w, ncol =subItra+1)
+    y0in = matrix(y, nrow= n_y, ncol =subItra+1)
     petain = rep(0, subItra+1)
+    g0in = rep(0, subItra+1)
     
 	Z0 <- Z==0
     U0 <- Z*0
@@ -133,7 +179,7 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
         pdist<- matrix(1, nrow(Z), ncol(Z))
     }
     else{
-        tree.ht = arrange.tree(tree)
+       tree.ht = arrange.tree(tree)
         dist = cophenetic(eb.phylo(tree, tree.ht, peta[1]))
         dist = 1/dist
         diag(dist)<-0
@@ -148,7 +194,7 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
         for(s in 1:slice){
             if(s%%100==0)
                 print(sprintf('Slice %d', s))
-            petain[1] = peta[s]
+            
             if(!is.null(el$tree)){
                 dist = cophenetic(eb.phylo(tree, tree.ht, peta[s]))
                 dist = 1/dist
@@ -159,8 +205,12 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
             
             ## Updatting latent scores
             yw = outer(y0[,s],w0[, s])
-            U0 <- rExp(pdist*yw)
-            U0[Z0] <- 1
+            if(is.null(el$g)){
+                U0 <- rExp(pdist*yw)
+                U0[Z0] <- 1
+            }else
+                U0 <-rExp2(pdist*yw, g0[s], Z, Z0)
+            
             
             Upd = U0*pdist
             for (i in 1:subItra){
@@ -181,6 +231,10 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
                         eta_sd)
                     petain[i+1] = new.eta$eta
                     pdist[i,] = new.eta$dist
+                }
+
+                if(!is.null(el$g)){
+                    g0in[i+1] = rg(Z[i,], l=U0[i,])
                 }
             }
             
@@ -207,6 +261,12 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
             }
             peta[s+1]<- sum(petain[-1]*mr)/sum(mr)
             petain = rep(peta[s+1], subItra+1)
+
+            if(!is.null(el$g)){
+                g0[s+1] = sum(g0in[-1]*mr)/sum(mr)
+                g0in = rep(g0[s+1], subItra+1)
+            }
+            
         }
        ,warning = function(w)
            {print(c('warning at (s,i):', c(s,i))); print(w);traceback()},
@@ -217,10 +277,9 @@ ICM_est<-function(Z, slice = 10, eta, distOnly=FALSE, ...){
     if(throw.out==0) throw.out = c(1:slice) else throw.out = -c(1:throw.out)
     y0 =  y0[,throw.out] 
     w0 =  w0[,throw.out]
-    if(!missing(eta)){
-        eta = peta[throw.out]
-    }else eta = NULL
-    param = list(w = w0, y = y0, burn_in = slice - max(-throw.out), throw.out = max(-throw.out),eta = eta, sd = list(w=w_sd, y = y_sd, eta= eta_sd))
+    if(!missing(eta))   eta = peta[throw.out] else eta = NULL
+    if(!is.null(el$g))  g = g0[throw.out] else g = NULL
+    param = list(w = w0, y = y0, burn_in = slice - max(-throw.out), throw.out = max(-throw.out),eta = eta,g =g, sd = list(w=w_sd, y = y_sd, eta= eta_sd))
     param
 }
 ##################################################
