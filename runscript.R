@@ -8,7 +8,7 @@ option_list = list(
                 metavar="character"),
 	make_option(c("-r", "--runtype"), type="character",
                 default="fold", 
-                help="possible run types, ALL, fold, affinity, distonly, weighted [default= %default]",
+                help="possible run types, ALL, fold, affinity, distonly, weighted, uncertain, [default= %default]",
                 metavar="character"),
     make_option(c("-s", "--subset"), type="character",
                 default=NULL, 
@@ -77,8 +77,8 @@ DATAFILENAME = paste0('../', DATAFILENAME)
 ## Choosing runscipt
 if(grepl('uncertain', opt$runtype, ignore.case=TRUE)){
     run_script = '../main.10foldCV-uncertain.R'
-    stop('this method is not yet implemented in this branch!')
 }
+
 if(grepl('(fold|affinity|weighted|distonly)', opt$runtype, ignore.case =TRUE)){
     run_script = '../main.10foldCV.R'
     TYPE = toupper(opt$runtype)
@@ -91,22 +91,6 @@ if(is.null(run_script) | is.null(subDir)){
     stop('something is wrong, the run script not found or no sub-directory is specified!')
 }
 
-## # Setting Hyper parameters
-if(!is.null(opt$subset)){
-    if(grepl('gmp', DATAFILENAME, ignore.case = TRUE))
-        hyper = list(parasiteHyper =c(0.32, 1), hostHyper = c(0.94,1), etaSamplingSD = c(0.01)) 
-    
-    if(grepl('eid', DATAFILENAME, ignore.case = TRUE))
-        hyper = list(parasiteHyper= c(0.35, 1), hostHyper =c(0.78, 1), etaSamplingSD = c(0.01)) 
-    
-}else{
-    if(grepl('gmp', DATAFILENAME, ignore.case = TRUE)){
-        hyper = list(parasiteHyper =c(0.25, 1), hostHyper = c(0.82,1), etaSamplingSD = c(0.005))
-    }
-    if(grepl('eid', DATAFILENAME, ignore.case = TRUE)){
-        hyper = list(parasiteHyper =c(0.2, 1), hostHyper = c(0.73,1), etaSamplingSD = c(0.005))
-    }
-}
 
 
 print("Arguments:")
