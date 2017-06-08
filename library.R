@@ -734,7 +734,7 @@ ana.table<-function(com, comCross, roc, plot=FALSE){
     tb
 }
 
-ana.plot<-function(pg){
+ana.plot<-function(pg, wait = TRUE){
     rho_col <- "blue"
     gamma_col <- "red"
     eta_col <- "darkgreen"
@@ -744,30 +744,53 @@ ana.plot<-function(pg){
     c = which.max(rowMeans(pg$w));c
     burn = pg$burn_in - 10000:1
     burn = burn[burn>0]
-
-    burn = -c(1:3)
-    nrow=2
-    if(!is.null(pg$eta)) nrow=nrow+1
+    
+    nrow=0
+    nrow = nrow + ifelse(max(pg$y) != min(pg$y), 1, 0)
+    nrow = nrow + ifelse(max(pg$w) != min(pg$w), 1, 0)
+    nrow = nrow + ifelse(!is.null(pg$eta), 1, 0)
+    nrow = nrow + ifelse(!is.null(pg$g), 1, 0)
     
     par(mfrow=c(nrow,1))
-    
-    plot(pg$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host parameter')
-    plot(pg$w[c,burn], type='l', main = '', col=rho_col,  xlab = 'Iteration', ylab='Parasite parameter')
+
+    if(max(pg$y) != min(pg$y)) 
+        plot(pg$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host parameter')
+
+    if(max(pg$w) != min(pg$w)) 
+        plot(pg$w[c,burn], type='l', main = '', col=rho_col,  xlab = 'Iteration', ylab='Parasite parameter')
+
     if(!is.null(pg$eta))
         plot(pg$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Scaling parameter')
 
-    if(!is.null(pg$g)){
-        par(mfrow=c(1,1))
-        hist(pg$g[burn],xlab='Posterior estimate of g',main='', col=g_col)
+    if(!is.null(pg$g))
+        plot(pg$g[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Uncertainty parameter')
+    
+    ## if(!is.null(pg$g)){
+    ##     par(mfrow=c(1,1))
+    ##     hist(pg$g[burn],xlab='Posterior estimate of g',main='', col=g_col)
+    ## }
+
+    if(wait)
+        readline(prompt="Press [enter] to continue")
+
+    par(mfrow=c(nrow,1))
+    if(max(pg$y) != min(pg$y)){
+        acf(pg$y[r,burn],lag.max=100, main='Host - most active')
+        text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$y[r,burn]))))
+        round(effectiveSize(pg$y[r,burn]))
+    }
+    if(max(pg$w) != min(pg$w)) {
+        acf(pg$w[c,burn],lag.max=100, main='Parasite - most active')
+        text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$w[c,burn]))))
+    }
+    if(!is.null(pg$eta)){
+        acf(pg$eta[burn],lag.max=100, main='Scale parameter')
+        text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$eta[burn]))))
     }
 
-    readline(prompt="Press [enter] to continue")
-    par(mfrow=c(nrow,1))
-    acf(pg$y[r,burn],lag.max=100, main='Host - most active')
-    text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$y[r,burn]))))
-    round(effectiveSize(pg$y[r,burn]))
-    acf(pg$w[c,burn],lag.max=100, main='Parasite - most active')
-    text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$w[c,burn]))))
-    acf(pg$eta[burn],lag.max=100, main='Scale parameter')
-    text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$eta[burn]))))
+    if(!is.null(pg$g)){
+        acf(pg$g[burn],lag.max=100, main='Uncertainty parameter')
+        text(50, 0.8, paste0('Effective sample size: ',round(effectiveSize(pg$g[burn]))))
+    }
+    
 }
