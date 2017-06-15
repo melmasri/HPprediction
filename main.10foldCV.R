@@ -21,9 +21,6 @@ library(geiger)
 if(length(grep('com', ls()))==0)
     stop("no object named 'com' in the data file.")
 
-if(length(grep('tree', ls()))==0)
-    stop("no object named 'tree' in the data file.")
-
 tree <- read.tree('../mammals.tre')
 tree <- drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(com)])
 

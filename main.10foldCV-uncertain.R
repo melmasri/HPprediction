@@ -110,6 +110,8 @@ ana.plot(paramG, wait=FALSE)
 
 paramMuG = getMean(paramG)
 pdist= 1/cophenetic(rescale(tree, 'EB', paramMuG$eta))
+plot(rescale(tree, 'EB', paramMuG$eta))
+paramMuG$eta
 diag(pdist)<-0
 pdist = pdist%*%com
 pdist[pdist==0] <-  1
@@ -118,6 +120,7 @@ PG = 1- exp(-outer(paramMuG$y, paramMuG$w)*pdist)
 PG1 = paramMuG$g*PG/(1-PG  + paramMuG$g*PG)
 PG1[com==1]<-PG[com==1]
 
+par(mfrow=c(1,1))
 rocG = rocCurves(Z =1*(com10>0), Z_cross = com, P=PG1, plot=TRUE, all=FALSE, bins=400)
 cbind(Model=c('with G', 'without G'), rbind( round(ana.table(com10, com, rocG), 4), round(ana.table(com10, com, roc), 4)))
 
@@ -138,7 +141,7 @@ dev.off()
 pairs = cross.validate.fold(com, n=5,2)
 tot.gr = length(unique(pairs[,'gr']))
 
-res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, SLICE){
+res = lapply(1:tot.gr ,function(x, pairs, Z, tree, SLICE){
     source('../library.R', local=TRUE)
     source('../gen.R', local=TRUE)
     library(ape)
@@ -190,8 +193,9 @@ res = mclapply(1:tot.gr ,function(x, pairs, Z, tree, SLICE){
     withOutG = list(param=aux, tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
     list(withG=withG, withOutG = withOutG)
-},pairs=pairs,Z = com,tree=tree, SLICE=SLICE,
-    mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
+},pairs=pairs,Z = com,tree=tree, SLICE=SLICE)
+
+##mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
 
 if(SAVE_PARAM)
     save.image(file = 'param.RData')

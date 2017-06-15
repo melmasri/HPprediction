@@ -8,7 +8,7 @@ option_list = list(
                 metavar="character"),
 	make_option(c("-r", "--runtype"), type="character",
                 default="fold", 
-                help="possible run types, ALL, fold, affinity, distonly, weighted, uncertain, [default= %default]",
+                help="possible run types, ALL, fold, affinity, distonly, weighted, NN uncertain, [default= %default]",
                 metavar="character"),
     make_option(c("-s", "--subset"), type="character",
                 default=NULL, 
@@ -86,6 +86,12 @@ if(grepl('(fold|affinity|weighted|distonly)', opt$runtype, ignore.case =TRUE)){
 
 if(grepl('ALL', opt$runtype, ignore.case = TRUE))
     run_script = '../main.all.R'
+
+
+if(grepl('NN', opt$runtype)){
+    run_script = '../main.NN.R'
+}
+
 
 if(is.null(run_script) | is.null(subDir)){
     stop('something is wrong, the run script not found or no sub-directory is specified!')
