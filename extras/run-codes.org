@@ -1,0 +1,4 @@
+
+
+
+echo "Rscript  runscript.R -f comGMPD.RData  -r FOLD --no.cycles=5000" | at now 

@@ -53,16 +53,15 @@ cnames = colnames(com)
 rnames = rownames(com)
 com = unname(com)
 com_pa = 1*(com>0)
-    
+
 if(grepl('GMP', DATAFILENAME)){
     com10 = com
     year = 2004
     aux = which(com10>year, arr.ind=T)
     com = 1*(com10>0)
     for(i in 1:nrow(aux))
-        if(sum(com[aux[i,1],])>1 & sum(com[,aux[i,2]])>2)
-            com[aux[i,1], aux[i,2]]<-0
-    print(sprintf("No. of left out interactions between year %d and end of dataset is %d", year, sum(1*(com10>0)) - sum(com>0)))
+        if(sum(com[aux[i,1],])>-1 & sum(com[,aux[i,2]])>1) com[aux[i,1], aux[i,2]]<-0
+        print(sprintf("No. of left out interactions between year %d and end of dataset is %d", year, sum(1*(com10>0)) - sum(com>0)))
     print(sprintf("accounts for %f%%  of the data", 100*(sum(1*(com10>0)) - sum(com>0))/sum(com10>0)))
     com10=1*(com10>0)
 }
@@ -138,7 +137,7 @@ lines(cbind(roc.all$roc$FPR, roc.all$roc$TPR), type='b', col='blue')
 dev.off()
 
 ##  FOLD CV for uncertainty
-pairs = cross.validate.fold(com, n=5,2)
+pairs = cross.validate.fold(com, n=5,1)
 tot.gr = length(unique(pairs[,'gr']))
 
 res = lapply(1:tot.gr ,function(x, pairs, Z, tree, SLICE){
