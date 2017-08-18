@@ -382,8 +382,11 @@ cross.validate.fold<-function(Z, n= 10, min.per.col = 1){
     if(max(range(Z))>1) Z[Z>0]<-1
     pairs = which(Z==1, arr.ind=T)
     
-    if(length(which(colSums(Z)<min.per.col))>0)
-        pairs = pairs[-which(pairs[,'col'] %in% which(colSums(Z)<min.per.col)),]
+    if(length(which(colSums(Z)<min.per.col))>0){
+        aux = which(pairs[,'col'] %in% which(colSums(Z)<min.per.col))
+        if(length(aux))
+            pairs = pairs[-aux,]
+    }
     
     colm = pmax(colSums(Z) -min.per.col , 0)
     size = floor(sum(colm)/n)
