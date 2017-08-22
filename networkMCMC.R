@@ -15,7 +15,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
     if(!all(range(Z)==c(0,1))){
-        warning('Z is converted to binary!', immediate. = TRUE)
+        warning('Z is converted to binary!', immediate. = TRUE, call.= FALSE)
         Z = 1*(Z>0)
     
     }
@@ -23,7 +23,8 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
 
     ## Ignoring tree when affinity model is chosen
     if(!is.null(tree) & grepl('aff', model.type,ignore.case = TRUE))
-        warning('affinity only model is chosen; ignoring tree!', immediate. = TRUE)
+        warning('affinity only model is chosen; ignoring tree!',
+                immediate. = TRUE, call. = FALSE)
 
     ## Conditions if input model is not binary 
     if(grepl('(dist|both)', model.type)){
@@ -36,14 +37,14 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
         ## testing that all tips exist in Z
         if(!all(tree$tip.label %in% rownames(Z))){
             warning('not all species in tree exist in Z, thus will be removed from tree!',
-                    immediate.= TRUE)
-            tree <- drop.tip(tree, tree$tip.label[!(tree$tip.label %in% rownames(Z))])
+                    immediate.= TRUE, call. = FALSE)
+                    tree <- drop.tip(tree, tree$tip.label[!(tree$tip.label %in% rownames(Z))])
         }
         
         ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% tree$tip.label)){
             warning('not all row-species in Z exist tree, thus will be removed from Z!',
-                    immediate.= TRUE)
+                    immediate.= TRUE, call. = FALSE)
             Z <- Z[rownames(Z) %in% tree$tip.label,]
         }
 
@@ -71,6 +72,10 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
     ## loading extra args
     el <-list(...)
     ## parameters set-up
+
+    nw = ncol(Z);ny = nrow(Z)
+    n = nw*ny                          
+
     y = ifelse(!is.null(el$y), el$y , 1)
     w = ifelse(!is.null(el$w), el$w , 1)
     a_w = ifelse(!is.null(el$a_w), el$a_w, 1)
@@ -82,9 +87,6 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
     ## Burn in set-up
     beta = ifelse(!is.null(el$beta), el$beta , 1)
     burn.in = ifelse(is.null(el$burn.in), floor(0.5*slices), floor(el$burn.in*slices))
-
-    nw = ncol(Z);ny = nrow(Z)
-    n = nw*ny                          
 
     print(sprintf("Run for %i slices, and %i burn-ins",slices, burn.in))
     ##    print(sprintf("Using uncertainty: %s",!is.null(el$g)))
@@ -193,7 +195,7 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
             {print(c('error at (s,i):', c(s,i))); print(e);traceback()} ,
         finally = print("Done!"))
 
-    if(burn.in==0) burn.in = 1 else burn.in = c(1:burn.in)
+    if(burn.in==0) burn.in = 1 else burn.in = 1:(burn.in+1)
     if(!distOnly){
         y0 =  y0[,-burn.in]
         w0 =  w0[,-burn.in]
@@ -208,6 +210,7 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
          burn.in = max(burn.in)-1,
          sd = list(w=w_sd, y = y_sd, eta= eta_sd))
 }
+
 
 ### ==================================================
 ### Supporting functions
