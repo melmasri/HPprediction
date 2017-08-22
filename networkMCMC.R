@@ -9,8 +9,8 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
     require(geiger)
     ## Running options:
     ## 1 - Full model(both);
-    ## 2 - Affinity only model (affinity);
-    ## 3 - distance only model (distance).
+    ## 2 - Affinity-only model (affinity);
+    ## 3 - distance-only model (distance).
     
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
@@ -19,31 +19,46 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
         Z = 1*(Z>0)
     
     }
-    if(slices==0) stop('no. of slices cannot be 0!')
+    if(any(rowSums(Z)==0)){
+        warning('empty rows in Z are removed!', immediate. = TRUE, call.= FALSE)
+        Z = Z[which(rowSums(Z)>0),]
+    } 
+    if(any(rowSums(Z)==0)){
+        warning('empty columns in Z are removed!', immediate. = TRUE, call.= FALSE)
+        Z = Z[,which(colSums(Z)>0)]
+    } 
+    if(slices==0)
+        stop('no. of slices cannot be 0!')
 
-    ## Ignoring tree when affinity model is chosen
-    if(!is.null(tree) & grepl('aff', model.type,ignore.case = TRUE))
-        warning('affinity only model is chosen; ignoring tree!',
-                immediate. = TRUE, call. = FALSE)
+    ## For affinity-only model 
+    if(grepl('aff', model.type,ignore.case = TRUE)){
+        if(!is.null(tree))
+            warning('affinity-only model is chosen; ignoring tree!',
+                    immediate. = TRUE, call. = FALSE)
+        print('Running affinity-only model...')
+        param = fullJoint_est(Z, iter = slices, uncertainty = uncertainty, ...)
+        return (list(param=param, Z = Z))
+    }
 
-    ## Conditions if input model is not binary 
+    ## For Full (both) and distance-only model
     if(grepl('(dist|both)', model.type)){
         if(is.null(tree))
-            stop('distance only model is chosen, but tree is null!')
+            stop('distance-only model is chosen, but tree is null!')
 
         if(!is.phylo(tree))
             stop('tree must be a phylogeny tree, see gieger!')
 
         ## testing that all tips exist in Z
         if(!all(tree$tip.label %in% rownames(Z))){
-            warning('not all species in tree exist in Z, thus will be removed from tree!',
+            warning('not all species in tree exist in Z; missing are removed from tree!',
                     immediate.= TRUE, call. = FALSE)
-                    tree <- drop.tip(tree, tree$tip.label[!(tree$tip.label %in% rownames(Z))])
+            tree <- drop.tip(tree,
+                             tree$tip.label[!(tree$tip.label %in% rownames(Z))])
         }
         
         ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% tree$tip.label)){
-            warning('not all row-species in Z exist tree, thus will be removed from Z!',
+            warning('not all row-species in Z exist tree; missing are removed from Z!',
                     immediate.= TRUE, call. = FALSE)
             Z <- Z[rownames(Z) %in% tree$tip.label,]
         }
@@ -63,16 +78,14 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
         param  = ICM_est(unname(Z),
             tree = tree,slices,  distOnly = grepl('dist', model.type),
             uncertainty = uncertainty, ...)
-        list(param = param,tree=tree, Z=Z)
+        return(list(param = param,tree=tree, Z=Z))
     }
-    
 }
 
 ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, ...){
     ## loading extra args
     el <-list(...)
     ## parameters set-up
-
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
 
@@ -92,18 +105,22 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
     ##    print(sprintf("Using uncertainty: %s",!is.null(el$g)))
 
     ## Variable holders
+    ## outer loop
     y0<-matrix(y, nrow= ny, ncol =slices+1)
     w0<-matrix(w, nrow= nw, ncol =slices+1)
     g0<-rep(0, slices+1)
+    peta = rep(0, slices)
+
+    ## inner loop
     subItra = ny 
     w0in = matrix(w, nrow= nw, ncol =subItra+1)
     y0in = matrix(y, nrow= ny, ncol =subItra+1)
     petain = rep(0, subItra+1)
     g0in = rep(0, subItra+1)
+
     Z0 <- Z==0
 	mc <- colSums(Z)
-	mr <- rowSums(Z>0)
-    peta = rep(0, slices)
+	mr <- rowSums(Z)
 
     ## Arranging the tree
     tree.ht = arrange.tree(tree)
@@ -189,8 +206,8 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
                 g0in = rep(g0[s+1], subItra+1)
             }
         }
-       ,warning = function(w)
-           {print(c('warning at (s,i):', c(s,i))); print(w);traceback()},
+       ,warning = function(war)
+           {print(c('warning at (s,i):', c(s,i))); print(war);traceback()},
         error =function(e)
             {print(c('error at (s,i):', c(s,i))); print(e);traceback()} ,
         finally = print("Done!"))
@@ -211,6 +228,86 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
          sd = list(w=w_sd, y = y_sd, eta= eta_sd))
 }
 
+fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
+    ## loading extra args
+    el <-list(...)
+
+    ## parameters set-up
+    nw = ncol(Z);ny = nrow(Z)
+    n = nw*ny                          
+
+    y = ifelse(!is.null(el$y), el$y , 1)
+    w = ifelse(!is.null(el$w), el$w , 1)
+    a_w = ifelse(!is.null(el$a_w), el$a_w, 1)
+    a_y = ifelse(!is.null(el$a_w), el$a_y,  1)
+    b_w = b_y = 1;
+    y_sd = ifelse(!is.null(el$y_sd), el$y_sd, 0.2)
+    w_sd = ifelse(!is.null(el$wd_sd) ,el$wd_sd,0.2)
+    batch.size = ifelse(!is.null(el$batch.size), el$batch.size, 50)
+    
+    ## Burn in set-up
+    beta = ifelse(!is.null(el$beta), el$beta , 1)
+    burn.in = ifelse(is.null(el$burn.in), floor(0.5*iter), floor(el$burn.in*iter))
+
+    print(sprintf("Run for %i iterations, and %i burn-ins",iter, burn.in))
+    ##    print(sprintf("Using uncertainty: %s",!is.null(el$g)))
+
+    ## Variable holders
+    y0<-matrix(y, nrow= ny, ncol =iter+1)
+    w0<-matrix(w, nrow= nw, ncol =iter+1)
+    g0<-rep(0, iter+1)
+    peta = rep(0, iter+1)
+    
+    Z0 <- Z==0
+	mc <- colSums(Z)
+	mr <- rowSums(Z)
+    s=1
+    tryCatch(
+        for(s in 1:iter){
+            if(s%%100==0)
+                print(sprintf('iteration %d', s))
+            
+            ## Updatting latent scores
+            if(!uncertainty){
+                U0 <- rExp(outer(y0[,s],w0[, s]))
+                U0[Z0] <- 1
+            }else
+                U0 <-rExp2(outer(y0[,s],w0[, s]), g0[s], Z, Z0)
+            
+            ## Updating the parasite parameters
+            w0[, s+1]<-raffinity.MH(w0[,s],mc,y0[,s]%*%U0,
+                                    sig=w_sd, c(a_w, 1))
+            ## Updating host parameters
+            y0[, s+1]<-raffinity.MH(y0[,s],mr, U0%*%w0[,s+1],
+                                    sig=y_sd, c(a_y, 1))
+            ## Uncertain parameter sampling
+            if(uncertainty)
+                g0[s+1] = rg(Z, l=U0)
+            
+            ## MH Adaptiveness
+            if(s%%batch.size==0){
+                ss = s+1 - 1:batch.size
+                ac =1- rowMeans(abs(w0[,ss] - w0[,ss+1])<tol.err)
+                w_sd = w_sd*exp(beta*(ac-0.44)/log(1 +s/batch.size))
+                
+                ac =1- rowMeans(abs(y0[,ss] - y0[,ss+1])<tol.err)
+                y_sd = y_sd*exp(beta*(ac-0.44)/log(1 +s/batch.size))
+                
+            }
+        }
+       ,warning = function(war)
+           {print(c('warning at iter:', s)); print(war);traceback()},
+        error =function(e)
+            {print(c('error at iter:', s)); print(e);traceback()} ,
+        finally = print("Done!"))
+
+    if(burn.in==0) burn.in = 1 else burn.in = 1:(burn.in+1)
+    y0 =  y0[,-burn.in]
+    w0 =  w0[,-burn.in]
+    if(uncertainty)  g0 = g0[-burn.in] else g0 = NULL
+    list(w = w0, y = y0, g = g0, burn.in = max(burn.in)-1,
+         sd = list(w=w_sd, y = y_sd))
+}
 
 ### ==================================================
 ### Supporting functions
