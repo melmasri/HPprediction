@@ -96,7 +96,9 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
     b_w = b_y = 1;
     y_sd = ifelse(!is.null(el$y_sd), el$y_sd, 0.2)
     w_sd = ifelse(!is.null(el$wd_sd) ,el$wd_sd,0.2)
+    eta = ifelse(is.null(el$eta), 0, el$eta)
     eta_sd = ifelse(!is.null(el$eta_sd), el$eta_sd, 0.005)
+
     ## Burn in set-up
     beta = ifelse(!is.null(el$beta), el$beta , 1)
     burn.in = ifelse(is.null(el$burn.in), floor(0.5*slices), floor(el$burn.in*slices))
@@ -109,7 +111,7 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = F
     y0<-matrix(y, nrow= ny, ncol =slices+1)
     w0<-matrix(w, nrow= nw, ncol =slices+1)
     g0<-rep(0, slices+1)
-    peta = rep(0, slices)
+    peta = rep(eta, slices)
 
     ## inner loop
     subItra = ny 
@@ -243,9 +245,9 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
     b_w = b_y = 1;
     y_sd = ifelse(!is.null(el$y_sd), el$y_sd, 0.2)
     w_sd = ifelse(!is.null(el$wd_sd) ,el$wd_sd,0.2)
-    batch.size = ifelse(!is.null(el$batch.size), el$batch.size, 50)
     
     ## Burn in set-up
+    batch.size = ifelse(!is.null(el$batch.size), el$batch.size, 50)
     beta = ifelse(!is.null(el$beta), el$beta , 1)
     burn.in = ifelse(is.null(el$burn.in), floor(0.5*iter), floor(el$burn.in*iter))
 
