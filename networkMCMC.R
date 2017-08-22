@@ -15,7 +15,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
     if(!all(range(Z)==c(0,1))){
-        warning('Z is converted to binary!')
+        warning('Z is converted to binary!', immediate. = TRUE)
         Z = 1*(Z>0)
     
     }
@@ -23,7 +23,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
 
     ## Ignoring tree when affinity model is chosen
     if(!is.null(tree) & grepl('aff', model.type,ignore.case = TRUE))
-        warning('affinity only model is chosen; ignoring tree!')
+        warning('affinity only model is chosen; ignoring tree!', immediate. = TRUE)
 
     ## Conditions if input model is not binary 
     if(grepl('(dist|both)', model.type)){
@@ -35,13 +35,15 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
 
         ## testing that all tips exist in Z
         if(!all(tree$tip.label %in% rownames(Z))){
-            warning('not all species in tree exist in Z, thus will be removed from tree!')
+            warning('not all species in tree exist in Z, thus will be removed from tree!',
+                    immediate.= TRUE)
             tree <- drop.tip(tree, tree$tip.label[!(tree$tip.label %in% rownames(Z))])
         }
         
         ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% tree$tip.label)){
-            warning('not all row-species in Z exist tree, thus will be removed from Z!')
+            warning('not all row-species in Z exist tree, thus will be removed from Z!',
+                    immediate.= TRUE)
             Z <- Z[rownames(Z) %in% tree$tip.label,]
         }
 
@@ -53,22 +55,22 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
         ## Making sure the order of hosts in Z and tree are the same
         aux = cophenetic(tree)
         row.order <- sapply(rownames(aux), function(r) which(r==rownames(Z)))
-        Z = Z[row.order,]
-        Z = unname(Z)
+        print('Ordering the rows of Z to match tree, and left ordering the columns..')
+        Z = lof(Z[row.order,])
 
-        return(ICM_est(Z, tree = tree,slices,  distOnly = grepl('dist', model.type), ...))
+        ## Running the MCMC
+        param  = ICM_est(unname(Z),
+            tree = tree,slices,  distOnly = grepl('dist', model.type),
+            uncertainty = uncertainty, ...)
+        list(param = param,tree=tree, Z=Z)
     }
     
 }
 
-ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FALSE, ...){
-    ## Setting up parameters
-	nw = ncol(Z);ny = nrow(Z)
-    n = nw*ny                          
-
+ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, ...){
     ## loading extra args
     el <-list(...)
-    ## Affinity parameter set-up
+    ## parameters set-up
     y = ifelse(!is.null(el$y), el$y , 1)
     w = ifelse(!is.null(el$w), el$w , 1)
     a_w = ifelse(!is.null(el$a_w), el$a_w, 1)
@@ -80,6 +82,9 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
     ## Burn in set-up
     beta = ifelse(!is.null(el$beta), el$beta , 1)
     burn.in = ifelse(is.null(el$burn.in), floor(0.5*slices), floor(el$burn.in*slices))
+
+    nw = ncol(Z);ny = nrow(Z)
+    n = nw*ny                          
 
     print(sprintf("Run for %i slices, and %i burn-ins",slices, burn.in))
     ##    print(sprintf("Using uncertainty: %s",!is.null(el$g)))
@@ -93,12 +98,11 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
     y0in = matrix(y, nrow= ny, ncol =subItra+1)
     petain = rep(0, subItra+1)
     g0in = rep(0, subItra+1)
-    
-	Z0 <- Z==0
-    U0 <- Z*0
+    Z0 <- Z==0
 	mc <- colSums(Z)
 	mr <- rowSums(Z>0)
     peta = rep(0, slices)
+
     ## Arranging the tree
     tree.ht = arrange.tree(tree)
     dist = cophenetic(eb.phylo(tree, tree.ht, peta[1]))
@@ -109,8 +113,8 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
     pdist0 = pdist==0
     pdist00 = which(pdist0, arr.ind=TRUE)
     n0= NROW(pdist00)
-    i=1
-    s=1
+
+    i=1;s=1
     tryCatch(
         for(s in 1:slices){
             if(s%%100==0)
@@ -124,7 +128,7 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
             
             ## Updatting latent scores
             yw = outer(y0[,s],w0[, s])
-            if(!uncertain){
+            if(!uncertainty){
                 U0 <- rExp(pdist*yw)
                 U0[Z0] <- 1
             }else
@@ -149,7 +153,7 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
                 petain[i+1] = new.eta$eta
                 pdist[i,] = new.eta$dist
                 
-                if(uncertain){
+                if(uncertainty){
                     g0in[i+1] = rg(Z[i,], l=U0[i,])
                 }
             }
@@ -178,23 +182,27 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
             peta[s+1]<- sum(petain[-1]*mr)/sum(mr)
             petain = rep(peta[s+1], subItra+1)
 
-            if(uncertain){
+            if(uncertainty){
                 g0[s+1] = sum(g0in[-1]*mr)/sum(mr)
                 g0in = rep(g0[s+1], subItra+1)
             }
-            
         }
        ,warning = function(w)
            {print(c('warning at (s,i):', c(s,i))); print(w);traceback()},
         error =function(e)
             {print(c('error at (s,i):', c(s,i))); print(e);traceback()} ,
         finally = print("Done!"))
-    ## burn.in (default 50%)
+
     if(burn.in==0) burn.in = 1 else burn.in = c(1:burn.in)
-    y0 =  y0[,-burn.in] 
-    w0 =  w0[,-burn.in]
+    if(!distOnly){
+        y0 =  y0[,-burn.in]
+        w0 =  w0[,-burn.in]
+    } else{
+        y0=1
+        w0=1
+    }
     peta = peta[-burn.in]
-    if(uncertain)  g0 = g0[-burn.in] else g0 = NULL
+    if(uncertainty)  g0 = g0[-burn.in] else g0 = NULL
 
     list(w = w0, y = y0, eta = peta, g = g0,
          burn.in = max(burn.in)-1,
@@ -204,7 +212,6 @@ ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertain = FAL
 ### ==================================================
 ### Supporting functions
 ### ==================================================
-
 rExp<-function(l,a=1){
     ## Sampling from a truncated exponential distribution
  	unif = runif(length(l))
@@ -237,25 +244,23 @@ raffinity.MH<-function(old, z, Ud, sig=0.1, hyper){
 }
 
 rEta.cophenetic<-function(eta.old,tree,tree.ht,pdist.old, pd0,i, Z, ywU, eta_sd =0.01){
-    for(l in 1:1){
-        eta.prop = eta.old + rnorm(length(eta.old), 0, sd = eta_sd)
-        ##eta.prop = sign(eta.prop)*min(abs(eta.prop),20)
-        dist = 1/cophenetic(eb.phylo(tree, tree.ht, eta.prop))
-        diag(dist)<-0
-        pdist.new = c(dist[i,]%*%Z)
-        no0 = which(pd0)
-        if(length(no0)){
-            if(length(no0)==sum(Z[i,])) likeli = -Inf else 
-            likeli = sum(((log(pdist.new)- log(pdist.old))*Z[i,])[-no0])-
-                sum((ywU*(pdist.new - pdist.old))[-no0]) 
-        }else{
-            likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
-                sum(ywU*(pdist.new - pdist.old))
-        }
-        ratio = min(1, exp(likeli));ratio
-        u = (runif(1)<=ratio)
-        if(u) { eta.old  = eta.prop; pdist.old = pdist.new}
+    eta.prop = eta.old + rnorm(length(eta.old), 0, sd = eta_sd)
+    dist = 1/cophenetic(eb.phylo(tree, tree.ht, eta.prop))
+    diag(dist)<-0
+    pdist.new = c(dist[i,]%*%Z)
+    no0 = which(pd0)
+    if(length(no0)){
+        if(length(no0)==sum(Z[i,])) likeli = -Inf else 
+        likeli = sum(((log(pdist.new)- log(pdist.old))*Z[i,])[-no0])-
+            sum((ywU*(pdist.new - pdist.old))[-no0]) 
+    }else{
+        likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
+            sum(ywU*(pdist.new - pdist.old))
     }
+    ratio = min(1, exp(likeli));ratio
+    u = (runif(1)<=ratio)
+    if(u) { eta.old  = eta.prop; pdist.old = pdist.new}
+    
     list (eta=eta.old, dist=pdist.old)
 }
 
@@ -270,10 +275,24 @@ rg<-function(Z,l){
 }
 
 
+lof<-function(Z, indeces = FALSE){
+    ## Given a binary matrix Z. Where the rows is fixed
+    ## A function that left orders the matrix sequentially from row 1 to n
+    ## based on first appearance of columns.
+    if(min(range(Z))<0) stop('Range is less that 0.')
+
+    active_col <- apply(Z,1,function(r) which(as.vector(r)>0))
+	bank = active_col[[1]]
+	for(i in 1:nrow(Z)){
+			a = setdiff(active_col[[i]], bank)
+			bank=c(bank,a)
+		}
+    if(indeces) bank else  Z[,bank]
+}
+
 ### ==================================================
 ### Tree functions
 ### ==================================================
-
 arrange.tree<-function(phy){
     ## taken from .b.phylo from
     ## https://github.com/mwpennell/geiger-v2/blob/master/R/utilities-phylo.R#L1353-L1382
@@ -286,7 +305,7 @@ arrange.tree<-function(phy){
     ht
 }
 
-eb.phylo=function(phy, heights, a){
+eb.phylo<-function(phy, heights, a){
     ## modified form .eb.phylo
     ## https://github.com/mwpennell/geiger-v2/blob/master/R/utilities-phylo.R
 	## #ht=heights.phylo(phy)
@@ -301,8 +320,7 @@ eb.phylo=function(phy, heights, a){
     phy
 }
 
-
-heights.phylo=function(x){
+heights.phylo<-function(x){
     phy=x
 	phy <- reorder(phy, "postorder")
 	n <- length(phy$tip.label)
