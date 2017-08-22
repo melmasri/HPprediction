@@ -9,7 +9,7 @@ library(geiger)
 source('example/download_tree.R')
 
 ## loading data
-source()
+source('example/load_GMPD.R')
 
 ## sourcing MCMC script
 source('networkMCMC.R')
