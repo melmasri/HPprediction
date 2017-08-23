@@ -15,7 +15,7 @@ if(!file.exists("example/GMPD_main.csv")){
 dt <- dt[dt$Group %in% c("carnivores","ungulates"),]
 
 # Removing parasites not reported to species
-# Sys.setlocale('LC_ALL','C') 
+Sys.setlocale('LC_ALL','C') 
 dt <- dt[grep("sp[.]",dt$ParasiteCorrectedName, invert=TRUE),]
 dt <- dt[grep("ABOLISHED",dt$ParasiteCorrectedName, invert=TRUE),]
 dt <- dt[grep("no binomial name",dt$ParasiteCorrectedName, invert=TRUE),]
