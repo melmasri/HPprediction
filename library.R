@@ -1,7 +1,9 @@
 #!/bin/R
-
 library(coda)
-## Useful function
+
+### ==================================================
+### Main functions
+### ==================================================
 
 plot_Z<-function(Z, xlab, ylab, ...){
     ## ploting interaction matrix as a binary image
@@ -13,6 +15,160 @@ plot_Z<-function(Z, xlab, ylab, ...){
 		useRaster=TRUE,srt=45, axes=FALSE)
 	axis(1, at = 5*0:(ceiling(ncol(Z)/5)))
 	axis(2, at = c(1,10*1:(ceiling(nrow(Z)/10))), labels = c(10*(ceiling(nrow(Z)/10)):1,1))
+}
+
+rocCurves<-function(Z_test,Z_train,P, plot=TRUE,bins=400, all=FALSE){
+    ## Computes the ROC curves as x = FPR and y = TPR
+    ##  FPR = FP/(FP +TN)
+    ##  TPR = TP/(TP+FN)
+
+    ## convert to binary
+    Z_test= 1*(Z_test>0)
+    Z_train = 1*(Z_train>0)
+    
+    u = seq(0, 1, length.out = bins)
+    Z1 = (Z_test - Z_train)==1
+    if(all) Z1 = Z_test==1
+    m = sum(1*(Z1))
+    Z2 = Z_test==0
+    n = sum(1*Z2)
+    aux = sapply(u, function(r){
+                     aux = 1*(P>=r)
+                     TP = sum(aux[Z1])            # True positive
+                     FN = m - TP                  # False negative
+                     FP = sum(aux[Z2])           # False positive
+                     TN = n - FP                # True negative
+                     c(TP=TP, FN=FN, FP=FP, TN=TN)
+                 })
+    FPR = aux['FP',]/(aux['FP',] + aux['TN',])
+    TPR = aux['TP',]/(aux['TP',] + aux['FN',])
+    roc = data.frame(u=u, t(aux), FPR = FPR, TPR = TPR)
+    max.point =   which.min(abs(roc$TPR-1) + roc$FPR)
+    threshold = roc$u[max.point]
+    n = length(u)
+    auc =  0.5*t(abs(FPR[2:n] - FPR[2:n -1]))%*% (TPR[2:n] + TPR[2:n -1])
+    auc = round(100*auc,2)
+    if(plot){
+        plot(FPR, TPR, xlab='FPR (1-specifity)', ylab = 'TPR (sensitivity)',
+             type ='l', col='red', lwd=2, main = paste('AUC ', auc), xlim = c(0,1), ylim = c(0,1), pch =6, lty=4)
+        abline(a = 0, b=1,col='black',lty=2, lwd=2)
+    }
+
+    list(auc = auc, threshold = threshold,roc=roc,
+         max.point.coordinate= c(FPR[max.point], TPR[max.point]))
+}
+
+topPairs<-function(P,Z,topX=20){
+    ## Returning pairs with highest posterior probability
+    require(reshape)
+    P[Z>0]<--1
+    aux =   melt(P)
+    aux = aux[order(aux$value,decreasing=TRUE),]
+    colnames(aux)<-c('Hosts', 'Parasites', 'p')
+    aux[1:topX,]
+}
+
+cross.validate.set<-function(Z, rate= 0.2){
+    ##  Retunrs a Z with a percentage of one's turned 0
+    ## only cells with rows of more than one interaction and columns with more than 2
+    if(max(range(Z))>1) Z[Z>0]<-1
+    Zo = Z
+    pairs = which(Z==1, arr.ind=T)
+    n = floor(rate*nrow(pairs))
+    sampled = rep(0, nrow(pairs))
+    repeat{
+        r = sample(which(sampled==0),1)
+        if(sum(Z[pairs[r,1],])>1 & sum(Z[,pairs[r,2]])>2){
+            Z[pairs[r,1], pairs[r,2]]<-0
+            sampled[r]<-1
+            n = n -1
+        }
+        if(n==0) break
+    }
+    print(sprintf("Actual cross-validation rate is %0.3f" ,sum(Zo-Z)/sum(Zo)))
+    Z
+}
+
+cross.validate.fold<-function(Z, n= 10, min.per.col = 1){
+    ## n-fold cross validation
+    ## Returns a matrix of 3 columns, the first two are the (row,col) index of the pair,
+    ## the third is the group
+    if(max(range(Z))>1) Z[Z>0]<-1
+    pairs = which(Z==1, arr.ind=T)
+    
+    if(length(which(colSums(Z)<min.per.col))>0){
+        aux = which(pairs[,'col'] %in% which(colSums(Z)<min.per.col))
+        if(length(aux))
+            pairs = pairs[-aux,]
+    }
+    
+    colm = pmax(colSums(Z) -min.per.col , 0)
+    size = floor(sum(colm)/n)
+    gr = rep(size, n)
+    if(sum(colm) %% size!=0)
+        gr[n] =  gr[n] + sum(colm) %% size
+
+    pair.list = list()
+    for(i in 1:n){
+        bank=c()
+        for(k in 1:gr[i]){
+            a = which(colm>0)
+            b = a[sample(length(a),1)]
+            bank = c(bank, b)
+            colm[b] = colm[b]-1
+        }
+        pair.list[[i]]<-bank
+    }
+
+    
+    gr.list= list()
+    bank= c()
+    for(i in 1:n){
+        a= table(pair.list[[i]])
+        gr.rows = unlist(sapply(1:length(a), function(r){
+            b = which(pairs[,'col']== as.numeric(names(a[r])))
+            b =setdiff(b, bank)
+            b[sample.int(length(b), a[r])]
+        }))
+        bank = c(bank, gr.rows)
+        gr.list[[i]]<-cbind(gr.rows, i)
+    }
+
+    aux = do.call('rbind', gr.list)
+    pairs = cbind(pairs[aux[,1], ],gr= aux[,2])
+    
+    print(sprintf("Actual cross-validation rate is %0.3f" , table(pairs[,'gr'])/sum(1*(Z>0))))
+    pairs[order(pairs[,'gr']),]
+    
+}
+
+
+### ==================================================
+### Secondary functions
+### ==================================================
+
+getMean<-function(param){
+    ## A function that returns the posterior mean of all paramters of the model
+    names = names(param)[grep('(w|y|eta|g)',names(param))]
+
+    lapply(param[names], function(r){
+        if (!is.null(dim(r)))
+            rowMeans(r) else
+        if(length(r)>1) mean(r)
+    })
+    
+}
+
+lof<-function(Z, indeces = FALSE){
+    ## left ordering  binary matrix Z. Rows are fixed.
+    if(min(range(Z))<0) stop('Range is less that 0.')
+    active_col <- apply(Z,1,function(r) which(as.vector(r)>0))
+	bank = active_col[[1]]
+	for(i in 1:nrow(Z)){
+			a = setdiff(active_col[[i]], bank)
+			bank=c(bank,a)
+		}
+    if(indeces) bank else  Z[,bank]
 }
 
 plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='red'){
@@ -76,162 +232,6 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
 }
 
 
-lof<-function(Z, indeces = FALSE){
-    ## left ordering  binary matrix Z. Rows are fixed.
-    if(min(range(Z))<0) stop('Range is less that 0.')
-    active_col <- apply(Z,1,function(r) which(as.vector(r)>0))
-	bank = active_col[[1]]
-	for(i in 1:nrow(Z)){
-			a = setdiff(active_col[[i]], bank)
-			bank=c(bank,a)
-		}
-    if(indeces) bank else  Z[,bank]
-}
-
-rocCurves<-function(Z,Z_cross,plot=TRUE,P,bins=200, all=FALSE){
-    ## Computes the ROC curves as x = FPR and y = TPR
-    ##  FPR = FP/(FP +TN)
-    ##  TPR = TP/(TP+FN)
-    if(length(unique(as.vector(Z)))!=2) Z = 1*(Z>0)
-    if(length(unique(as.vector(Z_cross)))!=2) Z_cross = 1*(Z_cross>0)
-    u = seq(0, 1, length.out = bins)
-    Z1 = (Z - Z_cross)==1
-    if(all) Z1 = Z==1
-    m = sum(1*(Z1))
-    Z2 = Z==0
-    n = sum(1*Z2)
-    aux = sapply(u, function(r){
-                     aux = 1*(P>=r)
-                     TP = sum(aux[Z1])            # True positive
-                     FN = m - TP                  # False negative
-                     FP = sum(aux[Z2])           # False positive
-                     TN = n - FP                # True negative
-                     c(TP=TP, FN=FN, FP=FP, TN=TN)
-                 })
-    FPR = aux['FP',]/(aux['FP',] + aux['TN',])
-    TPR = aux['TP',]/(aux['TP',] + aux['FN',])
-    roc = data.frame(u=u, t(aux), FPR = FPR, TPR = TPR)
-    max.point =   which.min(abs(roc$TPR-1) + roc$FPR)
-    threshold = roc$u[max.point]
-    n = length(u)
-    auc =  0.5*t(abs(FPR[2:n] - FPR[2:n -1]))%*% (TPR[2:n] + TPR[2:n -1])
-    auc = round(100*auc,2)
-    if(plot){
-        plot(FPR, TPR, xlab='FPR (1-specifity)', ylab = 'TPR (sensitivity)',
-             type ='l', col='red', lwd=2, main = paste('AUC ', auc), xlim = c(0,1), ylim = c(0,1), pch =6, lty=4)
-        abline(a = 0, b=1,col='black',lty=2, lwd=2)
-    }
-
-    list(roc= roc,auc = auc, threshold = threshold,
-         max.point= c(FPR[max.point], TPR[max.point]) , P= P)
-}
-
-getMean<-function(param){
-    ## A function that returns the posterior mode of all paramters of the model
-    extra.throw.out = 1
-    if(param$throw.out/(param$throw.out + param$burn_in) <=0.1){
-        extra.throw.out =1:round(0.2*(param$burn_in + param$throw.out) - param$throw.out)
-    }
-    estimate_mode <- function(x)    mean(x)
-
-    names =  names(param)[!sapply(param, is.null)]
-    names = names(param)[-grep('(hh|sd|etashoot|throw.out|burn_in|w_star|Z)',names(param))]
-    
-    aux = lapply(param[names], function(r){
-        if (!is.null(dim(r)))
-            apply(r,1,estimate_mode) else
-        if(length(r)>1) estimate_mode(r)
-    })
-    aux
-}
-
-topPairs<-function(P,Z,topX=20){
-   ## Plotting the top new pairs
-    ## Note that P is a probability matrix, not a binary one.
-    require(reshape2)
-    Z = com_pa
-    P[Z==1]<--1
-    aux=   melt(P)
-    aux = aux[order(aux$value,decreasing=TRUE),]
-    colnames(aux)<-c('Hosts', 'Parasites', 'p')
-    aux[1:topX,]
-}
-
-cross.validate.set<-function(Z, rate= 0.2){
-    ##  Retunrs a Z with a percentage of one's turned 0
-    ## only cells with rows of more than one interaction and columns with more than 2
-    if(max(range(Z))>1) Z[Z>0]<-1
-    Zo = Z
-    pairs = which(Z==1, arr.ind=T)
-    n = floor(rate*nrow(pairs))
-    sampled = rep(0, nrow(pairs))
-    repeat{
-        r = sample(which(sampled==0),1)
-        if(sum(Z[pairs[r,1],])>1 & sum(Z[,pairs[r,2]])>2){
-            Z[pairs[r,1], pairs[r,2]]<-0
-            sampled[r]<-1
-            n = n -1
-        }
-        if(n==0) break
-    }
-    print(sprintf("Actual cross-validation rate is %0.3f" ,sum(Zo-Z)/sum(Zo)))
-    Z
-}
-
-
-
-cross.validate.fold<-function(Z, n= 10, min.per.col = 1){
-    ## n-fold cross validation
-    ## Returns a matrix of 3 columns, the first two are the (row,col) index of the pair,
-    ## the third is the group
-    if(max(range(Z))>1) Z[Z>0]<-1
-    pairs = which(Z==1, arr.ind=T)
-    
-    if(length(which(colSums(Z)<min.per.col))>0){
-        aux = which(pairs[,'col'] %in% which(colSums(Z)<min.per.col))
-        if(length(aux))
-            pairs = pairs[-aux,]
-    }
-    
-    colm = pmax(colSums(Z) -min.per.col , 0)
-    size = floor(sum(colm)/n)
-    gr = rep(size, n)
-    if(sum(colm) %% size!=0)
-        gr[n] =  gr[n] + sum(colm) %% size
-
-    pair.list = list()
-    for(i in 1:n){
-        bank=c()
-        for(k in 1:gr[i]){
-            a = which(colm>0)
-            b = a[sample(length(a),1)]
-            bank = c(bank, b)
-            colm[b] = colm[b]-1
-        }
-        pair.list[[i]]<-bank
-    }
-
-    
-    gr.list= list()
-    bank= c()
-    for(i in 1:n){
-        a= table(pair.list[[i]])
-        gr.rows = unlist(sapply(1:length(a), function(r){
-            b = which(pairs[,'col']== as.numeric(names(a[r])))
-            b =setdiff(b, bank)
-            b[sample.int(length(b), a[r])]
-        }))
-        bank = c(bank, gr.rows)
-        gr.list[[i]]<-cbind(gr.rows, i)
-    }
-
-    aux = do.call('rbind', gr.list)
-    pairs = cbind(pairs[aux[,1], ],gr= aux[,2])
-    
-    print(sprintf("Actual cross-validation rate is %0.3f" , table(pairs[,'gr'])/sum(1*(Z>0))))
-    pairs[order(pairs[,'gr']),]
-    
-}
 
 
 ana.table<-function(com, comCross, roc, plot=FALSE){
