@@ -20,11 +20,11 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
     
     }
     if(any(rowSums(Z)==0)){
-        warning('empty rows in Z are removed!', immediate. = TRUE, call.= FALSE)
+        stop('Z has empty rows, please remove!', immediate. = TRUE, call.= FALSE)
         Z = Z[which(rowSums(Z)>0),]
     } 
     if(any(rowSums(Z)==0)){
-        warning('empty columns in Z are removed!', immediate. = TRUE, call.= FALSE)
+        stop('Z has empty columns, please remove!', immediate. = TRUE, call.= FALSE)
         Z = Z[,which(colSums(Z)>0)]
     } 
     if(slices==0)
@@ -75,6 +75,9 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
         Z = lof(Z[row.order,])
 
         ## Running the MCMC
+        print(paste0('Running ',
+                     ifelse(grepl('dist', model.type),
+                            'distance-only model...', 'full model...')))
         param  = ICM_est(unname(Z),
             tree = tree,slices,  distOnly = grepl('dist', model.type),
             uncertainty = uncertainty, ...)
