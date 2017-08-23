@@ -1,4 +1,4 @@
-##Example for HP-Prediction (Elmasri et al. 2017)##
+### Example for HP-Prediction (Elmasri et al. 2017) ###
 
 This example uses a small subset of the GMPD 2.0 ( DOI: 10.1002/ecy.1799) to show how to run the models described in Elmasri et al. 2017 (https://arxiv.org/abs/1707.08354).
 
