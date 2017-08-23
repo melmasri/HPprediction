@@ -38,10 +38,15 @@ All model variants can be run using the wrapper function network_est()
 ### Basic arguments ###
 
 **Z** - The community matrix
+
 **tree** - The phylo object
+
 **model.type** - Either "distance", "affinity", or "both"
+
 **slices** - This is the number of iterations to run the model
+
 **uncertainty** - Whether to extend model to estimate uncertainty in unobserved interactions (TRUE/FALSE), default is FALSE 
+
 
 You can pass the following optional arguments:
 
