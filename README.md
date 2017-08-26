@@ -1,60 +1,49 @@
+# Repository description
+
 The `ICM` branch fits the model using the "Iterative Conditional Modelling" approach, discussed Besag(74) Section 6.1, which is called the "Coding" method.
 
+# Usage
 
-# General setting for script running
-The `R` script called `runscript.R` fits the model on some data input. In the terminal `runscript.R` can be executed with some arguments with the command `Rscript`.
-The input arguments are:
+The main function is `network_est()` in file `networkMCMC.R`
+
+
 ```
-Usage: runscript.R [options]
+network_est returns a a list of input objects, the binary interaction matrix and the phylogeny tree in some cases, and the MCMC samples of the specified parameters interest.
+
+Usage
+
+network_est(Z, slices = 10, tree = NULL, model.type = c('both', 'distance', 'affinity'), uncertainty = FALSE, ... )
+
+Arguments
+Z 	
+
+an H x J binary or count matrix of interactions between two sets of species, H and J. If Z is count it will be converted to binary.
 
 
-Options:
-	-f CHARACTER, --file=CHARACTER
-		dataset file name, or an identifiable portion of it, if multiple files the first one is used. The file should have the RData extension.
+slices
 
-	-r CHARACTER, --runtype=CHARACTER
-		possible run types, ALL, 10fold, affinity, distonly, weighted [default= 10fold]
+the number of slices or MCMC samples to run. In the case of the full model or the phylogeny-only model a single sample/itration is the average of H samples from H conditional distributions, one for each row of Z; as in the ICM model. For the affinity-only model sampling from the full joint is possible; see 'Details' for more information.
 
-	-s CHARACTER, --subset=CHARACTER
-		possible subset choices, for GMP it is Carnivora, for and EID it is Rodentia.
 
-	--output=CHARACTER
-		output directory, the default is constructed from time stamp and other inputs.
+model.type
 
-	--no.cycles=INTEGER
-		no. of cycles to run over the matrix [default= 20].
+either the full model (both), phylogeny-only (distance) or the affinity-only (affinity) models. Default is the full model (both)
 
-	--no.cores=INTEGER
-		number of cores to use (1, 2, ..) [default= 5].
 
-	--icm.horiz=LOGICAL
-		block updates are done horizontally (ICM.HORIZ=TRUE), else diagonally [default= TRUE].
+uncertainty
 
-	--email=CHARACTER
-		end-of-run email notification is sent to the supplied email if mailx is installed and configured
+whether to sample an uncertainty parameter of not. See 'Details' for more information.
 
-	-h, --help
-		Show this help message and exit
+... 	
+
+optional arguments to the lower layer MCMC sampling algorithm. See 'Details' for more information.
+
+Details
+
 ```
 
-+ `runtype`: 
-    + `ALL`: to fit the model on the whole dataset without CV.
-    + `10fold`: to fit the full model using 5-fold CV.
-    + `affinity`: to fit the affinity-only model using 5-fold CV.
-    + `distonly`: to fit the dist-only model using 5-fold CV.
-    + `weighted`: to fit the full model using 5-fold CV and the weighted (count) interaction matrix.
-+ `no.cycles`: two methods to calculate the number of MCMC samples given the `no.cycles`
-    + with diagonal block update `icm.horiz=FALSE`, the model cycles over the number of columns in the interaction matrix. For a 50x100 matrix, a cycle has 50 samples for each column parameter, and 100 for each row parameter.
-    + with horizontal block update `icm.horiz=TRUE`, the model cycles over the number of rows in the interaction matrix. For a 50x100 matrix, a cycle has 50 samples for each column parameter, and 1 for each row parameter.
 
 
-For example to run the 10fold affinity only model using a data set file called `Dataset123.RData`,
-
-`
-Rscript runscript.R -f Dataset123 -r affinity
-`
-
-A an output folder is created with the following name `AFFINITY-Dataset123-TIMESTAMP`.
       
 
     
