@@ -15,11 +15,12 @@ source('example/load_GMPD.R')           # see matrix 'com'
 source('networkMCMC.R')
 
 pruned.tree <- drop.tip(tree,
-                        sample(tree$tip.label)[1:(0.9*length(tree$tip.label))],) # timming 90% of tree tips for speed
+                        sample(tree$tip.label)[1:(0.9*length(tree$tip.label))],) # trimming 90% of tree tips for speed
 
 ## running the model of interest
 obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') # full model
 names(obj)
+names(obj$param)
 ## Probability matrix
 ## Extracting mean posteriors
 Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)

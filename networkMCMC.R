@@ -33,9 +33,9 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     ## For affinity-only model 
     if(grepl('aff', model.type,ignore.case = TRUE)){
         if(!is.null(tree))
-            warning('affinity-only model is chosen; ignoring tree!',
+            warning('affinity model is chosen; ignoring tree!',
                     immediate. = TRUE, call. = FALSE)
-        print('Running affinity-only model...')
+        print('Running affinity model...')
         param = fullJoint_est(Z, iter = slices, uncertainty = uncertainty, ...)
         return (list(param=param, Z = Z))
     }
@@ -43,7 +43,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     ##  Full and distance model
     if(grepl('(dist|full)', model.type)){
         if(is.null(tree))
-            stop('distance-only model is chosen, but tree is null!')
+            stop('distance model is chosen, but tree is null!')
 
         if(!is.phylo(tree))
             stop('tree must be a phylogeny tree, see gieger!')
@@ -77,7 +77,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
         ## Running the MCMC
         print(paste0('Running ',
                      ifelse(grepl('dist', model.type),
-                            'distance-only model...', 'full model...')))
+                            'distance model...', 'full model...')))
         param  = ICM_est(unname(Z),
             tree = tree,slices,  distOnly = grepl('dist', model.type),
             uncertainty = uncertainty, ...)

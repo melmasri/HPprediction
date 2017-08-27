@@ -14,7 +14,7 @@ The main function is `network_est()` in file `networkMCMC.R`
 
 ## Arguments
 + `Z`:  an H x J binary or count matrix of interactions between two sets of species, H and J. If `Z` is count it will be converted to binary.
-+ `slices`: the number of slices or MCMC samples to run. In the case of the full model or the phylogeny-only model a single sample/itration is the average of H samples from H conditional distributions, one for each row of `Z`; as in the ICM model. For the affinity-only model sampling from the full joint is possible; see 'Details' for more information.
++ `slices`: the number of slices or MCMC samples to run. In the case of the full model or the phylogeny-only model a single sample/iteration is the average of H samples from H conditional distributions, one for each row of `Z`; as in the ICM model. For the affinity-only model sampling from the full joint is possible; see 'Details' for more information.
 + `model.type`: either distance, affinity, or full to combine both distance and affinity. Default is the full.
 + `uncertainty`: whether to sample an uncertainty parameter of not. See 'Details' for more information.
 + `...`: optional arguments to the lower layer MCMC sampling algorithm:
@@ -33,7 +33,7 @@ The main function is `network_est()` in file `networkMCMC.R`
 
 ## Details
 
-The function `network_est()` returns a list that includes a list names `param` of posterior samples for each estimated parameter with burn-in removed. In addition the input data; `Z` and `tree` for `full` and `distnace` models, and `Z` only for `affinity` model. Note that `network_est()` does initial cleaning of `Z` and `tree` to conform to the needed input. Such as:
+The function `network_est()` returns a list that includes a list names `param` of posterior samples for each estimated parameter with burn-in removed. In addition the input data; `Z` and `tree` for `full` and `distance` models, and `Z` only for `affinity` model. Note that `network_est()` does initial cleaning of `Z` and `tree` to conform to the needed input. Such as:
     + converting `Z` to binary;
     + removing row-species in `Z` that are not in `tree`;
     + removing empty rows and columns from `Z`;
@@ -42,7 +42,7 @@ The function `network_est()` returns a list that includes a list names `param` o
     
 For convenience, row parameters (gammas), and column parameters (rhos), are indicated by the variables `y` and `w`, respectively, in the output. If using the `distance` model or `full`, this will also include posterior samples for the phylogenetic transformation parameter `eta`. The uncertainty parameter is denoted by `g`, and returned only when `uncertainty=TRUE`, otherwise `NULL`.
 
-Specifying inital values for affinity parameters and related options in `...` is only relavent for the `full` or `affinity` model, otherwise they are ignored. Intial values for the `eta` parameter only apply in the `full` or `distance` model.
+Specifying initial values for affinity parameters and related options in `...` is only relevant for the `full` or `affinity` model, otherwise they are ignored. Initial values for the `eta` parameter only apply in the `full` or `distance` model.
     
 `network_est()` runs two types of upper layer MCMC sampling functions. It runs and MCMC using the full joint distribution when the `affinity` model is used, otherwise it runs an iterated conditional modes (ICM) MCMC sampler when the `full` or `distance` models are used. A mode of the ICM is the conditional joint distribution of a row on all other rows of `Z`. Besag(74, Sec 6.1) for details on the ICM method.
 
@@ -76,7 +76,7 @@ library(ape)
 library(geiger)
 library(fulltext)
 
-## loading mammal supertree included in Fritz et al. 2009 (DOI: 10.1111/j.1461-0248.2009.01307.x). 
+## loading mammal supertree included in Fritz et al. (2009).
 source('example/download_tree.R')       # see variable 'tree'
 
 ## loading GMPD
