@@ -1,6 +1,6 @@
-# Repository description
+An `R` code of the implementation of the model in
 
-The `ICM` branch fits the model using the "Iterative Conditional Modelling" approach, discussed Besag(74) Section 6.1, which is called the "Coding" method.
+Elmasri, M., Farrell, M., and Stephens, D. A. (2017). _A hierarchical Bayesian model for predicting ecological interactions using evolutionary relationships._ [arXiv](https://arxiv.org/abs/1707.08354).
 
 ## Quick intro
 
@@ -44,8 +44,14 @@ For convenience, row parameters (gammas), and column parameters (rhos), are indi
 
 Specifying inital values for affinity parameters and related options in `...` is only relavent for the `full` or `affinity` model, otherwise they are ignored. Intial values for the `eta` parameter only apply in the `full` or `distance` model.
     
-`network_est()` runs two types of upper layer MCMC sampling functions. It runs and MCMC using the full joint distribution when the `affinity` model is used, otherwise it runs an iterated conditional modes (ICM) MCMC sampler when the `full` or `distance` models are used. A mode of the ICM is the conditional joint distribution of a row on all other rows of `Z`. 
-    
+`network_est()` runs two types of upper layer MCMC sampling functions. It runs and MCMC using the full joint distribution when the `affinity` model is used, otherwise it runs an iterated conditional modes (ICM) MCMC sampler when the `full` or `distance` models are used. A mode of the ICM is the conditional joint distribution of a row on all other rows of `Z`. Besag(74, Sec 6.1) for details on the ICM method.
+
+## References
+
+Elmasri, M., Farrell, M., and Stephens, D. A. (2017). _A hierarchical Bayesian model for predicting ecological interactions using evolutionary relationships._ [arXiv](https://arxiv.org/abs/1707.08354).
+
+Besag, J. (1974). _Spatial interaction and the statistical analysis of lattice systems._ Journal of the Royal Statistical Society. Series B (Methodological), 192–236.
+
 ## Examples
 
 
