@@ -13,7 +13,6 @@ The main function is `network_est()` in file `networkMCMC.R`
 `network_est(Z, slices = 10, tree = NULL, model.type = c('full', 'distance', 'affinity'), uncertainty = FALSE, ... )`
 
 ## Arguments
-
     + `Z`:  an H x J binary or count matrix of interactions between two sets of species, H and J. If `Z` is count it will be converted to binary.
     + `slices`:" the number of slices or MCMC samples to run. In the case of the full model or the phylogeny-only model a single sample/itration is the average of H samples from H conditional distributions, one for each row of `Z`; as in the ICM model. For the affinity-only model sampling from the full joint is possible; see 'Details' for more information.
     + `model.type`: either distance, affinity, or full to combine both distance and affinity. Default is the full.
@@ -41,12 +40,12 @@ The function `network_est()` returns a list that includes a list names `param` o
     + removing tips in `tree` that do not correspond to row-species in `Z`;
     + left ordering of `Z`.
     
-    
 For convenience, row parameters (gammas), and column parameters (rhos), are indicated by the variables `y` and `w`, respectively, in the output. If using the `distance` model or `full`, this will also include posterior samples for the phylogenetic transformation parameter `eta`. The uncertainty parameter is denoted by `g`, and returned only when `uncertainty=TRUE`, otherwise `NULL`.
 
-      
 Specifying inital values for affinity parameters and related options in `...` is only relavent for the `full` or `affinity` model, otherwise they are ignored. Intial values for the `eta` parameter only apply in the `full` or `distance` model.
-
+    
+`network_est()` runs two types of upper layer MCMC sampling functions. It runs and MCMC using the full joint distribution when the `affinity` model is used, otherwise it runs an iterated conditional modes (ICM) MCMC sampler when the `full` or `distance` models are used. A mode of the ICM is the conditional joint distribution of a row on all other rows of `Z`. 
+    
 ## Examples
 
 
