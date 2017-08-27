@@ -5,13 +5,13 @@ tol.err=1e-5
 ### ==================================================
 ### Main MCMC function
 ### ==================================================
-network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'distance', 'affinity'), uncertainty = FALSE, ... ){
+network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'distance', 'affinity'), uncertainty = FALSE, ... ){
     require(geiger)
     ## Running options:
-    ## 1 - Full model(both);
+    ## 1 - Full to combined 2 and 3;
     ## 2 - Affinity-only model (affinity);
     ## 3 - distance-only model (distance).
-    
+    model.type= model.type[1]
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
     if(!all(range(Z)==c(0,1))){
@@ -40,8 +40,8 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('both', 'dista
         return (list(param=param, Z = Z))
     }
 
-    ## For Full (both) and distance-only model
-    if(grepl('(dist|both)', model.type)){
+    ##  Full and distance model
+    if(grepl('(dist|full)', model.type)){
         if(is.null(tree))
             stop('distance-only model is chosen, but tree is null!')
 

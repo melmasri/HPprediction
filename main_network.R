@@ -26,7 +26,7 @@ Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
 ## Affinity only model
 P =  1-exp(-outer(Y, W))
 
-### Full model (both) or Distance only model
+### Full or distance model
 ## Creating distance
 distance = 1/cophenetic(rescale(obj$tree, 'EB', Eta))
 diag(distance)<-0
@@ -34,7 +34,7 @@ distance = distance %*% obj$Z
 distance[distance==0]<-1
 
 ## Probability matrix
-## Full model (both)
+## Full model
 P = 1-  exp(-outer(Y, W)*distance)
 
 ## Distance only model 
