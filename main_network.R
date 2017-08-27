@@ -1,15 +1,18 @@
 #########################################
 ## Script to run on the whole dataset
 rm(list= ls())
+
+## Loading required packages
 library(ape)
 library(geiger)
+library(fulltext)
 
 
-## loading tree
-source('example/download_tree.R')
+## loading mammal supertree included in Fritz et al. 2009 (DOI: 10.1111/j.1461-0248.2009.01307.x). 
+source('example/download_tree.R')       # see variable tree
 
-## loading data
-source('example/load_GMPD.R')
+## loading GMPD
+source('example/load_GMPD.R')           # see matrix com
 
 ## sourcing MCMC script
 source('networkMCMC.R')

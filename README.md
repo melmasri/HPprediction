@@ -14,7 +14,7 @@ The main function is `network_est()` in file `networkMCMC.R`
 
 ## Arguments
 + `Z`:  an H x J binary or count matrix of interactions between two sets of species, H and J. If `Z` is count it will be converted to binary.
-+ `slices`:" the number of slices or MCMC samples to run. In the case of the full model or the phylogeny-only model a single sample/itration is the average of H samples from H conditional distributions, one for each row of `Z`; as in the ICM model. For the affinity-only model sampling from the full joint is possible; see 'Details' for more information.
++ `slices`: the number of slices or MCMC samples to run. In the case of the full model or the phylogeny-only model a single sample/itration is the average of H samples from H conditional distributions, one for each row of `Z`; as in the ICM model. For the affinity-only model sampling from the full joint is possible; see 'Details' for more information.
 + `model.type`: either distance, affinity, or full to combine both distance and affinity. Default is the full.
 + `uncertainty`: whether to sample an uncertainty parameter of not. See 'Details' for more information.
 + `...`: optional arguments to the lower layer MCMC sampling algorithm:
@@ -52,7 +52,34 @@ Elmasri, M., Farrell, M., and Stephens, D. A. (2017). _A hierarchical Bayesian m
 
 Besag, J. (1974). _Spatial interaction and the statistical analysis of lattice systems._ Journal of the Royal Statistical Society. Series B (Methodological), 192–236.
 
+Stephens, P. R., P. Pappalardo, S. Huang, J. E. Byers, M. J. Farrell, A. Gehman, R. R.
+Ghai, S. E. Haas, B. Han, A. W. Park, J. P. Schmidt, S. Altizer, V. O. Ezenwa, and C. L.
+Nunn (2017). _Global Mammal Parasite Database version 2.0._ Ecology 98 (February),
+2017.
+
+Fritz, S. A., O. R. P. Bininda-Emonds, and A. Purvis (2009). Geographical variation in
+predictors of mammalian extinction risk: big is bad, but only in the tropics. Ecology
+letters 12 (6), 538–549.
+
 ## Examples
+
+A direct example from Elmasri, M. _et al._ (2017) using the Global Mammal Parasite Database version 2.0 (GMPD).
+
+### Loading data
+
+```R
+## Loading required packages
+library(ape)
+library(geiger)
+library(fulltext)
+
+## loading mammal supertree included in Fritz et al. 2009 (DOI: 10.1111/j.1461-0248.2009.01307.x). 
+source('example/download_tree.R')       # see variable tree
+
+## loading GMPD
+source('example/load_GMPD.R')           # see matrix com
+
+```
 
 
 
