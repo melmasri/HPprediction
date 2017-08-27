@@ -62,7 +62,7 @@ Nunn (2017). _Global Mammal Parasite Database version 2.0._ Ecology 98 (February
 2017.
 
 ## Examples
-A direct example from Elmasri, M. _et al._ (2017) using the Global Mammal Parasite Database version 2.0 (GMPD).
+A direct example from Elmasri et al. (2017) using the Global Mammal Parasite Database version 2.0 (GMPD).
 
 ```R
 ## Loading required packages
