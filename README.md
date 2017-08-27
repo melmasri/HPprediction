@@ -48,33 +48,25 @@ Specifying initial values for affinity parameters and related options in `...` i
 
 ## References
 
+Besag, J. (1974). _Spatial interaction and the statistical analysis of lattice systems._ Journal of the Royal Statistical Society. Series B (Methodological), 192–236.
+
 Elmasri, M., Farrell, M., and Stephens, D. A. (2017). _A hierarchical Bayesian model for predicting ecological interactions using evolutionary relationships._ [arXiv](https://arxiv.org/abs/1707.08354).
 
-Besag, J. (1974). _Spatial interaction and the statistical analysis of lattice systems._ Journal of the Royal Statistical Society. Series B (Methodological), 192–236.
+Fritz, S. A., O. R. P. Bininda-Emonds, and A. Purvis (2009). Geographical variation in
+predictors of mammalian extinction risk: big is bad, but only in the tropics. Ecology
+letters 12 (6), 538–549.
 
 Stephens, P. R., P. Pappalardo, S. Huang, J. E. Byers, M. J. Farrell, A. Gehman, R. R.
 Ghai, S. E. Haas, B. Han, A. W. Park, J. P. Schmidt, S. Altizer, V. O. Ezenwa, and C. L.
 Nunn (2017). _Global Mammal Parasite Database version 2.0._ Ecology 98 (February),
 2017.
 
-Fritz, S. A., O. R. P. Bininda-Emonds, and A. Purvis (2009). Geographical variation in
-predictors of mammalian extinction risk: big is bad, but only in the tropics. Ecology
-letters 12 (6), 538–549.
-
 ## Examples
-
 A direct example from Elmasri, M. _et al._ (2017) using the Global Mammal Parasite Database version 2.0 (GMPD).
-
-### Loading data
 
 ```R
 ## Loading required packages
 library(ape, geiger, fulltext)
-
-## Loading required packages
-library(ape)
-library(geiger)
-library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009).
 source('example/download_tree.R')       # see variable 'tree'
