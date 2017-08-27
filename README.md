@@ -69,15 +69,62 @@ A direct example from Elmasri, M. _et al._ (2017) using the Global Mammal Parasi
 
 ```R
 ## Loading required packages
+library(ape, geiger, fulltext)
+
+## Loading required packages
 library(ape)
 library(geiger)
 library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. 2009 (DOI: 10.1111/j.1461-0248.2009.01307.x). 
-source('example/download_tree.R')       # see variable tree
+source('example/download_tree.R')       # see variable 'tree'
 
 ## loading GMPD
-source('example/load_GMPD.R')           # see matrix com
+source('example/load_GMPD.R')           # see matrix 'com'
+# trimming 90% of tree tips for speed
+pruned.tree <- drop.tip(tree,sample(tree$tip.label)[1:(0.9*length(tree$tip.label))],)
+
+## sourcing MCMC script
+source('networkMCMC.R')
+
+## running the model of interest
+> obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') # full model
+Warning: Z is converted to binary!
+Warning: not all species in tree exist in Z; missing are removed from tree!
+Warning: not all row-species in Z exist tree; missing are removed from Z!
+[1] "Ordering the rows of Z to match tree, and left ordering the columns.."
+[1] "Running full model..."
+[1] "Run for 1000 slices, and 500 burn-ins"
+[1] "Slices 100"
+[1] "Slices 200"
+[1] "Slices 300"
+[1] "Slices 400"
+[1] "Slices 500"
+[1] "Slices 600"
+[1] "Slices 700"
+[1] "Slices 800"
+[1] "Slices 900"
+[1] "Slices 1000"
+[1] "Done!"
+> names(obj)
+[1] "param" "tree"  "Z"    
+> names(obj$param)
+[1] "w"       "y"       "eta"     "g"       "burn.in" "sd"  
+
+## Creating the H x J probability matrix
+## Extracting mean posteriors
+Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
+W = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
+Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
+
+## Creating posterior distance
+distance = 1/cophenetic(rescale(obj$tree, 'EB', Eta))
+diag(distance)<-0
+distance = distance %*% obj$Z
+distance[distance==0]<-1
+
+## Probability matrix
+P = 1-  exp(-outer(Y, W)*distance)
 
 ```
 
