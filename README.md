@@ -4,7 +4,7 @@ Elmasri, M., Farrell, M., and Stephens, D. A. (2017). _A hierarchical Bayesian m
 
 ## Quick intro
 
-The main function is `network_est()` in file `networkMCMC.R`
+The main function is `network_est()` in file `network_MCMC.R`
 
 `network_est` returns a a list of input objects, the binary interaction matrix and the phylogeny tree in some cases, and the MCMC samples of the specified parameters interest.
 
@@ -68,19 +68,21 @@ A direct example from Elmasri et al. (2017) using the Global Mammal Parasite Dat
 ## Loading required packages
 library(ape, geiger, fulltext)
 
-## loading mammal supertree included in Fritz et al. (2009).
+## loading mammal supertree included in Fritz et al. (2009)
 source('example/download_tree.R')       # see variable 'tree'
+## trimming 80% of tree tips for speed
+pruned.tree <- drop.tip(tree,
+                        sample(tree$tip.label)[1:(0.8*length(tree$tip.label))])
 
 ## loading GMPD
 source('example/load_GMPD.R')           # see matrix 'com'
-# trimming 90% of tree tips for speed
-pruned.tree <- drop.tip(tree,sample(tree$tip.label)[1:(0.9*length(tree$tip.label))],)
+
 
 ## sourcing MCMC script
-source('networkMCMC.R')
+source('network_MCMC.R')
 
 ## running the model of interest
-> obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') # full model
+> obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') 
 Warning: Z is converted to binary!
 Warning: not all species in tree exist in Z; missing are removed from tree!
 Warning: not all row-species in Z exist tree; missing are removed from Z!
@@ -103,6 +105,20 @@ Warning: not all row-species in Z exist tree; missing are removed from Z!
 > names(obj$param)
 [1] "w"       "y"       "eta"     "g"       "burn.in" "sd"  
 
+## load useful network analysis functions
+source('network_analysis.R')
+
+## plot input matrix and tree
+plot(obj$tree, show.tip.label=FALSE)
+plot_Z(obj$Z)
+```
+
+Phylogeny tree example     |  Species interaction matrix Z
+:-------------------------:|:-------------------------:
+![](https://github.com/melmasri/HP-prediction/tree/master/example/tree_example.png)  |  ![](https://github.com/melmasri/HP-prediction/tree/master/example/Z_example.png)
+
+
+```
 ## Creating the H x J probability matrix
 ## Extracting mean posteriors
 Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)

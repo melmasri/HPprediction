@@ -7,20 +7,26 @@ library(ape, geiger, fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009)
 source('example/download_tree.R')       # see variable 'tree'
+pruned.tree <- drop.tip(tree,
+                        sample(tree$tip.label)[1:(0.8*length(tree$tip.label))]) # trimming 80% of tree tips for speed
 
 ## loading GMPD
 source('example/load_GMPD.R')           # see matrix 'com'
 
 ## sourcing MCMC script
-source('networkMCMC.R')
-
-pruned.tree <- drop.tip(tree,
-                        sample(tree$tip.label)[1:(0.9*length(tree$tip.label))],) # trimming 90% of tree tips for speed
+source('network_MCMC.R')
 
 ## running the model of interest
 obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') # full model
 names(obj)
 names(obj$param)
+
+## load useful network analysis functions
+source('network_analysis.R')
+## plot input matrix and tree
+plot(obj$tree, show.tip.label=FALSE)
+plot_Z(obj$Z)
+
 ## Probability matrix
 ## Extracting mean posteriors
 Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
