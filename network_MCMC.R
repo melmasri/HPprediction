@@ -19,11 +19,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
         Z = 1*(Z>0)
     
     }
-    if(any(rowSums(Z)==0)){
-        stop('Z has empty rows, please remove!', immediate. = TRUE, call.= FALSE)
-        Z = Z[which(rowSums(Z)>0),]
-    } 
-    if(any(rowSums(Z)==0)){
+    if(any(colSums(Z)==0)){
         stop('Z has empty columns, please remove!', immediate. = TRUE, call.= FALSE)
         Z = Z[,which(colSums(Z)>0)]
     } 

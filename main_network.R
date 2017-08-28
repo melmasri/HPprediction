@@ -3,7 +3,9 @@
 rm(list= ls())
 
 ## Loading required packages
-library(ape, geiger, fulltext)
+library(ape)
+library(geiger)
+library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009)
 source('example/download_tree.R')       # see variable 'tree'
