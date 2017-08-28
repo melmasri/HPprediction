@@ -23,6 +23,7 @@ names(obj$param)
 
 ## load useful network analysis functions
 source('network_analysis.R')
+
 ## plot input matrix and tree
 plot(obj$tree, show.tip.label=FALSE)
 plot_Z(obj$Z)

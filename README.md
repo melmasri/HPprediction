@@ -115,7 +115,7 @@ plot_Z(obj$Z)
 
 Phylogeny tree example     |  Species interaction matrix Z
 :-------------------------:|:-------------------------:
-![](https://github.com/melmasri/HP-prediction/tree/master/example/tree_example.png)  |  ![](https://github.com/melmasri/HP-prediction/tree/master/example/Z_example.png)
+![](https://github.com/melmasri/HP-prediction/blob/master/example/tree_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Z_example.png)
 
 
 ```
