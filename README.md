@@ -147,5 +147,5 @@ ROC curve and AUC     |  Posterior of Z
 ![](https://github.com/melmasri/HP-prediction/blob/master/example/roc_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Zpost_example.png)
 
 
-To run the same analysis on the whole GMPD, use `tree` as is without prunning. For more information see `main_network.R`.
+To run the same analysis on the whole GMPD, use `tree` as is without pruning. For more information see `main_network.R`.
    
