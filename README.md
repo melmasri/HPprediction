@@ -66,7 +66,9 @@ A direct example from Elmasri et al. (2017) using the Global Mammal Parasite Dat
 
 ```R
 ## Loading required packages
-library(ape, geiger, fulltext)
+library(ape)
+library(geiger)
+library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009)
 source('example/download_tree.R')       # see variable 'tree'
@@ -145,5 +147,5 @@ ROC curve and AUC     |  Posterior of Z
 ![](https://github.com/melmasri/HP-prediction/blob/master/example/roc_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Zpost_example.png)
 
 
-To run the same analysis on the whole GMPD, use `tree` as is without prunning.
+To run the same analysis on the whole GMPD, use `tree` as is without prunning. For more information see `main_network.R`.
    
