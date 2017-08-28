@@ -118,7 +118,7 @@ Phylogeny tree example     |  Species interaction matrix Z
 ![](https://github.com/melmasri/HP-prediction/blob/master/example/tree_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Z_example.png)
 
 
-```
+```R
 ## Creating the H x J probability matrix
 ## Extracting mean posteriors
 Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
@@ -134,8 +134,16 @@ distance[distance==0]<-1
 ## Probability matrix
 P = 1-  exp(-outer(Y, W)*distance)
 
+## ROC curves, AUC and posterior Z
+roc = rocCurves(obj$Z, obj$Z, P = P, all = TRUE) # ROC
+plot_Z(P>roc$threshold + 0)                      # posterior Z
+
 ```
 
+ROC curve and AUC     |  Posterior of Z
+:-------------------------:|:-------------------------:
+![](https://github.com/melmasri/HP-prediction/blob/master/example/roc_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Zpost_example.png)
 
 
-    
+To run the same analysis on the whole GMPD, use `tree` as is without prunning.
+   

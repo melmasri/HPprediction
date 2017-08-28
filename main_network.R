@@ -51,13 +51,9 @@ P = 1-  exp(-outer(Y, W)*distance)
 ## Distance only model 
 P = 1-  exp(-distance)
 
-
-## Analysis
-source('library.R')
-
-## rocCurves 
-roc = rocCurves(obj$Z, obj$Z, P = P, all = TRUE)
-
+## ROC curves, AUC and posterior Z
+roc = rocCurves(obj$Z, obj$Z, P = P, all = TRUE) # ROC
+plot_Z(P>roc$threshold + 0)                      # posterior Z
 
 ##################################################
 ##################################################
