@@ -17,7 +17,6 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     if(!all(range(Z)==c(0,1))){
         warning('Z is converted to binary!', immediate. = TRUE, call.= FALSE)
         Z = 1*(Z>0)
-    
     }
     if(any(colSums(Z)==0)){
         stop('Z has empty columns, please remove!', immediate. = TRUE, call.= FALSE)
@@ -35,7 +34,6 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
         param = fullJoint_est(Z, iter = slices, uncertainty = uncertainty, ...)
         return (list(param=param, Z = Z))
     }
-
     ##  Full and distance model
     if(grepl('(dist|full)', model.type)){
         if(is.null(tree))
@@ -48,17 +46,14 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
         if(!all(tree$tip.label %in% rownames(Z))){
             warning('not all species in tree exist in Z; missing are removed from tree!',
                     immediate.= TRUE, call. = FALSE)
-            tree <- drop.tip(tree,
-                             tree$tip.label[!(tree$tip.label %in% rownames(Z))])
+            tree = drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(Z)])
         }
-        
         ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% tree$tip.label)){
             warning('not all row-species in Z exist tree; missing are removed from Z!',
                     immediate.= TRUE, call. = FALSE)
-            Z <- Z[rownames(Z) %in% tree$tip.label,]
+            Z = Z[rownames(Z) %in% tree$tip.label,]
         }
-
         ## Testing that names in Z exist only once
         if(!all(sapply(sapply(rownames(Z),
                               function(r) which(r==tree$tip.label)), length)==1))
@@ -74,14 +69,13 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
         print(paste0('Running ',
                      ifelse(grepl('dist', model.type),
                             'distance model...', 'full model...')))
-        param  = ICM_est(unname(Z),
-            tree = tree,slices,  distOnly = grepl('dist', model.type),
+        param  = ICM_est(unname(Z),tree1,slices, distOnly = grepl('dist', model.type),
             uncertainty = uncertainty, ...)
-        return(list(param = param,tree=tree, Z=Z))
+        return(list(param = param,tree=tree1, Z=Z))
     }
 }
 
-ICM_est<-function(Z, tree = tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, ...){
+ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, ...){
     ## loading extra args
     el <-list(...)
     ## parameters set-up
@@ -397,7 +391,7 @@ lof<-function(Z, indeces = FALSE){
 arrange.tree<-function(phy){
     ## taken from .b.phylo from
     ## https://github.com/mwpennell/geiger-v2/blob/master/R/utilities-phylo.R#L1353-L1382
-    ht=heights.phylo(tree)
+    ht=heights.phylo(phy)
 	N=Ntip(phy)
 	Tmax=ht$start[N+1]
 	mm=match(1:nrow(ht), phy$edge[,2])
