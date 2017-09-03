@@ -69,9 +69,9 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
         print(paste0('Running ',
                      ifelse(grepl('dist', model.type),
                             'distance model...', 'full model...')))
-        param  = ICM_est(unname(Z),tree1,slices, distOnly = grepl('dist', model.type),
+        param  = ICM_est(unname(Z),tree,slices, distOnly = grepl('dist', model.type),
             uncertainty = uncertainty, ...)
-        return(list(param = param,tree=tree1, Z=Z))
+        return(list(param = param,tree=tree, Z=Z))
     }
 }
 
