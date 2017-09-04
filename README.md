@@ -6,7 +6,7 @@ Elmasri, M., Farrell, M., and Stephens, D. A. (2017). _A hierarchical Bayesian m
 
 The main function is `network_est()` in file `network_MCMC.R`
 
-`network_est` takes an interaciton matrix and a phylogenetic tree as input, depending on the model chosen, and returns a list of input objects and the MCMC samples of the specified parameters interest.
+`network_est` takes an interaction matrix and a phylogenetic tree as input, depending on the model chosen, and returns a list of input objects and the MCMC samples of the specified parameters interest.
 
 ## Usage
 
@@ -120,7 +120,7 @@ plot_Z(obj$Z)
 
 Phylogenetic tree          |  Species interaction matrix Z
 :-------------------------:|:-------------------------:
-![](https://github.com/melmasri/HP-prediction/blob/master/example/tree_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Z_example.png)
+![](https://github.com/melmasri/HP-prediction/blob/master/example-GMPD/tree_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example-GMPD/Z_example.png)
 
 
 ```R
@@ -147,7 +147,7 @@ plot_Z(P>roc$threshold + 0)                      # posterior Z
 
 ROC curve and AUC     |  Posterior of Z
 :-------------------------:|:-------------------------:
-![](https://github.com/melmasri/HP-prediction/blob/master/example/roc_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example/Zpost_example.png)
+![](https://github.com/melmasri/HP-prediction/blob/master/example-GMPD/roc_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example-GMPD/Zpost_example.png)
 
 
 To run the same analysis on the whole GMPD, use `tree` as is without pruning. For more information see `main_network.R`.

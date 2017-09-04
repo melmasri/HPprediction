@@ -168,7 +168,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, .
             pdist = dist%*%Z
             pdist[pdist00]<-1
             
-            ## Updatting latent scores
+            ## Updating latent scores
             yw = outer(y0[,s],w0[, s])
             if(!uncertainty){
                 U0 <- rExp(pdist*yw)
@@ -395,22 +395,6 @@ rg<-function(Z,l){
     M = sum(ZZ*Z)              # l<1(OR S>0) and Z=1,  N++
     N = sum((1-Z)*ZZ)          # l<1(OR S>0) and Z=0,  N-+
     rbeta(1 , N + 1, M + 1)         
-}
-
-
-lof<-function(Z, indeces = FALSE){
-    ## Given a binary matrix Z. Where the rows is fixed
-    ## A function that left orders the matrix sequentially from row 1 to n
-    ## based on first appearance of columns.
-    if(min(range(Z))<0) stop('Range is less that 0.')
-
-    active_col <- apply(Z,1,function(r) which(as.vector(r)>0))
-	bank = active_col[[1]]
-	for(i in 1:nrow(Z)){
-			a = setdiff(active_col[[i]], bank)
-			bank=c(bank,a)
-		}
-    if(indeces) bank else  Z[,bank]
 }
 
 ### ==================================================

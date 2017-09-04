@@ -2,7 +2,7 @@
 ## Script to run using cross-validation 
 rm(list= ls())
 ## General variables
-## please specifiy the following parameters
+## please specify the following parameters
 SAVE_PARAM = TRUE
 SAVE_FILE = 'param.RData'
 TYPE = 'full'                           # full, distance or affinity
@@ -32,7 +32,7 @@ tree = cleaned$tree                     # cleaned tree
 ## load useful network analysis functions
 source('network_analysis.R')
 
-## indexing 5-folds of interactionsx
+## indexing 5-folds of interactions
 folds = cross.validate.fold(com, n= 5)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
@@ -83,7 +83,7 @@ TB = data.frame(
 )
 TB
 
-print(sprintf('Model: %s, AUC: %f and prect 1 recovered from held out: %f',
+print(sprintf('Model: %s, AUC: %f and percent 1 recovered from held out: %f',
               TYPE,mean(TB$m.auc), mean(TB$m.pred.held.out.ones)))
 
 ## ROC curve points, can plot as plot(ROCgraph)
