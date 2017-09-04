@@ -60,10 +60,10 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
             stop('some row-species in Z exist more than once tree!')
 
         ## Making sure the order of hosts in Z and tree are the same
-        aux = cophenetic(tree)
-        row.order <- sapply(rownames(aux), function(r) which(r==rownames(Z)))
-        print('Ordering the rows of Z to match tree, and left ordering the columns..')
-        Z = lof(Z[row.order,])
+        row.order <- sapply(rownames(cophenetic(tree)),
+                            function(r) which(r==rownames(Z)))
+        print('Ordering the rows of Z to match tree...')
+        Z = Z[row.order,]
 
         ## Running the MCMC
         print(paste0('Running ',
