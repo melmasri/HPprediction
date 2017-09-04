@@ -155,4 +155,4 @@ To run the same analysis on the whole GMPD, use `tree` as is without pruning. Fo
 
 ## Cross validation
 
-For a cross validation example refer to scrip `mainCV_network.R`.
+For a cross validation example refer to script `mainCV_network.R`.
