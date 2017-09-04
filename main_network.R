@@ -8,12 +8,12 @@ library(geiger)
 library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009)
-source('example/download_tree.R')       # see variable 'tree'
+source('example-GMPD/download_tree.R')       # see variable 'tree'
 pruned.tree <- drop.tip(tree,
                         sample(tree$tip.label)[1:(0.8*length(tree$tip.label))]) # trimming 80% of tree tips for speed
 
 ## loading GMPD
-source('example/load_GMPD.R')           # see matrix 'com'
+source('example-GMPD/load_GMPD.R')           # see matrix 'com'
 
 ## sourcing MCMC script
 source('network_MCMC.R')
