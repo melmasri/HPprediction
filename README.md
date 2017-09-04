@@ -19,10 +19,10 @@ The main function is `network_est()` in file `network_MCMC.R`
 + `uncertainty`: whether to sample and incorporate the uncertainty parameter or not. See 'Details' for more information.
 + `...`: optional arguments to the lower layer MCMC sampling algorithm:
   + `y`: a single number of a vector of size H specifying the initial value for the row affinities, default is 1. 
-  + `a_y`: alpha hyperparameter of the Gamma priors of the row affinities, default is 1. The beta parameter is set to 1. 
+  + `a_y`: alpha hyperparameter of the Gamma priors of the row affinities, default is 1. Beta parameter is set to 1. 
   + `y_sd`: initial standard deviation for the proposal distribution (Gaussian) for the row parameters, default is 0.2. 
   + `w`: a single number of a vector of size J specifying the initial value for the column affinities, default is 1. 
-  + `a_w`: alpha hyperparameter of the Gamma priors of the column affinities, default is 1. The beta parameter is set to 1.
+  + `a_w`: alpha hyperparameter of the Gamma priors of the column affinities, default is 1. Beta parameter is set to 1.
   + `w_sd`: initial standard deviation for the proposal distribution (Gaussian) for the column parameters, default is 0.2.
   + `eta`: initial value for the tree transformation parameter under the `EB` model, default is 0.
   + `eta_sd`: initial standard deviation for the proposal distribution (Gaussian) for the column parameters, default is 0.005.
@@ -36,10 +36,13 @@ The main function is `network_est()` in file `network_MCMC.R`
 The function `network_est()` returns a list that includes a list of posterior samples for each estimated parameter with burn-in removed. In addition, the input data; `Z` and `tree` for `full` and `distance` models, and `Z` only for `affinity` model are included in the output. Note that `network_est()` does initial cleaning of `Z` and `tree` to conform to the needed input. Such as:
     + converting `Z` to binary;
     + removing row-species in `Z` that are not in `tree`;
-    + removing empty rows and columns from `Z`;
+    + removing empty columns from `Z`;
     + removing tips in `tree` that do not correspond to row-species in `Z`;
-    + left ordering of `Z`.
-    
+    + ordering rows of Z to conform with transformation of `tree` to a distance matrix by `cophenetic`.
+
+For a more details refer to `network_clean()` function. 
+
+
 For convenience, row parameters (gammas), and column parameters (rhos), are indicated by the variables `y` and `w`, respectively, in the output. If using the `distance` model or `full`, this will also include posterior samples for the phylogenetic transformation parameter `eta`. The uncertainty parameter is denoted by `g`, and returned only when `uncertainty=TRUE`, otherwise `NULL`.
 
 Specifying initial values for affinity parameters and related options in `...` is only relevant for the `full` or `affinity` model, otherwise they are ignored. Initial values for the `eta` parameter only apply in the `full` or `distance` model.
@@ -66,25 +69,25 @@ A direct example from Elmasri et al. (2017) using the Global Mammal Parasite Dat
 
 ```R
 ## Loading required packages
+## Loading required packages
 library(ape)
 library(geiger)
 library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009)
-source('example/download_tree.R')       # see variable 'tree'
+source('example-GMPD/download_tree.R')       # see variable 'tree'
 ## trimming 80% of tree tips for speed
 pruned.tree <- drop.tip(tree,
-                        sample(tree$tip.label)[1:(0.8*length(tree$tip.label))])
+                        sample(tree$tip.label)[1:(0.8*length(tree$tip.label))]) # trimming 80% of tree tips for speed
 
 ## loading GMPD
-source('example/load_GMPD.R')           # see matrix 'com'
-
+source('example-GMPD/load_GMPD.R')           # see matrix 'com'
 
 ## sourcing MCMC script
 source('network_MCMC.R')
 
 ## running the model of interest
-> obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') 
+> obj = network_est(Z = com, slices=1000, tree=pruned.tree, model.type='full') # full model
 Warning: Z is converted to binary!
 Warning: not all species in tree exist in Z; missing are removed from tree!
 Warning: not all row-species in Z exist tree; missing are removed from Z!
@@ -148,4 +151,8 @@ ROC curve and AUC     |  Posterior of Z
 
 
 To run the same analysis on the whole GMPD, use `tree` as is without pruning. For more information see `main_network.R`.
-   
+
+
+## Cross validation
+
+For a cross validation example refer to scrip `mainCV_network.R`.
