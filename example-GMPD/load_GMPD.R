@@ -3,12 +3,12 @@ obj.names = ls()
 library(reshape2)
 
 ### Download and load data
-if(!file.exists("example/GMPD_main.csv")){
+if(!file.exists("example-GMPD/GMPD_main.csv")){
 	require(fulltext)
 	# GMPD v2.0
 	# Stephens et al. 2016 Ecology
 	dt <- read.csv(unzip(ft_get_si("10.1002/ecy.1799", 1, "wiley"), exdir="example/", "GMPD_datafiles/GMPD_main.csv", junkpaths=TRUE), as.is=TRUE)
-} else dt <- read.csv("example/GMPD_main.csv", as.is=TRUE)
+} else dt <- read.csv("example-GMPD/GMPD_main.csv", as.is=TRUE)
 
 ### Formating the dataset
 # Subsetting to Carnivore + Ungulate subsections
