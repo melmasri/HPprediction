@@ -18,30 +18,41 @@ plot_Z<-function(Z, xlab, ylab, ...){
 	axis(2, at = c(1,10*1:(ceiling(nrow(Z)/10))), labels = c(10*(ceiling(nrow(Z)/10)):1,1))
 }
 
-rocCurves<-function(Z_test,Z_train,P, plot=TRUE,bins=400, all=FALSE){
+lof<-function(Z, indices = FALSE){
+    ## Given a binary matrix Z. Where the rows is fixed
+    ## A function that left orders the matrix sequentially from row 1 to n
+    ## based on first appearance of columns.
+    if(min(range(Z))<0) stop('Range is less that 0.')
+
+    active_col <- apply(Z,1,function(r) which(as.vector(r)>0))
+	bank = active_col[[1]]
+	for(i in 1:nrow(Z)){
+			a = setdiff(active_col[[i]], bank)
+			bank=c(bank,a)
+		}
+    if(indices) bank else  Z[,bank]
+}
+
+rocCurves<-function(Z.test,Z.train,P, plot=TRUE,bins=400, all=FALSE){
     ## Computes the ROC curves as x = FPR and y = TPR
     ##  FPR = FP/(FP +TN)
     ##  TPR = TP/(TP+FN)
-
     ## Arguments:
     ## plot = TRUE to actually plot the ROC curve
     ## bin  = the number of intervals (0,1) is divided into
     ## all = TRUE, when TPR and FPR are calculated on the whole dataset, FALSE on the held out portion only
-
     ## Returns:
     ## auc = the maximum AUC value
     ## threshold = the threshold where (P> threshold) has maximum AUC
     ## roc = a matrix of (threshold, FPR, TPR)
-
-    
-    Z_test= 1*(Z_test>0)
-    Z_train = 1*(Z_train>0)
+    Z.test= 1*(Z.test>0)
+    Z.train = 1*(Z.train>0)
     
     u = seq(0, 1, length.out = bins)    # binning
-    Z1 = (Z_test - Z_train)==1
-    if(all) Z1 = Z_test==1
+    Z1 = (Z.test - Z.train)==1
+    if(all) Z1 = Z.test==1
     m = sum(1*(Z1))
-    Z2 = Z_test==0
+    Z2 = Z.test==0
     n = sum(1*Z2)
     aux = sapply(u, function(r){
                      aux = 1*(P>=r)
@@ -157,16 +168,14 @@ cross.validate.set<-function(Z, rate= 0.2){
 ### Secondary functions
 ### ==================================================
 
-
-ana.table<-function(Z, ZCross, roc, plot=FALSE){
+ana.table<-function(Z, ZCross, P, roc, plot=FALSE){
     Z = 1*(Z>0)
     ZCross  = 1*(ZCross>0)
-    zz = 1*(roc$P>roc$threshold)
-
-    data.frame(auc = roc$auc, thresh= roc$threshold,
-               tot.interactions = sum(Z), hold.out= sum(abs(ZCross - Z)[Z==1]),
-               pred.hold.out = sum(zz[Z==1 & ZCross==0])/sum(abs(ZCross - Z)[Z==1]),
-               pred.all = sum(zz[Z==1])/sum(Z))
+    Zpost = 1*(P>roc$threshold)
+    data.frame(auc = roc$auc/100, thresh= roc$threshold,
+               tot.ones = sum(Z), held.out.ones= sum(abs(ZCross - Z)[Z==1]),
+               pred.held.out.ones = 100*sum(Zpost[Z==1 & ZCross==0])/sum(abs(ZCross - Z)[Z==1]),
+               pred.tot.ones = sum(Zpost[Z==1])/sum(Z)*100)
     
 }
 
