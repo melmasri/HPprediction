@@ -37,7 +37,7 @@ SAVE_FILE = 'param.RDAta'            # name of output R workspace file
 NO.CORES = opt$no.cores
 SLICE = opt$no.cycles
 MODEL = if(grepl('(full|aff|dist)', opt$model, ignore.case =TRUE))
-            grep(opt$model, c('full', 'distance', 'affinity'), value=TRUE) else NULL
+            grep(opt$model, c('full', 'distance', 'affinity'), value=T) else NULL
 run_script = NULL
 
 ## choosing an MCMC method 
