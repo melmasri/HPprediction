@@ -46,6 +46,7 @@ Options:
 
 # Example
 To run the full model with cross validation: navigate the main directory (`HP-prediction`), and run the following command on the shell. 
+
 `
 Rscript extras/runscript.R -m full -r cv --no.cycles= 1000 --no.cores 2
 `
