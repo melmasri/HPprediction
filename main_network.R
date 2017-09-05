@@ -3,7 +3,7 @@
 #########################################
 
 ## General variables
-## please uncooment specify the following parameters
+## please specify the following parameters
 SAVE_PARAM = TRUE                    # should workspace be saved
 SAVE_FILE = 'param.RData'            # name of output R workspace file
 MODEL = 'full'                       # full, distance or affinity
