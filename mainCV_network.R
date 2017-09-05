@@ -43,8 +43,6 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## Analysis for a single fold
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
-    eta_sd = 0.005
-    a_y = a_w = 0.15
 
     ## running the model of interest
     obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type)
