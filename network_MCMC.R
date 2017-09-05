@@ -11,7 +11,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     ## 1 - Full to combined 2 and 3;
     ## 2 - Affinity-only model (affinity);
     ## 3 - distance-only model (distance).
-    model.type= model.type[1]
+    model.type= tolower(model.type[1])
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
     if(slices==0)  stop('no. of slices cannot be 0!')
@@ -21,7 +21,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     tree = cleaned$tree
 
     ## For affinity-only model 
-    if(grepl('aff', model.type,ignore.case = TRUE)){
+    if(grepl('aff', model.type)){
         print('Running affinity model...')
         param = fullJoint_est(Z, iter = slices, uncertainty = uncertainty, ...)
     }
@@ -52,7 +52,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
     ## 2 - Affinity-only model (affinity);
     ## 3 - distance-only model (distance).
 
-    model.type= model.type[1]
+    model.type= tolower(model.type[1])
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
     if(!all(range(Z)==c(0,1))){
@@ -63,7 +63,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
         stop('Z has empty columns, please remove!', immediate. = TRUE, call.= FALSE)
         Z = Z[,which(colSums(Z)>0)]
     }
-    if(grepl('aff', model.type,ignore.case = TRUE)){
+    if(grepl('aff', model.type)){
         if(!is.null(tree))
             warning('affinity model is chosen; ignoring tree!',
                     immediate. = TRUE, call. = FALSE)

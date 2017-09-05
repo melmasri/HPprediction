@@ -2,17 +2,13 @@
 library("optparse")
 
 option_list = list(
-    make_option(c("-f", "--file"), type="character",
-                default=NULL, 
-                help="dataset file name, or an identifiable portion of it, if multiple files the first one is used. The file should have the RData extension.",
+	make_option(c("-m", "--model"), type="character",
+                default="full", 
+                help="possible models: full, distance, affinity, uncertain, [default= %default]",
                 metavar="character"),
-	make_option(c("-r", "--runtype"), type="character",
-                default="fold", 
-                help="possible run types, ALL, fold, affinity, distonly, weighted, NN uncertain, [default= %default]",
-                metavar="character"),
-    make_option(c("-s", "--subset"), type="character",
-                default=NULL, 
-                help="possible subset choices, for GMP it is Carnivora, for and EID it is Rodentia. [default = %default]",
+    make_option(c("-r", "--runtype"), type="character",
+                default="CV", 
+                help="possible run types: all, CV, [default= %default]",
                 metavar="character"),
     make_option("--output", type="character",
                 default=NULL, 
@@ -35,85 +31,53 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
-if (is.null(opt$file)){
-    print_help(opt_parser)
-    stop("At least one argument must be supplied (input file).n", call.=FALSE)
-}
-
+## General variables
+SAVE_PARAM = TRUE                    # should workspace be saved
+SAVE_FILE = 'param.RDAta'            # name of output R workspace file
 NO.CORES = opt$no.cores
 SLICE = opt$no.cycles
-## Setting up the file name 
-if(any(grepl(opt$file, list.files(recursive=FALSE), ignore.case = TRUE))){
-    DATAFILENAME  = grep(opt$file, list.files(recursive=FALSE, pattern='RData'), value=TRUE, ignore.case = TRUE)[1]
-    print(sprintf("File used: %s", DATAFILENAME))
-}else{
-    stop(paste("No file with the following identifier '", opt$file, "'was found in \n", getwd()))
-}
-    
-sTime = Sys.time()
-
-SUBSET  = opt$subset
-
+MODEL = if(grepl('(full|aff|dist)', opt$model, ignore.case =TRUE))
+            grep(opt$model, c('full', 'distance', 'affinity'), value=TRUE) else NULL
 run_script = NULL
+
+## choosing an MCMC method 
+if(grepl('CV', opt$runtype, ignore.case = TRUE))
+    run_script = 'mainCV_network.R'
+
+if(grepl('all', opt$runtype, ignore.case = TRUE))
+    run_script = 'main_network.R'
+
+## Setting up the file name 
+sTime = Sys.time()
 ## Formating the sub-directory name
 if(is.null(opt$output)){
-    if(is.null(opt$subset)){
-        subDir =  paste(toupper(opt$runtype),
-            gsub('.RData', '', DATAFILENAME),
-            format(sTime, "%d-%m-%Hh%M"), sep='-')
-    }else{
-        subDir =  paste(toupper(opt$runtype),
-            opt$subset, gsub('.RData', '', DATAFILENAME),
-            format(sTime, "%d-%m-%Hh%M"), sep='-')
-    }
+    subDir =  paste(toupper(opt$runtype),toupper(opt$model), 
+        format(sTime, "%d-%m-%Hh%M"), sep='-')
 }else{
     subDir = opt$output
 }
 ## adding sub-extension
-subDir = paste0('./', subDir)
-DATAFILENAME = paste0('../', DATAFILENAME)
+subDir = paste0('./', subDir, '/')
 
-
-## Choosing runscipt
-if(grepl('uncertain', opt$runtype, ignore.case=TRUE)){
-    run_script = '../main.10foldCV-uncertain.R'
+if(is.null(MODEL) | is.null(run_script)){
+    stop('something is wrong, run script or model not specified!')
 }
-
-if(grepl('(fold|affinity|weighted|distonly)', opt$runtype, ignore.case =TRUE)){
-    run_script = '../main.10foldCV.R'
-    TYPE = toupper(opt$runtype)
-}
-
-if(grepl('ALL', opt$runtype, ignore.case = TRUE))
-    run_script = '../main.all.R'
-
-
-if(grepl('NN', opt$runtype)){
-    run_script = '../main.NN.R'
-}
-
-
-if(is.null(run_script) | is.null(subDir)){
-    stop('something is wrong, the run script not found or no sub-directory is specified!')
-}
-
 
 
 print("Arguments:")
 print(opt)
 
-source('library.R')
-source('gen.R')
-##Creating directory
-reportFile <- "report.txt"
+source('network_analysis.R')
+source('network_MCMC.R')
 ## Creating a subdirectory
 dir.create(file.path(subDir))
+## report file
+reportFile <- paste0(subDir, "report.txt")
 ## Setting the working directory
-setwd(file.path(subDir))
+
 ## starting the process
 sink(reportFile)
 print(date())
-print(DATAFILENAME)
 print(run_script)
 print(opt)
 print(subDir)
@@ -133,8 +97,8 @@ print(eTime - sTime)
 ######################
 ## Closing sink and reverting work directory.
 sink()
-system("grep '^[^>+;]' report.txt > report_clean.txt")
-setwd('../')
+system(paste("grep '^[^>+;]'", reportFile, ">", paste0(subDir, "report_clean.txt") ))
+
 if(!is.null(opt$email)){
     subj = '"End of sim "'
     body = paste(subDir)

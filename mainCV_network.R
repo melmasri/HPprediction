@@ -1,13 +1,15 @@
 #########################################
 ## Script to run using cross-validation 
-rm(list= ls())
+#########################################
+
 ## General variables
 ## please specify the following parameters
-SAVE_PARAM = TRUE
-SAVE_FILE = 'param.RData'
-TYPE = 'full'                           # full, distance or affinity
-SLICE = 100                             # no of iterations
-NO.CORES = 2                            # maximum cores to use
+SAVE_PARAM = TRUE                    # should workspace be saved
+SAVE_FILE = 'param.RData'            # name of output R workspace file
+## MODEL = 'full'                       # full, distance or affinity
+## SLICE = 100                          # no of iterations
+## subDir = ''                          # directory to print the results 
+## NO.CORES = 2                         # maximum cores to use
 
 ## Loading required packages
 library(ape)
@@ -43,8 +45,10 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
     eta_sd = 0.005
     a_y = a_w = 0.15
+
     ## running the model of interest
     obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type)
+
     ## Probability matrix
     ## Extracting mean posteriors
     y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
@@ -69,9 +73,11 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     roc.all = rocCurves(Z, Z.train, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P, roc.all, plot=FALSE)
     
-    list(param=list(y=y, w=w, eta=eta), tb = tb, tb.all = tb.all, FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    list(param=list(y=y, w=w, eta=eta), tb = tb,
+         tb.all = tb.all, FPR.all = roc.all$roc$FPR,
+         TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
-},folds=folds,Z = com, tree=tree, model.type=TYPE, slice = SLICE,
+},folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
 
 ## Some analysis results, AUC, %1 recovered
@@ -82,9 +88,11 @@ TB = data.frame(
     m.hold.out = sapply(res, function(r) r$tb$held.out.ones)
 )
 TB
-
+## Printing and writing out average MCMC 
 print(sprintf('Model: %s, AUC: %f and percent 1 recovered from held out: %f',
-              TYPE,mean(TB$m.auc), mean(TB$m.pred.held.out.ones)))
+              MODEL,mean(TB$m.auc), mean(TB$m.pred.held.out.ones)))
+
+write.csv(rbind(TB, total = colMeans(TB)), file = paste0(subDir, 'AUC-PRED.csv'))
 
 ## ROC curve points, can plot as plot(ROCgraph)
 ROCgraph = cbind(
@@ -92,18 +100,18 @@ ROCgraph = cbind(
     TPR = rowMeans(sapply(res, function(r) r$TPR)))
 
 ## Constructing the P probability matrix from CV results
-if(grepl('(full|aff)', TYPE)){
+if(grepl('(full|aff)', MODEL)){
     W = rowMeans(sapply(res, function(r) r$param$w))
     Y = rowMeans(sapply(res, function(r) r$param$y))
     YW = outer(Y, W)
 } else W=Y=YW=1
 
-if(grepl('(full|dist)', TYPE)){
+if(grepl('(full|dist)', MODEL)){
     Eta = mean(sapply(res, function(r) r$param$eta))
     distance = 1/cophenetic(rescale(tree, 'EB', Eta))
     diag(distance)<-0
     distance = distance %*% com
-    if(grepl('dist', TYPE)) distance[distance==0]<-Inf else 
+    if(grepl('dist', MODEL)) distance[distance==0]<-Inf else 
     distance[distance==0]<-1
 }else distance = 1
 
@@ -116,13 +124,13 @@ com = com[, indices]
 P = P[, indices]
 
 ## printing posterior interaction matrix
-pdf(paste0('Z_', TYPE, '.pdf'))
-plot_Z(1*(P > mean(sapply(res, function(r) r$tb$thres))),
-       xlab = 'parasites', ylab = 'hosts')
+pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
+plot_Z(1*(P > mean(sapply(res, function(r) r$tb$thres))))
 dev.off()
 
+## Saving workspace
 if(SAVE_PARAM)
-    save.image(file = SAVE_FILE)
+    save.image(file = paste0(subDir, SAVE_FILE))
 
 ##################################################
 ##################################################
