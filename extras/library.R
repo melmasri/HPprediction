@@ -43,34 +43,34 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     gpch = c('+', '*')
     if(type=='parasites'){
         plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        legend(xlim[2]*0.3, ylim[2]*0.6, c("Parasites"), col = parasite.col,
-               pch = gpch[2], box.col="white")
+        legend(xlim[2]*0.2, ylim[2]*0.6, c("Parasites"), col = parasite.col,
+               pch = gpch[2], box.col="white", cex=1.5, pt.cex=1)
         if(!missing(Z_est)){
             points((para_est), type="p", col=parasite.col, pch=16)
-            legend(xlim[2]*0.3, ylim[2]*0.4, c("Estimated"), col = parasite.col,
-               pch = 16, box.col="white")
+            legend(xlim[2]*0.2, ylim[2]*0.4, c("Estimated"), col = parasite.col,
+               pch = 16, box.col="white", cex=1.5, pt.cex=1)
         }
     }
     if(type=='hosts'){
         plot((host_degrees), type="p", col=host.col, pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        legend(xlim[2]*0.3, ylim[2]*0.6, c("Hosts"), col = host.col,
-               pch = gpch[1], box.col="white")
+        legend(xlim[2]*0.2, ylim[2]*0.6, c("Hosts"), col = host.col,
+               pch = gpch[1], box.col="white", cex=1.5, pt.cex=1)
         if(!missing(Z_est)){
             points((host_est), type="p", col=host.col, pch=16)
-            legend(xlim[2]*0.3, ylim[2]*0.4, c("Estimated"), col = host.col,
-                   pch = 16, box.col="white")
+            legend(xlim[2]*0.2, ylim[2]*0.4, c("Estimated"), col = host.col,
+                   pch = 16, box.col="white",cex=1.5, pt.cex=1 )
         }
     }
     if(type=='both'){
         plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
         points((host_degrees), type="p", col=host.col, pch=gpch[1])
-    legend(xlim[2]*0.3, ylim[2]*0.6, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
-           pch = gpch[2:1], box.col="white")
+    legend(xlim[2]*0.2, ylim[2]*0.6, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
+           pch = gpch[2:1], box.col="white", cex=1.5, pt.cex=1)
         if (!missing(Z_est)) {
             points((para_est), type="p", col=parasite.col, pch=16)
             points((host_est), type="p", col=host.col, pch=16)
-            legend(xlim[2]*0.3, ylim[2]*0.33, c("Estimated"), col = c("black"),
-                   pch = 16, box.col="white")
+            legend(xlim[2]*0.2, ylim[2]*0.25, c("Estimated"), col = c("black"),
+                   pch = 16, box.col="white",cex=1.5, pt.cex=1)
         }
     }
 }

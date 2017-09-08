@@ -1,4 +1,4 @@
-##################################################
+s##################################################
 ##################################################
 ### gmp and eid all dataset.
 ### files of the format gmp- or eid-
@@ -43,9 +43,10 @@ dev.off()
 pdf(paste0('param_mcmc_',dataset,'.pdf'))
 
 par(mfrow=c(3,1))
-plot(param$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host')
-plot(param$w[c,burn], type='l', main = '', col=rho_col, xlab = 'Iteration', ylab='Parasite')
-plot(param$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Tree scaling parameter')
+plot(param$y[r,burn], type='l', main='', col=gamma_col, xlab='Iteration', ylab='Host',
+     cex.lab=1.5)
+plot(param$w[c,burn], type='l', main = '', col=rho_col, xlab = 'Iteration', ylab='Parasite', cex.lab=1.5)
+plot(param$eta[burn], type='l', main = '', col=eta_col, xlab = 'Iteration', ylab='Tree scaling parameter', cex.lab=1.5)
 
 dev.off()
 
@@ -188,7 +189,7 @@ roc= rocCurves(Z , Z, TRUE, P, 400,TRUE)
 ## 10 fold cross validation
 ## ## All files
 rm(list=ls())
-source('../../../library.R')
+source('~/Github/HP-ICM/extras/library.R')
 library(xtable)
 library(ape)
 library(geiger)
@@ -289,19 +290,21 @@ gpch = c(3, 8, 1, 6, 5,9)
 t = 'b'
 glwd=3
 i= 1
-plot(gres[[i]]$graph, xlab='1-specificity', ylab = 'sensitivity', type =t, col=gcol[i], main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1), lty=glty[i], lwd=glwd,  pch=gpch[i])
+plot(gres[[i]]$graph, xlab='1-specificity', ylab = 'sensitivity', type =t, col=gcol[i], main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1),
+     lty=glty[i], lwd=glwd,  pch=gpch[i],
+     cex.lab=1.5)
 if(length(gres)>1)
     for (i in 2:length(gres)){
         lines(gres[[i]]$graph,type=t, col=gcol[i],lty=glty[i], lwd=glwd,pch=gpch[i])
     }
-legend('bottomright', legend = gnames[ord.plot], col=gcol[ord.plot], lty=glty[ord.plot],lwd=2, pch = gpch[ord.plot])
+legend('bottomright', legend = gnames[ord.plot], col=gcol[ord.plot], lty=glty[ord.plot],lwd=2, pch = gpch[ord.plot], pt.cex=1, cex=1.5)
 dev.off()
 
     ### Plotting the interaction posterior matrix 
 for( i in 1:length(gres)){
     if(!is.null(gres[[i]]$P)){
         pdf(paste0('Z_', gres[[i]]$name, '.pdf'))
-        plot_Z(1*(gres[[i]]$P > mean(gres[[i]]$ana$m.thresh) ),xlab = 'parasites', ylab = 'hosts')
+        plot_Z(1*(gres[[i]]$P > mean(gres[[i]]$ana$m.thresh) ),xlab = '', ylab = '')
         dev.off()
     }
 }
@@ -459,7 +462,7 @@ for(f  in files){
     colnoass = rgb(1,0,0.4,0.4,0.5)
     hist(log(P1[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-11,0), breaks=30)
     hist(log(P1[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
-    legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass))
+    legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5) 
     dev.off()
     
     P1 = Pnog
@@ -468,7 +471,7 @@ for(f  in files){
     colnoass = rgb(1,0,0.4,0.4,0.5)
     hist(log(P1[com10>0]),col=colass,main ='', ylab = 'Density', freq=FALSE, xlab='Log of probability', ylim = c(0,0.38), xlim=c(-10,0), breaks=30)
     hist(log(P1[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
-    legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass))
+    legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5)
     dev.off()
     
     ind = lof(com10, TRUE)
@@ -484,12 +487,12 @@ for(f  in files){
     
     rocG= rocCurves(Z=1*(com10>0), Z_cross=com, P=Pg, all=TRUE, plot=FALSE, bins=400)
     pdf(paste0('gZ-2010_',name,'.pdf'))
-    plot_Z((1*(rocG$P> rocG$threshold))[,ind],'parasites', 'hosts' )
+    plot_Z((1*(rocG$P> rocG$threshold))[,ind],'', '' )
     dev.off()
     
     ## Histogram of G
     pdf(paste0('hist_g_',name,'.pdf'),height=4)
-    hist(paramG$g,freq=F,col=g_col, xlab='Posterior estimate of g', main='', breaks=100, xlim=c(0,0.4))
+    hist(paramG$g,freq=F,col=g_col, xlab='Posterior estimate of g', main='', breaks=100, xlim=c(0,0.4), cex.lab=1.5)
     abline(v=quantile(paramG$g,probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
     dev.off()
 
@@ -534,11 +537,12 @@ for(f  in files){
     t = 'b'
     glwd=3
     i=1
-    plot(rocG$roc$FPR, rocG$roc$TPR, xlab='1-specificity', ylab = 'sensitivity', type =t, col=gcol[i], main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1), lty=glty[i], lwd=glwd, pch=gpch[i])
+    plot(rocG$roc$FPR, rocG$roc$TPR, xlab='1-specificity', ylab = 'sensitivity', type =t, col=gcol[i], main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1), lty=glty[i], lwd=glwd, pch=gpch[i], cex.lab=1.5)
     i=2
     lines(rocNoG$roc$FPR, rocNoG$roc$TPR,type=t, col=gcol[i],lty=glty[i], lwd=glwd,pch=gpch[i])
     abline(a = 0, b=1,col='black',lty=2, lwd=2)
-    legend('bottomright', legend = gnames, col=gcol, lty=glty,lwd=2, pch=gpch)
+    legend('bottomright', legend = gnames, col=gcol, lty=glty,lwd=2, pch=gpch,
+           pt.cex=1, cex=1.5)
     dev.off()
     
     ## Table of analysis
@@ -578,7 +582,8 @@ for(f  in files){
     
     pdf(paste0('TopM_', name,'.pdf'))
 
-    plot(x=1:m,y = topm[,'withG'], xlab='Number of validated pairwise interactions', ylab = 'Number of recovered pairwise interactions',  col='red',lty=1, type='l', lwd=2)
+    plot(x=1:m,y = topm[,'withG'], xlab='Number of validated pairwise interactions', ylab = 'Number of recovered pairwise interactions',  col='red',lty=1, type='l', lwd=2,
+         cex.lab=1.5)
     lines(x=1:m,y = topm[,'withOutG'], lty=3, type='l', lwd=2, col='red')
     gnames = c('Full model with uncertainty', 'Full model')
     gcol = c('red','red')
@@ -591,7 +596,8 @@ for(f  in files){
     gcol = c(gcol, 'black')
     glwd = c(glwd,1)
     glty = c(glty,5)
-    legend('bottomright', legend = gnames, col=gcol, lty=glty,lwd=glwd)
+    legend('bottomright', legend = gnames, col=gcol, lty=glty,lwd=glwd,
+           pt.cex=1,cex=1.5)
     dev.off()
 
 
