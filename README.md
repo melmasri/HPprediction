@@ -8,6 +8,24 @@ The main function is `network_est()` in file `network_MCMC.R`
 
 `network_est` takes an interaction matrix and a phylogenetic tree as input, depending on the model chosen, and returns a list of input objects and the MCMC samples of the specified parameters interest.
 
+**Required libraries:**
++ R 3.4.1
++ [ape >= 3.5](https://cran.r-project.org/web/packages/ape/index.html)
++ [geiger >=2.0.6](https://cran.r-project.org/web/packages/geiger/index.html)
++ [reshape2 >=1.4.2](https://cran.r-project.org/web/packages/reshape2/index.html)
++ [fulltext >=0.1.8](https://cran.r-project.org/web/packages/fulltext/index.html)
++ parallel
+
+
+To install all packages the regular `install.packages` function can be used.
+
+```R
+install.packages('geiger')
+install.packages('reshape2')
+install.packages('fulltext')
+install.packages('ape')
+```
+
 ## Usage
 
 `network_est(Z, slices = 10, tree = NULL, model.type = c('full', 'distance', 'affinity'), uncertainty = FALSE, ... )`
@@ -150,7 +168,7 @@ ROC curve and AUC     |  Posterior of Z
 ![](https://github.com/melmasri/HP-prediction/blob/master/example-GMPD/roc_example.png)  |  ![](https://github.com/melmasri/HP-prediction/blob/master/example-GMPD/Zpost_example.png)
 
 
-To run the same analysis on the whole GMPD, use `tree` as is without pruning. For more information see `main_network.R`.
+To run the same analysis on the whole GMPD use `tree` as is without pruning. For more information see `main_network.R`.
 
 
 ## Cross validation

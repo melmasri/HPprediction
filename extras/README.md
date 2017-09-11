@@ -1,5 +1,10 @@
 Automation of the implemented model through `Rscript` command line.
 
+**Extra required libraries for automation:**
++ libaraies listed README file of main folder
++ [optparse >=1.3.2](https://cran.r-project.org/web/packages/optparse/index.html)
+
+
 # General setting for  running
 
 The `R` script called `runscript.R` fits the 3 model variations (full, distance, affinity) using either cross-validation (CV) or the full dataset. In the terminal `runscript.R` can be executed with some arguments with the command `Rscript` with the help of `optparse` library. The input arguments are:
