@@ -37,9 +37,9 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     list(param =param , Z = Z, tree=tree)
 }
 
-network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
+network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), uncertainty = FALSE){
     ## A function to clean Z and tree as:
-    ## - converts Z to binary
+    ## - converts Z to binary, if uncertain is FALSE
     ## - removed empty columns from Z
     ## - confirms tree is a phylo object when full or distance models
     ## - removed tree tips that do not exist in the rows of Z
@@ -55,7 +55,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
     model.type= tolower(model.type[1])
     ## General warnings are checks
     if(missing(Z)) stop('Interaction matrix is missing!')
-    if(!all(range(Z)==c(0,1))){
+    if(!all(range(Z)==c(0,1)) & !uncertainty){
         warning('Z is converted to binary!', immediate. = TRUE, call.= FALSE)
         Z = 1*(Z>0)
     }
@@ -93,7 +93,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
             stop('some row-species in Z exist more than once tree!')
         
         ## Making sure the order of hosts in Z and tree are the same
-        if(!all(rownames(rownames(cophenetic(tree)) ==rownames(Z)))){
+        if(!all(rownames(cophenetic(tree)) ==rownames(Z))){
             row.order <- sapply(rownames(cophenetic(tree)),
                                 function(r) which(r==rownames(Z)))
             print('Ordering the rows of Z to match tree...')
