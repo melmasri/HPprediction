@@ -35,7 +35,7 @@ tree = cleaned$tree                     # cleaned tree
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5,2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
@@ -97,6 +97,8 @@ ROCgraph = cbind(
     FPR = rowMeans(sapply(res, function(r) r$FPR)),
     TPR = rowMeans(sapply(res, function(r) r$TPR)))
 
+write.csv(ROCgraph, file = paste0(subDir, 'ROC-xy-points.csv'))
+
 ## Constructing the P probability matrix from CV results
 if(grepl('(full|aff)', MODEL)){
     W = rowMeans(sapply(res, function(r) r$param$w))
@@ -124,6 +126,16 @@ P = P[, indices]
 ## printing posterior interaction matrix
 pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
 plot_Z(1*(P > mean(sapply(res, function(r) r$tb$thres))))
+dev.off()
+
+## printing input Z
+pdf(paste0(subDir, 'Z_input.pdf'))
+plot_Z(com)
+dev.off()
+
+## printing input tree
+pdf(paste0(subDir, 'tree_input.pdf'))
+plot(tree, show.tip.label=FALSE)
 dev.off()
 
 ## Saving workspace
