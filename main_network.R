@@ -13,7 +13,6 @@ subDir = ''                          # directory to print the results
 ## Loading required packages
 library(ape)
 library(geiger)
-library(fulltext)
 
 ## loading mammal supertree included in Fritz et al. (2009)
 source('example-GMPD/download_tree.R')       # see variable 'tree'
@@ -39,15 +38,15 @@ W = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
 Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
 YW = outer(Y, W)
 ## setting affinity to 1 in distance model
-if(grepl('dist', MODEL, ignore.case = TRUE)) YW = 1 
+if(grepl('dist', MODEL)) YW = 1 
 
 ### Full or distance model
 ## Creating distance
-if(grepl('(full|dist)', MODEL, ignore.case=TRUE)){
+if(grepl('(full|dist)', MODEL)){
     distance = 1/cophenetic(rescale(obj$tree, 'EB', Eta))
     diag(distance)<-0
     distance = distance %*% obj$Z
-    distance[distance==0] <- if(grepl('dist', MODEL, ignore.case = TRUE)) Inf else 1
+    distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
 } else distance = 1
 
 ## models
@@ -84,6 +83,39 @@ dev.off()
 pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
 plot_Z(1*(P[, indices]>roc$threshold))                     
 dev.off()
+
+
+
+
+## MCMC trace plots and ACF
+require(coda)
+pdf(paste0(subDir, 'param_mcmc_acf.pdf'))
+r = which.max(rowSums(com))
+c = which.max(colSums(com))
+if(grepl('aff', MODEL)) par(mfrow=c(2,2))
+if(grepl('dist', MODEL)) par(mfrow=c(1,2))
+if(grepl('full', MODEL)) par(mfrow=c(3,2))
+if(grepl('(aff|full)', MODEL)){
+    plot(obj$param$y[r,], type='l', main='',xlab='Iteration', ylab='Host')
+    plot(obj$param$w[c,], type='l', main='', xlab = 'Iteration', ylab='Parasite')
+}
+if(grepl('(dist|full)', MODEL))
+    plot(obj$param$eta, type='l', main = '', xlab = 'Iteration', ylab='Tree scaling parameter')
+if(grepl('(aff|full)', MODEL)){
+    acf(obj$param$y[r,],lag.max=100, main='Host - most active')
+    text(80, 0.8, paste0('Effective sample size: ',round(effectiveSize(obj$param$y[r,]))))
+    round(effectiveSize(obj$param$y[r,]))
+    acf(obj$param$w[c,],lag.max=100, main='Parasite - most active')
+    text(80, 0.8, paste0('Effective sample size: ',round(effectiveSize(obj$param$w[c,]))))
+    round(effectiveSize(obj$param$w[c,]))
+}
+if(grepl('(dist|full)', MODEL)){
+    acf(obj$param$eta,lag.max=100, main='Scale parameter')
+    text(80, 0.8, paste0('Effective sample size: ',round(effectiveSize(obj$param$eta))))
+    round(effectiveSize(obj$param$eta))
+}
+dev.off()
+
 
 ## Saving workspace
 if(SAVE_PARAM)
