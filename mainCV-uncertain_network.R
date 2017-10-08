@@ -155,6 +155,7 @@ pdf(paste0(subDir, 'tree_input.pdf'))
 plot(tree, show.tip.label=FALSE)
 dev.off()
 
+name = 'GMPD'
 ## ROC curves and posterior interaction matrices
 rocNoG = rocCurves(com10, com,Pnog, all=TRUE, plot=FALSE, bins=400)
 pdf(paste0(subDir, 'without_gZ-2010_',name,'.pdf'))

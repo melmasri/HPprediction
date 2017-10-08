@@ -4,11 +4,11 @@ library("optparse")
 option_list = list(
 	make_option(c("-m", "--model"), type="character",
                 default="full", 
-                help="possible models: full, distance, affinity, uncertain, [default= %default]",
+                help="possible models: full, distance, affinity [default= %default]",
                 metavar="character"),
     make_option(c("-r", "--runtype"), type="character",
                 default="CV", 
-                help="possible run types: all, CV, [default= %default]",
+                help="possible run types: CV, all, uncertain [default= %default]",
                 metavar="character"),
     make_option("--output", type="character",
                 default=NULL, 
@@ -36,13 +36,17 @@ SAVE_PARAM = TRUE                    # should workspace be saved
 SAVE_FILE = 'param.RDAta'            # name of output R workspace file
 NO.CORES = opt$no.cores
 SLICE = opt$no.cycles
-MODEL = if(grepl('(full|aff|dist)', opt$model, ignore.case =TRUE))
-            grep(opt$model, c('full', 'distance', 'affinity'), value=T) else NULL
+MODEL = if(grepl('(full|aff|dist)', tolower(opt$model)))
+            grep(tolower(opt$model), c('full', 'distance', 'affinity'), value=T) else NULL
+COUNT = if(grepl('uncer', tolower(opt$runtype))) FALSE else TRUE
 run_script = NULL
 
 ## choosing an MCMC method 
 if(grepl('CV', opt$runtype, ignore.case = TRUE))
     run_script = 'mainCV_network.R'
+
+if(grepl('uncer', opt$runtype, ignore.case = TRUE))
+    run_script = 'mainCV-uncertain_network.R'
 
 if(grepl('all', opt$runtype, ignore.case = TRUE))
     run_script = 'main_network.R'
