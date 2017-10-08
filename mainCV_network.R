@@ -10,10 +10,9 @@ MODEL = 'full'                       # full, distance or affinity
 SLICE = 100                          # no of iterations
 subDir = ''                          # directory to print the results 
 NO.CORES = 2                         # maximum cores to use
+COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
 
 ## Loading required packages
-library(ape)
-library(geiger)
 library(parallel)
 
 ## loading mammal supertree included in Fritz et al. (2009)

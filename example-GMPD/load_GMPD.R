@@ -39,15 +39,28 @@ Citation <- gsub('(et al|et al.| |-)', '', dt$Citation)
 
 # Calculating unique citation count
 hp <- unique(data.frame( dt[, c('HostCorrectedName', 'ParasiteCorrectedName')], Citation=Citation))
-aux <- table(paste0(hp$HostCorrectedName, hp$ParasiteCorrectedName))
-hp <- unique(hp [, c("HostCorrectedName", "ParasiteCorrectedName")])
-CiteCount <- sapply(paste0(hp$HostCorrectedName, hp$ParasiteCorrectedName), function(r){
-	aux[which(names(aux)==r)]
-	})
-hp <- cbind(hp, CiteCount)
 
-# Creating interaction / community matrix
-com <- dcast(hp,HostCorrectedName ~ ParasiteCorrectedName, value.var='CiteCount', fill=0)
+if(COUNT | length(grep('COUNT', ls()))==0){
+    ## For count data
+    aux <- table(paste0(hp$HostCorrectedName, hp$ParasiteCorrectedName))
+    hp <- unique(hp [, c("HostCorrectedName", "ParasiteCorrectedName")])
+    CiteCount <- sapply(paste0(hp$HostCorrectedName, hp$ParasiteCorrectedName), function(r){
+        aux[which(names(aux)==r)]
+    })
+    hp <- cbind(hp, CiteCount)
+    ## Creating interaction / community matrix
+    com <- dcast(hp,HostCorrectedName ~ ParasiteCorrectedName,
+                 value.var='CiteCount', fill=0)
+}else{
+## First citation years
+    Citation.min.year = as.numeric(substr(hp$Citation,
+        regexpr('[0-9]{2,4}',hp$Citation),regexpr('[0-9]{2,4}',hp$Citation)+3))
+    
+    ## Creating interaction / community matrix
+    com = dcast(cbind(hp, Citation.min.year), HostCorrectedName ~ ParasiteCorrectedName,
+        fun.aggregate = min, value.var = 'Citation.min.year', fill=0)
+}
+ 
 rownames(com) <- com$HostCorrectedName
 com <- subset(com, select = -HostCorrectedName)
 com <- as.matrix(com)

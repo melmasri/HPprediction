@@ -9,10 +9,7 @@ SAVE_FILE = 'param.RData'            # name of output R workspace file
 MODEL = 'full'                       # full, distance or affinity
 SLICE = 100                          # no of iterations
 subDir = ''                          # directory to print the results 
-
-## Loading required packages
-library(ape)
-library(geiger)
+COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
 
 ## loading mammal supertree included in Fritz et al. (2009)
 source('example-GMPD/download_tree.R')       # see variable 'tree'
