@@ -185,7 +185,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, .
                                               sig=w_sd, c(a_w, 1))
                     ## Updating host parameters
                     y0in[, i+1]<-raffinity.MH(y0in[,i],mr,
-                                              (Upd)%*%w0in[,i+1],
+                                              tcrossprod(w0in[,i+1],Upd),
                                               sig=y_sd, c(a_y, 1))
                 }
                 ## Updating similarity matix parameter
@@ -370,7 +370,7 @@ rEta.cophenetic<-function(eta.old,tree,tree.ht,pdist.old, pd0,i, Z, ywU, eta_sd 
     eta.prop = eta.old + rnorm(length(eta.old), 0, sd = eta_sd)
     dist = 1/cophenetic(eb.phylo(tree, tree.ht, eta.prop))
     diag(dist)<-0
-    pdist.new = c(dist[i,]%*%Z)
+    pdist.new = c(crossprod(dist[i,],Z))
     no0 = which(pd0)
     if(length(no0)){
         if(length(no0)==sum(Z[i,])) likeli = -Inf else 
