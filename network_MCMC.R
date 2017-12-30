@@ -145,26 +145,27 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, .
 	mc <- colSums(Z)
 	mr <- rowSums(Z)
 
+    ## indexing the upper and lower triangular of the matrix
+    lowerIndex = lower.tri.Index(ny)
+    upperIndex = upper.tri.Index(ny)
+
     ## Arranging the tree
     tree.ht = arrange.tree(tree)
-    dist = cophenetic(eb.phylo(tree, tree.ht, peta[1]))
-    dist = 1/dist
-    diag(dist)<-0
+    tree$tip.label = 1:length(tree$tip.label)
+    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex, ny)
     pdist = dist%*%Z
     
-    pdist0 = pdist==0
-    pdist00 = which(pdist0, arr.ind=TRUE)
-    n0= NROW(pdist00)
-
+    pdist00 = which(pdist==0)
+    ## pdist0 = pdist==0
+    pdist0 = apply(pdist,1, function(r) which(r==0))
+    
     i=1;s=1
     tryCatch(
         for(s in 1:slices){
             if(s%%100==0)
                 print(sprintf('slice: %d', s))
             ## Arranging the tree
-            dist = cophenetic(eb.phylo(tree, tree.ht, peta[s]))
-            dist = 1/dist
-            diag(dist)<-0
+            dist = cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
             pdist = dist%*%Z
             pdist[pdist00]<-1
             
@@ -189,9 +190,12 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, .
                                               sig=y_sd, c(a_y, 1))
                 }
                 ## Updating similarity matix parameter
-                new.eta = rEta.cophenetic(petain[i],tree,tree.ht,
-                    pdist[i,],pdist0[i,],i,Z, (w0[,s]*y0in[i,i+1]*U0[i,]),
-                    eta_sd)
+                new.eta = rEta.copheneticFast(petain[i],tree,tree.ht,
+                    pdist[i,],pdist0[[i]],i,Z,  y0in[i,i+1]*(w0[,s]*U0[i,]),
+                    eta_sd, lowerIndex, upperIndex, ny)
+                ## new.eta = rEta.cophenetic(petain[i],tree,tree.ht,
+                ##     pdist[i,],pdist0[i,],i,Z, (w0[,s]*y0in[i,i+1]*U0[i,]),
+                ##     eta_sd)
                 petain[i+1] = new.eta$eta
                 pdist[i,] = new.eta$dist
                 
@@ -450,4 +454,54 @@ heights.phylo<-function(x){
 	res
 }
 
+### ==================================================
+### Faster Cophenetic using Phangorn package and ape>5.0
+### ==================================================
+
+lower.tri.Index <-function(n){
+    ## returning the vectorized indices of the lower triangular
+    ## elements of the matrix, excluding diagonal 
+    unlist(sapply(1:(n-1), function(i) n*(i-1) + (i+1):n))
+}
+
+upper.tri.Index<-function(n){
+    ## returning the vectorized indices of the upper triangular
+    ## elements of the matrix, excluding diagonal 
+    b = matrix(0, n ,n )
+    lowerIndex = lower.tri.Index(n)
+    b[lowerIndex]<-lowerIndex
+    b =t(b)
+    a = which(upper.tri(b))
+    a[order(b[upper.tri(b)])]
+}
+
+
+cophFast<-function(tree, lowerIndex, upperIndex, n){
+    ## a fast version of phylo tree using phangorn:::coph
+    ## phangorn:::coph returns a dist object.
+    b = matrix(0, n,n)
+    b[lowerIndex]<- b[upperIndex]<-(1/phangorn:::coph(tree))
+    b
+}
+
+rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, Z, ywU,
+                              eta_sd =0.01, a, b,nr){
+    ## a faster version of rEta using faster cophenetic and sparse matrices
+    eta.prop = eta.old + eta_sd*rnorm(1)
+    dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
+    pdist.new = dist[i,]%*%Z
+    ## no0=which(no0==0)
+    if(length(no0)){
+        if(length(no0)==sum(Z[i,])) likeli = -Inf else 
+        likeli = sum(((log(pdist.new)- log(pdist.old))*Z[i,])[-no0])-
+            sum((ywU*(pdist.new - pdist.old))[-no0]) 
+    }else{
+        likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
+            sum(ywU*(pdist.new - pdist.old))
+    }
+    if(runif(1)<= min(1, exp(likeli)))
+        { eta.old  = eta.prop; pdist.old = pdist.new}
+    
+    list (eta=eta.old, dist=pdist.old)
+}
 ### ==================================================
