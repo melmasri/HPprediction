@@ -176,7 +176,11 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     i=1;s=1
     tryCatch(
         for(s in 1:slices){
-            if(s%%100==0)  print(sprintf('slice: %d, at %s', s, Sys.time())) # iteration update
+            if(s%%200==0){
+                print(sprintf('slice: %d, at %s', s, Sys.time())) # iteration update
+                if(!is.null(el$backup))
+                    save(y0,w0,peta,g0, file='snapshot.RData')
+            }
             
             ## Updating the tee
             dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
@@ -306,9 +310,11 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
     s=1
     tryCatch(
         for(s in 1:iter){
-            if(s%%100==0)
+            if(s%%200==0){
                 print(sprintf('iteration %d, at %s', s, Sys.time()))
-            
+                if(!is.null(el$backup))
+                    save(y0,w0,peta,g0, file='snapshot.RData')
+            }
             ## Updatting latent scores
             if(!uncertainty){
                 U0 <- rExp(outer(y0[,s],w0[, s]))
