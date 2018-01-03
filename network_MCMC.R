@@ -298,7 +298,7 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
     g0<-rep(0, iter+1)
     peta = rep(0, iter+1)
     
-    Z0 <- which(Z==0)
+    Z0 <-Z==0
 	mc <- colSums(Z)
 	mr <- rowSums(Z)
 
@@ -317,7 +317,8 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
                 U0 <-rExp2(outer(y0[,s],w0[, s]), g0[s], Z, Z0)
             
             ## Updating the parasite parameters
-            w0[, s+1]<-raffinity.MH(w0[,s],mc,tcrossprod(y0[,s],U0),
+            w0[, s+1]<-raffinity.MH(w0[,s],mc,
+                                    crossprod(y0[,s],U0),
                                     sig=w_sd, c(a_w, 1))
             ## Updating host parameters
             y0[, s+1]<-raffinity.MH(y0[,s],mr,
