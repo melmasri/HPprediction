@@ -9,6 +9,7 @@ network_est<-function(Z, slices = 10, tree = NULL, model.type = c('full', 'dista
     require(geiger)
     require(phangorn)
     require(Matrix)
+    require(methods)
     ## Running options:
     ## 1 - Full to combined 2 and 3;
     ## 2 - Affinity-only model (affinity);
