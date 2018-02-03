@@ -21,7 +21,7 @@ source('example-GMPD/load_GMPD.R')           # see matrix 'com'
 source('network_MCMC.R')
 
 ## running the model of interest
-obj = network_est(Z = com, slices=SLICE, tree=tree, model.type=MODEL, backup=TRUE) # full model
+obj = network_est(Z = com, slices=SLICE, tree=tree, model.type=MODEL) # full model
 names(obj)
 names(obj$param)
 
