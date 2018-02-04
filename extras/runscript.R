@@ -33,7 +33,7 @@ opt = parse_args(opt_parser);
 
 ## General variables
 SAVE_PARAM = TRUE                    # should workspace be saved
-SAVE_FILE = 'param.RDAta'            # name of output R workspace file
+SAVE_FILE = 'param.RData'            # name of output R workspace file
 NO.CORES = opt$no.cores
 SLICE = opt$no.cycles
 MODEL = if(grepl('(full|aff|dist)', tolower(opt$model)))
