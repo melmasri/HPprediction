@@ -99,14 +99,17 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
             stop('some row-species in Z exist more than once tree!')
         
         ## Making sure the order of hosts in Z and tree are the same
-        aux = cophFast(tree, lower.tri.Index(length(tree$tip.label)), upper.tri.Index(length(tree$tip.label)), length(tree$tip.label))
+        aux  = cophenetic(tree)
         if(!all(rownames(aux)==rownames(Z))){
             row.order <- sapply(rownames(aux),function(r) which(r==rownames(Z)))
             print('Ordering the rows of Z to match tree...')
             Z = Z[row.order,]
         }
-        print('normalizing tree edges by half the maximum pairwise distance')
-        tree$node.length = tree$node.length/(max(aux)/2)
+        if(max(range(tree$edge.length))>1){
+            warning('normalizing tree edges by the maximum pairwise distance!',
+                      immediate.= TRUE, call. = FALSE)
+            tree$edge.length = tree$edge.length/max(aux)
+        }
     }
     list(Z = Z, tree = tree)
 }
