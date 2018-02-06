@@ -99,12 +99,14 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
             stop('some row-species in Z exist more than once tree!')
         
         ## Making sure the order of hosts in Z and tree are the same
-        if(!all(rownames(cophenetic(tree)) ==rownames(Z))){
-            row.order <- sapply(rownames(cophenetic(tree)),
-                                function(r) which(r==rownames(Z)))
+        aux = cophFast(tree, lower.tri.Index(length(tree$tip.label)), upper.tri.Index(length(tree$tip.label)), length(tree$tip.label))
+        if(!all(rownames(aux)==rownames(Z))){
+            row.order <- sapply(rownames(aux),function(r) which(r==rownames(Z)))
             print('Ordering the rows of Z to match tree...')
             Z = Z[row.order,]
         }
+        print('normalizing tree edges by half the maximum pairwise distance')
+        tree$node.length = tree$node.length/(max(aux)/2)
     }
     list(Z = Z, tree = tree)
 }
@@ -511,7 +513,6 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
-    eta.prop = sign(eta.prop)*min(abs(eta.prop), 0.35)
     dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
     pdist.new = dist[i,]%*%sZ
     if(sparse)
