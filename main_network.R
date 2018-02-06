@@ -100,15 +100,15 @@ if(grepl('(dist|full)', MODEL))
     plot(obj$param$eta, type='l', main = '', xlab = 'Iteration', ylab='Tree scaling parameter')
 if(grepl('(aff|full)', MODEL)){
     acf(obj$param$y[r,],lag.max=100, main='Host - most active')
-    text(50, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$y[r,]))))
+    text(30, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$y[r,]))))
     round(effectiveSize(obj$param$y[r,]))
     acf(obj$param$w[c,],lag.max=100, main='Parasite - most active')
-    text(50, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$w[c,]))))
+    text(30, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$w[c,]))))
     round(effectiveSize(obj$param$w[c,]))
 }
 if(grepl('(dist|full)', MODEL)){
     acf(obj$param$eta,lag.max=100, main='Scale parameter')
-    text(50, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$eta))))
+    text(30, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$eta))))
     round(effectiveSize(obj$param$eta))
 }
 dev.off()
