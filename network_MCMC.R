@@ -169,6 +169,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     pdist = dist%*%sparseZ
     if(sparse)  pdist = as(pdist, 'matrix')
     pdist0 = apply(pdist, 1, function(r) which(r==0))
+    if(length(pdist0)!=ny) stop('pdist0 error')
     pdist00 = which(pdist==0)
 
     ## starting the loop
@@ -522,7 +523,7 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
         likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
             sum(ywU*(pdist.new - pdist.old))
     }
-    if(runif(1)<= min(1, exp(likeli)))
+    if(!is.nan(likeli) && runif(1)<= min(1, exp(likeli)))
         { eta.old  = eta.prop; pdist.old = c(pdist.new);change=TRUE}
     
     list (eta=eta.old, dist=pdist.old, change=change)
