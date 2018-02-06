@@ -196,7 +196,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                 U0 <- rExp(pdist*yw)
                 U0[Z0] <- 1
             }else
-                U0 <-rExp2(pdist*yw, g0[s], Z, Z00)
+                U0 <-rExp2(pdist*yw, g0[s], Z,Z0, Z00)
 
             ## looping over nrow(Z), for ICM
             Upd = U0*pdist
@@ -317,11 +317,8 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
                     save(y0,w0,peta,g0, file='snapshot.RData')
             }
             ## Updatting latent scores
-            if(!uncertainty){
-                U0 <- rExp(outer(y0[,s],w0[, s]))
-                U0[Z0] <- 1
-            }else
-                U0 <-rExp2(outer(y0[,s],w0[, s]), g0[s], Z, Z0)
+            U0 <- rExp(outer(y0[,s],w0[, s]))
+            U0[Z0] <- 1
             
             ## Updating the parasite parameters
             w0[, s+1]<-raffinity.MH(w0[,s],mc,
@@ -332,8 +329,7 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
                                     tcrossprod(w0[,s+1],U0),
                                     sig=y_sd, c(a_y, 1))
             ## Uncertain parameter sampling
-            if(uncertainty)
-                g0[s+1] = rg(Z, l=U0)
+            
             
             ## MH Adaptiveness
             if(s%%batch.size==0){
@@ -369,14 +365,14 @@ rExp<-function(l,a=1){
 	-log(1- unif*(1-exp(-l*a)))/(l + tol.err)
 }
 
-rExp2<-function(l, g, Z, Z0){
+rExp2<-function(l, g, Z, Z0, Z00){
     ## Sampling from a zero-inflated Gumbel or a one-inflated Exponential
     ## Method one: P(z=0|g) = 1\delta_{s=0} + g\delta_{s>0}; dirac delta
     p = 1- exp(-l)
     unif = matrix(runif(length(l)), dim(p))
     U = 1 + 0*p
     U[-Z0] = -log(1- unif[-Z0]*p[-Z0])/(l[-Z0] + tol.err)
-    aa = Z0 & (unif < g*p/(g*p + 1-p))
+    aa = Z00 & (unif < g*p/(g*p + 1-p))
     U[aa] =  -log(1 - unif[aa]*(g*p[aa] + 1-p[aa])/g)/l[aa]
     U
 }
