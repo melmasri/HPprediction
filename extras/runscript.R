@@ -31,6 +31,8 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
+##
+set.seed(23456)
 ## General variables
 SAVE_PARAM = TRUE                    # should workspace be saved
 SAVE_FILE = 'param.RData'            # name of output R workspace file
