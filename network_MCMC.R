@@ -516,6 +516,7 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
+    eta.prop = sign(eta.prop)*min(abs(eta.prop),200)
     dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
     pdist.new = dist[i,]%*%sZ
     if(sparse)
