@@ -173,7 +173,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     pdist = dist%*%sparseZ
     if(sparse)  pdist = as(pdist, 'matrix')
     pdist0 = apply(pdist, 1, function(r) which(r==0))
-    if(length(pdist0)!=ny) stop('pdist0 error')
+    if(length(pdist0) && length(pdist0)!=ny) stop('pdist0 error')
     pdist00 = which(pdist==0)
 
     ## starting the loop
@@ -218,7 +218,8 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                 }
                 ## Updating similarity matix parameter
                 new.eta = rEta.copheneticFast(petain[i],tree,tree.ht,
-                    pdist[i,],pdist0[[i]],i,sparseZ,Z,
+                    pdist[i,],
+                    if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
                     y0in[i,i+1]*(w0[,s]*U0[i,]),
                     eta_sd, lowerIndex, upperIndex, ny, ind, sparse)
                 petain[i+1] = new.eta$eta
