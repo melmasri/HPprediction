@@ -20,7 +20,10 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 source('example-GMPD/load_GMPD.R')      # see matrix 'com'
-
+## aux = which(colSums(1*(com>0))==1)
+## com = com[, -aux]
+## com = com[-which(rowSums(1*(com>0))==0), ]
+dim(com)
 ## sourcing MCMC script
 source('network_MCMC.R')
 
@@ -31,7 +34,7 @@ tree = cleaned$tree                     # cleaned tree
 
 ## subsetting GMPD for up to 2004 and up to 2010 (com10)
 com10 = com
-year = 2004
+year = 2006
 aux = which(com10>year, arr.ind=T)
 com = 1*(com10>0)
 for(i in 1:nrow(aux))
