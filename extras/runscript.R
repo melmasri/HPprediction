@@ -63,7 +63,8 @@ if(is.null(opt$output)){
     subDir =  paste(toupper(opt$runtype),toupper(opt$model), 
         format(sTime, "%d-%m-%Hh%M"), sep='-')
 }else{
-    subDir = opt$output
+    subDir =  paste(toupper(opt$runtype),toupper(opt$model),toupper(opt$output),
+        format(sTime, "%d-%m-%Hh%M"), sep='-')
 }
 ## adding sub-extension
 subDir = paste0('./', subDir, '/')
