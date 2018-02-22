@@ -124,8 +124,9 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
-    a_y = if(!is.null(el$a_w)) el$a_y else  1
-    b_w = b_y = 1;
+    a_y = if(!is.null(el$a_y)) el$a_y else  1
+    b_w = if(!is.null(el$b_w)) el$b_w else 1
+    b_y = if(!is.null(el$b_y)) el$b_y else 1
     y_sd = if(is.null(el$y_sd)) rep(0.2, ny) else el$y_sd
     w_sd = if(is.null(el$w_sd)) rep(0.2, nw) else el$w_sd
     eta = if(is.null(el$eta)) 0 else el$eta
@@ -210,11 +211,11 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                     ## Updating the parasite parameters
                     w0in[, i+1]<-raffinity.MH(w0in[,i],Z[i,],
                                               y0in[i,i]*(Upd[i,]),
-                                              sig=w_sd, c(a_w, 1))
+                                              sig=w_sd, c(a_w, b_w))
                     ## Updating host parameters
                     y0in[, i+1]<-raffinity.MH(y0in[,i],mr,
                                               tcrossprod(w0in[,i+1],Upd),
-                                              sig=y_sd, c(a_y, 1))
+                                              sig=y_sd, c(a_y, b_y))
                 }
                 ## Updating similarity matix parameter
                 new.eta = rEta.copheneticFast(petain[i],tree,tree.ht,
@@ -293,8 +294,9 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
-    a_y = if(!is.null(el$a_w)) el$a_y else  1
-    b_w = b_y = 1;
+    a_y = if(!is.null(el$a_y)) el$a_y else  1
+    b_w = if(!is.null(el$b_w)) el$b_w else 1
+    b_y = if(!is.null(el$b_y)) el$b_y else 1
     y_sd = if(is.null(el$y_sd)) 0.2 else el$y_sd
     w_sd = if(is.null(el$w_sd)) 0.2 else el$w_sd
     
@@ -329,11 +331,11 @@ fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
             ## Updating the parasite parameters
             w0[, s+1]<-raffinity.MH(w0[,s],mc,
                                     crossprod(y0[,s],U0),
-                                    sig=w_sd, c(a_w, 1))
+                                    sig=w_sd, c(a_w, b_w))
             ## Updating host parameters
             y0[, s+1]<-raffinity.MH(y0[,s],mr,
                                     tcrossprod(w0[,s+1],U0),
-                                    sig=y_sd, c(a_y, 1))
+                                    sig=y_sd, c(a_y, b_y))
             ## Uncertain parameter sampling
             
             
