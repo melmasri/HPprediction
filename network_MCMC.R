@@ -147,7 +147,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     subItra = ny 
     w0in = matrix(w, nrow= nw, ncol =subItra+1)
     y0in = matrix(y, nrow= ny, ncol =subItra+1)
-    petain = rep(0, subItra+1)
+    petain = rep(eta, subItra+1)
     g0in = rep(0, subItra+1)
 
     ## special variables
