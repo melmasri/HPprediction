@@ -11,7 +11,7 @@
 ## subDir = ''                          # directory to print the results 
 ## NO.CORES = 2                         # maximum cores to use
 ## COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
-
+set.seed(23456)
 ## Loading required packages
 library(parallel)
 
@@ -20,6 +20,9 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 source('example-GMPD/load_GMPD.R')      # see matrix 'com'
+## aux = which(colSums(1*(com>0))==1)
+## com = com[, -aux]
+## com = com[-which(rowSums(1*(com>0))==0), ]
 
 ## sourcing MCMC script
 source('network_MCMC.R')
@@ -43,7 +46,8 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
 
     ## running the model of interest
-    obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type)
+    obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type,
+                      a_y = 6, a_w = 0.03)
 
     ## Probability matrix
     ## Extracting mean posteriors
