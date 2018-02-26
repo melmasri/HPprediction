@@ -23,7 +23,6 @@ print(date())
 ## Global Variable
 SAVE_PARAM = TRUE
 SEARCH_NNK = TRUE
-ZtZ = FALSE
 
 set.seed(23456)
 ## Loading required packages
@@ -35,9 +34,9 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 ## loading GMPD
 COUNT=TRUE
 source('example-GMPD/load_GMPD.R')      # see matrix 'com'
-## aux = which(colSums(1*(com>0))==1)
-## com = com[, -aux]
-## com = com[-which(rowSums(1*(com>0))==0), ]
+aux = which(colSums(1*(com>0))==1)
+com = com[, -aux]
+com = com[-which(rowSums(1*(com>0))==0), ]
 dim(com)
 ## sourcing MCMC script
 source('network_MCMC.R')
@@ -47,11 +46,7 @@ cleaned = network_clean(com, tree, 'full')
 com = cleaned$Z                         # cleaned binary interaction matrix
 com = 1*(com>0)
 tree = cleaned$tree    
-
-dd = cophenetic(tree)
-phy_dist = 1/dd
-diag(phy_dist)<-0
-
+com = com[sample.int(nrow(com)),]
 
 ## load useful network analysis functions
 source('network_analysis.R')
@@ -61,9 +56,6 @@ folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, gr
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## for the optimal nnk.
-folds2 = cross.validate.fold(com, n= 5, 2)
-tot.gr = length(unique(folds2[,'gr']))   # total number of CV groups
-
 if(SEARCH_NNK){
     min.nnk = 2
     max.nnk = nrow(com) - 1
@@ -76,27 +68,29 @@ if(SEARCH_NNK){
         q = floor((max.nnk - min.nnk)/4)
         pointlist = c(min.nnk, min.nnk + q,  min.nnk + 2*q, min.nnk + 3*q, max.nnk)
         auc1= sapply(pointlist[which(auc==0)], function(nnk)
-            mean(unlist(lapply(1:tot.gr ,function(x, pairs, Z, dist, nn.k){
-                Z.train = Z
-                Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-                zeros = which(Z.train==0,arr.ind=TRUE)
-                P = Z.train*0
-                if(ZtZ){
-                    dist  = Z.train%*%t(Z.train)
-                    dist  = 1-1/dist
-                    dist[is.infinite(dist)]<-0
-                    dist = dist + 1e-4
-                    diag(dist)<-0
-                }
+            mean(unlist(lapply(1:tot.gr ,function(x, Z, nn.k){
+                zeros = which(Z==0,arr.ind=TRUE)
+                P = Z*0
+                dist  = Z%*%t(Z)
+                diag(dist)<--10
                 nn = apply(dist,1,function(r) order(r, decreasing=TRUE)[1:nn.k])
-                
                 for(j in 1:ncol(Z))
                     for(i in 1:nrow(Z))
-                        P[i,j]<-sum(Z.train[nn[,i],j])
+                        if(Z[i,j]==0)
+                            P[i,j]<-sum(Z[nn[,i],j])
+                        else{
+                            ## removing self interaction in determining distance to hosts
+                            z = Z[i,]
+                            z[j]=0
+                            nei = tcrossprod(z, Z)
+                            nei[i]<--10
+                            P[i,j]<-sum(Z[order(nei, decreasing=TRUE)[1:nn.k], j])
+                        }
+                
                 P = P/nn.k
-                roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
+                roc = rocCurves(Z, Z, P, plot=FALSE, bins=400, all=TRUE)
                 roc$auc
-            },pairs=folds2,Z = com, dist=phy_dist,nn.k=nnk))))
+            },Z = com, nn.k=nnk))))
         auc[which(auc==0)]<-auc1
         print(rbind(pointlist, auc))
         a =  which.max(auc)
@@ -111,34 +105,38 @@ if(SEARCH_NNK){
     print(sprintf('nnk is: %d', nnk))
 }
 
-res = lapply(1:tot.gr ,function(x, pairs, Z, dist, nn.k){
+res = lapply(1:tot.gr ,function(x, pairs, Z, nn.k){
     Z.train = Z
     Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
     zeros = which(Z.train==0,arr.ind=TRUE)
     P = Z.train*0
-    if(ZtZ){
-            dist  = Z.train%*%t(Z.train)
-            dist  = 1-1/dist
-            dist[is.infinite(dist)]<-0
-            dist = dist + 1e-4
-            diag(dist)<-0
-        }
-    nn = apply(dist,1,function(r) order(r, decreasing=TRUE)[1:nn.k])
+    ## jaccard distance including the interaction itself. This is removed next.
+    dist  = Z.train%*%t(Z.train)
+    diag(dist)<- -10
     
+    nn = apply(dist,1,function(r) order(r, decreasing=TRUE)[1:nn.k])
     for(j in 1:ncol(Z))
         for(i in 1:nrow(Z))
-            P[i,j]<-sum(Z.train[nn[,i],j])
+            if(Z.train[i,j]==0)
+                P[i,j]<-sum(Z.train[nn[,i],j])
+            else{
+                ## removing self interaction in determining distance to hosts
+                z = Z.train[i,]
+                z[j]=0
+                nei = tcrossprod(z, Z.train)
+                nei[i]<--10
+                P[i,j]<-sum(Z.train[order(nei, decreasing=TRUE)[1:nn.k], j])
+            }
     P = P/nn.k
-        
-    roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
+    roc = rocCurves(Z, Z.train, P, plot=TRUE, bins=400, all=FALSE)
     tb  = ana.table(Z, Z.train, P,roc, plot=FALSE)
-    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=TRUE)
+    roc.all = rocCurves(Z, Z.train, P, plot=TRUE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P,roc.all, plot=FALSE)
     
     list(nnk=nn.k, P=P,tb = tb, tb.all = tb.all,
          FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR,
          FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=folds,Z = com, dist=phy_dist,nn.k=nnk)        
+},pairs=folds,Z = com,nn.k=nnk)        
 
 
 TB = data.frame(
@@ -208,5 +206,4 @@ system(paste("grep '^[^>+;]'", reportFile, ">", paste0(subDir, "report_clean.txt
 
 
 q('no')
-
 
