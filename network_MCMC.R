@@ -614,7 +614,7 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
     peta = rep(eta, slices)
 
     ## inner loop
-    g0in = rep(0, subItra+1)
+    ## g0in = rep(0, subItra+1)
 
     ## special variables
     Z00 = Z==0
