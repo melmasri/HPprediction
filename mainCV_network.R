@@ -11,7 +11,7 @@
 ## subDir = ''                          # directory to print the results 
 ## NO.CORES = 2                         # maximum cores to use
 ## COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
-set.seed(23456)
+
 ## Loading required packages
 library(parallel)
 
