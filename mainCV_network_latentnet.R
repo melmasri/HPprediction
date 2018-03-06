@@ -35,7 +35,7 @@ tree = cleaned$tree                     # cleaned tree
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 1)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
@@ -43,23 +43,29 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## Analysis for a single fold
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
-
+    aux = which(rowSums(Z.train)==0)
     ## running the model of interest
-    X = network(Z.train)
-    fit<-ergmm(X~bilinear(d=2)+rsociality)
-    pred <- predict(fit)
 
+    X = network(Z.train[-aux,])
+    sTime = Sys.time()
+    fit<-ergmm(X~ bilinear(d=1)+ rsociality,
+               control=ergmm.control(burnin=0,sample.size=100,interval=1,
+                   mle.maxit = 10), verbose = TRUE)
+    print(Sys.time() - sTime)
+    
+    pred <- predict(fit)
+    
     parasites = which(network.vertex.names(X) %in% colnames(Z))
     hosts = which(network.vertex.names(X) %in% rownames(Z))
-    P = t(pred[parasites, hosts])
-
+    P = matrix(0, nrow(Z), ncol(Z))
+    P[-aux,] <- t(pred[parasites, hosts])
     
     ## order the rows in Z.test as in Z.train
     roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, Z.train, P, roc,  plot=FALSE)
     roc.all = rocCurves(Z, Z.train, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P, roc.all, plot=FALSE)
-    
+    cat(paste('Group ',x,' done..'))
     list(param=list(fit=fit,  P = P), tb = tb,
          tb.all = tb.all, FPR.all = roc.all$roc$FPR,
          TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
