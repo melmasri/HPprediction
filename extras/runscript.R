@@ -27,9 +27,8 @@ option_list = list(
                 help="end-of-run email notification is sent to the supplied email if mailx is installed and configured",
                 metavar="character")
 ); 
- 
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
+
+opt = parse_args(OptionParser(option_list=option_list))
 
 ##
 set.seed(23456)
@@ -73,7 +72,7 @@ if(is.null(MODEL) | is.null(run_script)){
     stop('something is wrong, run script or model not specified!')
 }
 
-
+    
 print("Arguments:")
 print(opt)
 
@@ -82,11 +81,13 @@ source('network_MCMC.R')
 ## Creating a subdirectory
 dir.create(file.path(subDir))
 ## report file
-reportFile <- paste0(subDir, "report.txt")
+reportFile <- file(paste0(subDir, "report.txt"), 'wt')
+    
 ## Setting the working directory
 
 ## starting the process
 sink(reportFile)
+sink(reportFile,type='message')
 print(date())
 print(run_script)
 print(opt)
@@ -107,8 +108,10 @@ print(eTime - sTime)
 ######################
 ## Closing sink and reverting work directory.
 sink()
-system(paste("grep '^[^>+;]'", reportFile, ">", paste0(subDir, "report_clean.txt") ))
+sinkt(type='message')
+close(reportFile)
 
+system(paste("grep '^[^>+;]'", paste0(subDir, "report.txt"), ">", paste0(subDir, "report_clean.txt") ))
 if(!is.null(opt$email)){
     subj = '"End of sim "'
     body = paste(subDir)
