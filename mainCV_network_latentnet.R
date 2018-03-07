@@ -49,7 +49,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
 
     X = network(Z.train[-aux,])
     fit<-ergmm(X~ bilinear(d=1)+ rsociality,
-               control=ergmm.control(sample.size=slice,verbose=TRUE)
+               control=ergmm.control(sample.size=slice,verbose=TRUE))
     pred <- predict(fit)
 
     parasites = which(network.vertex.names(X) %in% colnames(Z))
