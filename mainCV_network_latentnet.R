@@ -23,6 +23,7 @@ source('example-GMPD/load_GMPD.R')      # see matrix 'com'
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
+dim(com)
 ## sourcing MCMC script
 source('network_MCMC.R')
 
@@ -47,14 +48,10 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## running the model of interest
 
     X = network(Z.train[-aux,])
-    sTime = Sys.time()
     fit<-ergmm(X~ bilinear(d=1)+ rsociality,
-               control=ergmm.control(burnin=0,sample.size=100,interval=1,
-                   mle.maxit = 10), verbose = TRUE)
-    print(Sys.time() - sTime)
-    
+               control=ergmm.control(burnin=floor(slice*0.5),sample.size=floor(slice*0.5),interval=1))
     pred <- predict(fit)
-    
+
     parasites = which(network.vertex.names(X) %in% colnames(Z))
     hosts = which(network.vertex.names(X) %in% rownames(Z))
     P = matrix(0, nrow(Z), ncol(Z))

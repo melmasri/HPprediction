@@ -108,7 +108,7 @@ print(eTime - sTime)
 ######################
 ## Closing sink and reverting work directory.
 sink()
-sinkt(type='message')
+sink(type='message')
 close(reportFile)
 
 system(paste("grep '^[^>+;]'", paste0(subDir, "report.txt"), ">", paste0(subDir, "report_clean.txt") ))
