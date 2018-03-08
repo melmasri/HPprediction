@@ -49,7 +49,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
 
     X = network(Z.train[-aux,])
     fit<-ergmm(X~ bilinear(d=1)+ rsociality,
-               control=ergmm.control(sample.size=slice),verbose=TRUE)
+               control=ergmm.control(mle.maxit=10),verbose=TRUE)
     pred <- predict(fit)
 
     parasites = which(network.vertex.names(X) %in% colnames(Z))
@@ -69,6 +69,9 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     
 },folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
+
+if(SAVE_PARAM)
+    save.image(file = paste0(subDir, SAVE_FILE))
 
 ## Some analysis results, AUC, %1 recovered
 TB = data.frame(
