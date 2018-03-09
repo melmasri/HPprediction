@@ -20,9 +20,9 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 source('example-GMPD/load_GMPD.R')      # see matrix 'com'
-aux = which(colSums(1*(com>0))==1)
-com = com[, -aux]
-com = com[-which(rowSums(1*(com>0))==0), ]
+## aux = which(colSums(1*(com>0))==1)
+## com = com[, -aux]
+## com = com[-which(rowSums(1*(com>0))==0), ]
 dim(com)
 ## sourcing MCMC script
 source('network_MCMC.R')
@@ -47,8 +47,8 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     aux = which(rowSums(Z.train)==0)
     ## running the model of interest
     X = if(length(aux)>0) network(Z.train[-aux,]) else network(Z.train)
-    fit<-ergmm(X~ bilinear(d=1)+ rsociality,
-               control=ergmm.control(mle.maxit=10),verbose=TRUE)
+    fit<-ergmm(X~ euclidean(d=2)+ rsociality,
+               control=ergmm.control(mle.maxit=10,burnin=0,threads=2),verbose=TRUE)
     pred <- predict(fit)
 
     parasites = which(network.vertex.names(X) %in% colnames(Z))
