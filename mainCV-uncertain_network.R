@@ -60,7 +60,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## ################################################
     ## running the model of interest with uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
-        model.type=model.type, uncertainty = TRUE)
+        model.type=model.type, uncertainty = TRUE, a_y = 6, a_w = 0.03)
     ## Extracting mean posteriors
     y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
     w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
@@ -72,7 +72,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## ################################################
     ## running the model of interest without uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
-        model.type=model.type)
+        model.type=model.type, a_y = 6, a_w = 0.03)
     ## Extracting mean posteriors
     y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
     w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)

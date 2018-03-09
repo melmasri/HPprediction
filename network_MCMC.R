@@ -646,21 +646,10 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
     ## starting the loop
     print(sprintf("Run for %i slices with %i burn-ins",slices, burn.in))
     
-    i=1;s=1
     tryCatch(
         for(s in 1:slices){
-            if(s%%200==0){
+            if(s%%200==0)
                 print(sprintf('slice: %d, at %s', s, Sys.time())) # iteration update
-                if(!is.null(el$backup))
-                    save(y0,w0,peta,g0, file='snapshot.RData')
-            }
-            
-            ## Updating the tee
-            ## dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
-            ## pdist = dist%*%sparseZ
-            ## ## conversion takes less time then extraction/insertion from dgMatrix class
-            ## if(sparse) pdist = as(pdist, 'matrix') 
-            ## pdist[pdist00]<-1
             
             ## Updating latent scores
             yw = outer(y0[,s],w0[, s])
@@ -688,13 +677,11 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
             if(new.eta$change)
                 pdist = new.eta$dist # very slow when using sparse assignment
             
-            ## if(uncertainty){
-            ##     g0in[i+1] = rg(Z[i,], l=U0[i,])
-            ## }
-            
+            if(uncertainty)
+                g0[s+1] = rg(Z, l=U0)
             
             ## MH Adaptiveness
-                                        # Parasite parameters (w)
+            ## Parasite parameters (w)
             if(s%%batch.size==0){
                 ss = s+1 - 1:batch.size
                 ac =1- rowMeans(abs(w0[,ss] - w0[,ss+1])<tol.err)
