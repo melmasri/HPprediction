@@ -34,9 +34,9 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 ## loading GMPD
 COUNT=TRUE
 source('example-GMPD/load_GMPD.R')      # see matrix 'com'
-aux = which(colSums(1*(com>0))==1)
-com = com[, -aux]
-com = com[-which(rowSums(1*(com>0))==0), ]
+## aux = which(colSums(1*(com>0))==1)
+## com = com[, -aux]
+## com = com[-which(rowSums(1*(com>0))==0), ]
 dim(com)
 ## sourcing MCMC script
 source('network_MCMC.R')
@@ -46,13 +46,13 @@ cleaned = network_clean(com, tree, 'full')
 com = cleaned$Z                         # cleaned binary interaction matrix
 com = 1*(com>0)
 tree = cleaned$tree    
-com = com[sample.int(nrow(com)),]
+## com = com[sample.int(nrow(com)),]
 
 ## load useful network analysis functions
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5, 2, 'random')  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## for the optimal nnk.
@@ -128,9 +128,9 @@ res = lapply(1:tot.gr ,function(x, pairs, Z, nn.k){
                 P[i,j]<-sum(Z.train[order(nei, decreasing=TRUE)[1:nn.k], j])
             }
     P = P/nn.k
-    roc = rocCurves(Z, Z.train, P, plot=TRUE, bins=400, all=FALSE)
+    roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, Z.train, P,roc, plot=FALSE)
-    roc.all = rocCurves(Z, Z.train, P, plot=TRUE, bins=400, all=TRUE)
+    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P,roc.all, plot=FALSE)
     
     list(nnk=nn.k, P=P,tb = tb, tb.all = tb.all,
