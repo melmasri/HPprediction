@@ -205,22 +205,23 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
 
             ## looping over nrow(Z), for ICM
             Upd = U0*pdist
+            if(!distOnly){                
+                ## Updating the parasite parameters
+                w0[, s+1]<-raffinity.MH(w0[,s],mc,
+                                        crossprod(y0[,s],Upd),
+                                        sig=w_sd, c(a_w, b_w))
+                ## Updating host parameters
+                y0[, s+1]<-raffinity.MH(y0[,s],mr,
+                                        tcrossprod(w0[,s+1],Upd),
+                                        sig=y_sd, c(a_y, b_y))
+            }
+            ywU = outer(y0[,s+1], w0[,s+1])*U0
             for (i in 1:subItra){
-                if(!distOnly){                
-                    ## Updating the parasite parameters
-                    w0in[, i+1]<-raffinity.MH(w0in[,i],Z[i,],
-                                              y0in[i,i]*(Upd[i,]),
-                                              sig=w_sd, c(a_w, b_w))
-                    ## Updating host parameters
-                    y0in[, i+1]<-raffinity.MH(y0in[,i],mr,
-                                              tcrossprod(w0in[,i+1],Upd),
-                                              sig=y_sd, c(a_y, b_y))
-                }
                 ## Updating similarity matix parameter
                 new.eta = rEta.copheneticFast(petain[i],tree,tree.ht,
                     pdist[i,],
                     if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
-                    y0in[i,i+1]*(w0[,s]*U0[i,]),
+                    ywU[i,],
                     eta_sd, lowerIndex, upperIndex, ny, ind, sparse)
                 petain[i+1] = new.eta$eta
                 if(new.eta$change)
@@ -660,13 +661,14 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
                 U0 <-rExp2(pdist*yw, g0[s], Z,Z0, Z00)
 
             ## looping over nrow(Z), for ICM
+            Upd = U0 *pdist
             if(!distOnly){
                 w0[, s+1]<-raffinity.MH(w0[,s],mc,
-                                        crossprod(y0[,s],U0),
+                                        crossprod(y0[,s],Upd),
                                         sig=w_sd, c(a_w, b_w))
             ## Updating host parameters
                 y0[, s+1]<-raffinity.MH(y0[,s],mr,
-                                        tcrossprod(w0[,s+1],U0),
+                                        tcrossprod(w0[,s+1],Upd),
                                         sig=y_sd, c(a_y, b_y))
             }
             ## Updating similarity matix parameter
