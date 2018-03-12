@@ -132,6 +132,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.005
 
     ## Burn in set-up
+    batch.size = if(!is.null(el$batch.size)) el$batch.size else 50
     beta = if(!is.null(el$beta)) el$beta else 1
     burn.in = if(is.null(el$burn.in)) floor(0.5*slices) else floor(el$burn.in*slices)
 
@@ -228,12 +229,16 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                 g0[s+1] = rg(Z, l=U0)
                      
             ## MH Adaptiveness
-            # Parasite parameters (w)
-            ac =1- rowMeans(abs(w0in[,1:subItra] - w0in[,1:subItra+1])<tol.err)
-            w_sd = w_sd*exp(beta*(ac-0.44)/log(1 +s))
-            
-            ac =1- rowMeans(abs(y0in[,1:subItra] - y0in[,1:subItra+1])<tol.err)
-            y_sd = y_sd*exp(beta*(ac-0.44)/log(1 +s))
+            if(s%%batch.size==0){
+                ## Parasite parameters (w)
+                ss = s+1 - 1:batch.size
+                ac =1- rowMeans(abs(w0[,ss] - w0[,ss+1])<tol.err)
+                w_sd = w_sd*exp(beta*(ac-0.44)/log(1 +s/batch.size))
+                
+                ac =1- rowMeans(abs(y0[,ss] - y0[,ss+1])<tol.err)
+                y_sd = y_sd*exp(beta*(ac-0.44)/log(1 +s/batch.size))
+                
+            }
 
             ## Tree scaling parameter (eta)
             ac =1- mean(abs(petain[1:subItra] - petain[1:subItra +1])<tol.err)
