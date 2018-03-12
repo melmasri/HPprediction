@@ -144,10 +144,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
 
     ## inner loop
     subItra = ny 
-    w0in = matrix(w, nrow= nw, ncol =subItra+1)
-    y0in = matrix(y, nrow= ny, ncol =subItra+1)
     petain = rep(eta, subItra+1)
-    g0in = rep(0, subItra+1)
 
     ## special variables
     Z00 = Z==0
@@ -207,14 +204,13 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             Upd = U0*pdist
             if(!distOnly){                
                 ## Updating the parasite parameters
-                w0[, s+1]<-raffinity.MH(w0[,s],mc,
-                                        crossprod(y0[,s],Upd),
+                w0[, s+1]<-raffinity.MH(w0[,s],mc,crossprod(y0[,s],Upd),
                                         sig=w_sd, c(a_w, b_w))
                 ## Updating host parameters
-                y0[, s+1]<-raffinity.MH(y0[,s],mr,
-                                        tcrossprod(w0[,s+1],Upd),
+                y0[, s+1]<-raffinity.MH(y0[,s],mr,tcrossprod(w0[,s+1],Upd),
                                         sig=y_sd, c(a_y, b_y))
             }
+            
             ywU = outer(y0[,s+1], w0[,s+1])*U0
             for (i in 1:subItra){
                 ## Updating similarity matix parameter
@@ -226,12 +222,11 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                 petain[i+1] = new.eta$eta
                 if(new.eta$change)
                     pdist[i,] = new.eta$dist # very slow when using sparse assignment
-                
-                if(uncertainty){
-                    g0in[i+1] = rg(Z[i,], l=U0[i,])
-                }
             }
-            
+
+            if(uncertainty)
+                g0[s+1] = rg(Z, l=U0)
+                     
             ## MH Adaptiveness
             # Parasite parameters (w)
             ac =1- rowMeans(abs(w0in[,1:subItra] - w0in[,1:subItra+1])<tol.err)
@@ -244,22 +239,8 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             ac =1- mean(abs(petain[1:subItra] - petain[1:subItra +1])<tol.err)
             eta_sd = eta_sd*exp(beta*(ac-0.44)/log(1 +s))
             
-            if(!distOnly){
-                ## w0[,s+1]<- rowSums(w0in[,-1])/subItra
-                w0[,s+1] <- colSums(t(w0in[,-1])*mr)/sum(mr)
-                w0in<-matrix(w0[,s+1], nrow= nw, ncol =subItra+1)
-
-                y0[,s+1]<- rowSums(y0in[,-1])/subItra
-                y0in<-matrix(y0[,s+1], nrow= ny, ncol =subItra+1)
-                
-            }
             peta[s+1]<- sum(petain[-1]*mr)/sum(mr)
             petain = rep(peta[s+1], subItra+1)
-
-            if(uncertainty){
-                g0[s+1] = sum(g0in[-1]*mr)/sum(mr)
-                g0in = rep(g0[s+1], subItra+1)
-            }
         }
        ,warning = function(war)
            {print(c('warning at (s,i):', c(s,i))); print(war);traceback()},
