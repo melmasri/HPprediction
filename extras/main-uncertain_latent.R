@@ -19,6 +19,7 @@ COUNT = FALSE
 SINGLE = TRUE
 RAND  = TRUE
 SAVE_PARAM = TRUE
+NO.CORES = 5
 SAVE_FILE = 'param.RData'
 sTime = Sys.time()
 ## Formating the sub-directory name
