@@ -55,7 +55,7 @@ dim(com)
 source('network_MCMC.R')
 
 ## preparing tree and com
-cleaned = network_clean(com, tree, 'full')
+cleaned = network_clean(com, tree, 'full', uncertainty=TRUE)
 com = cleaned$Z                         # cleaned binary interaction matrix
 tree = cleaned$tree                     # cleaned tree
 
