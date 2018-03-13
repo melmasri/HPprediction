@@ -43,7 +43,6 @@ print(sprintf("No. of left out interactions between year %d and end of dataset i
 print(sprintf("accounts for %f%%  of the data", 100*(sum(1*(com10>0)) - sum(com>0))/sum(com10>0)))
 com10=1*(com10>0)
 
-
 ## load useful network analysis functions
 source('network_analysis.R')
 
@@ -105,7 +104,7 @@ if(grepl('(full|dist)', MODEL)){
 
 ## Probability matrix with G
 P =  1 - exp(-outer(Y, W)*distance)
-Pg = G*P/(1-P + G*P)
+Pg = G*P/(1-P + G*P + tol.err)
 Pg[com>0]<-P[com>0]
 
 ## Model with uncertainty
@@ -133,8 +132,8 @@ Pnog = Pnog[, indices]
 
 ## Histogram of G
 pdf(paste0(subDir, 'hist_g.pdf'),height=4)
-hist(G.sample,freq=F,col='ivory4', xlab='Posterior estimate of g', main='')
-abline(v=quantile(G.sample,probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
+hist(rowMeans(G.sample),freq=F,col='ivory4', xlab='Posterior estimate of g', main='', breaks=20)
+abline(v=quantile(rowMeans(G.sample),probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
 dev.off()
 ## Printing posterior mean and empirical quantiles
 write.csv(cbind(G = mean(G.sample), t(quantile(G.sample,probs = c(0.05, 0.95)))),
@@ -187,6 +186,22 @@ abline(a = 0, b=1,col='black',lty=2, lwd=2)
 legend('bottomright', legend = names, col=c('black', 'ivory4'), lty=c(1,2),lwd=3, pch=c(5,2))
 dev.off()
 
+## Printing  obs unk graphs
+pdf(paste0(subDir,'with_g_hist_obs_unk_', name,'.pdf'))
+colass = rgb(0,0.8,0.8,0.5)
+colnoass = rgb(1,0,0.4,0.4,0.5)
+hist(log(Pg[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-12,0), breaks=30)
+hist(log(Pg[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
+legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5) 
+dev.off()
+
+pdf(paste0(subDir,'hist_obs_unk_', name,'.pdf'))
+colass = rgb(0,0.8,0.8,0.5)
+colnoass = rgb(1,0,0.4,0.4,0.5)
+hist(log(Pnog[com10>0]),col=colass,main ='', ylab = 'Density', freq=FALSE, xlab='Log of probability', ylim = c(0,0.38), xlim=c(-8,0), breaks=20)
+hist(log(Pnog[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
+legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5)
+dev.off()
 
 ## Degree Distribution with and without G
 ZpostG = 1*(Pg>rocG$threshold)
@@ -204,7 +219,8 @@ dev.off()
 ## top m
 m = 4000
 ## Full with G
-ord.pg = order(Pg, decreasing=TRUE)
+ord.pg =order(Pg, decreasing=TRUE)
+ord.pg[which(Pg[ord.pg]==1 & com10[ord.pg]==1)]
 ## Full without G
 ord.p = order(Pnog, decreasing=TRUE)
 

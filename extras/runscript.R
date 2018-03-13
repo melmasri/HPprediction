@@ -47,7 +47,7 @@ if(grepl('CV', opt$runtype, ignore.case = TRUE))
     run_script = 'mainCV_network.R'
 
 if(grepl('latentnet', opt$runtype, ignore.case = TRUE))
-    run_script = 'mainCV_network_latentnet.R'
+    run_script = 'extras/mainCV_network_latentnet.R'
 
 if(grepl('uncer', opt$runtype, ignore.case = TRUE))
     run_script = 'mainCV-uncertain_network.R'
