@@ -45,7 +45,7 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 source('example-GMPD/load_GMPD.R')      # see matrix 'com'
-if(!SINLGE){
+if(!SINGLE){
     aux = which(colSums(1*(com>0))==1)
     com = com[, -aux]
     com = com[-which(rowSums(1*(com>0))==0), ]
