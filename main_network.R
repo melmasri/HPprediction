@@ -15,13 +15,19 @@
 source('example-GMPD/download_tree.R')       # see variable 'tree'
 
 ## loading GMPD
-source('example-GMPD/load_GMPD.R')           # see matrix 'com'
+if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    load(PATH.TO.FILE)
+}else{
+    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+}
+
 
 ## sourcing MCMC script
 source('network_MCMC.R')
 
 ## running the model of interest
-obj = network_est(Z = com, slices=SLICE, tree=tree, model.type=MODEL) # full model
+obj = network_est(Z = com, slices=SLICE, tree=tree, model.type=MODEL,
+                  a_y=ALPHA.ROWS, a_w= ALPHA.COLS) # full model
 names(obj)
 names(obj$param)
 

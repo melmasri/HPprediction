@@ -19,11 +19,15 @@ library(parallel)
 source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
-source('example-GMPD/load_GMPD.R')      # see matrix 'com'
+if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    load(PATH.TO.FILE)
+}else{
+    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+}
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
-dim(com)
+
 ## sourcing MCMC script
 source('network_MCMC.R')
 
@@ -43,16 +47,15 @@ print(sprintf("No. of left out interactions between year %d and end of dataset i
 print(sprintf("accounts for %f%%  of the data", 100*(sum(1*(com10>0)) - sum(com>0))/sum(com10>0)))
 com10=1*(com10>0)
 
-
 ## load useful network analysis functions
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 1)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5, CV.MIN.PER.COL)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
-res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
+res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.ROWS, ALPHA.COLS){
     ## Analysis for a single fold
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
@@ -60,7 +63,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## ################################################
     ## running the model of interest with uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
-        model.type=model.type, uncertainty = TRUE)
+        model.type=model.type, uncertainty = TRUE, a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
     ## Extracting mean posteriors
     y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
     w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
@@ -72,7 +75,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## ################################################
     ## running the model of interest without uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
-        model.type=model.type)
+        model.type=model.type, a_y = 6, a_w = 0.03)
     ## Extracting mean posteriors
     y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
     w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
@@ -84,6 +87,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     list(withG = withG, withOutG = withOutG)
     
 },folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
+    ALPHA.COLS = ALPHA.COLS, ALPHA.ROWS = ALPHA.ROWS,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
 
 ## Averaging mean posterior estimates
@@ -133,8 +137,8 @@ Pnog = Pnog[, indices]
 
 ## Histogram of G
 pdf(paste0(subDir, 'hist_g.pdf'),height=4)
-hist(G.sample,freq=F,col='ivory4', xlab='Posterior estimate of g', main='')
-abline(v=quantile(G.sample,probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
+hist(rowMeans(G.sample),freq=F,col='ivory4', xlab='Posterior estimate of g', main='', breaks=20)
+abline(v=quantile(rowMeans(G.sample),probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
 dev.off()
 ## Printing posterior mean and empirical quantiles
 write.csv(cbind(G = mean(G.sample), t(quantile(G.sample,probs = c(0.05, 0.95)))),
@@ -187,6 +191,22 @@ abline(a = 0, b=1,col='black',lty=2, lwd=2)
 legend('bottomright', legend = names, col=c('black', 'ivory4'), lty=c(1,2),lwd=3, pch=c(5,2))
 dev.off()
 
+## Printing  obs unk graphs
+pdf(paste0(subDir,'with_g_hist_obs_unk_', name,'.pdf'))
+colass = rgb(0,0.8,0.8,0.5)
+colnoass = rgb(1,0,0.4,0.4,0.5)
+hist(log(Pg[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-12,0), breaks=30)
+hist(log(Pg[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
+legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5) 
+dev.off()
+
+pdf(paste0(subDir,'hist_obs_unk_', name,'.pdf'))
+colass = rgb(0,0.8,0.8,0.5)
+colnoass = rgb(1,0,0.4,0.4,0.5)
+hist(log(Pnog[com10>0]),col=colass,main ='', ylab = 'Density', freq=FALSE, xlab='Log of probability', ylim = c(0,0.38), xlim=c(-8,0), breaks=20)
+hist(log(Pnog[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
+legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5)
+dev.off()
 
 ## Degree Distribution with and without G
 ZpostG = 1*(Pg>rocG$threshold)
@@ -204,7 +224,8 @@ dev.off()
 ## top m
 m = 4000
 ## Full with G
-ord.pg = order(Pg, decreasing=TRUE)
+ord.pg =order(Pg, decreasing=TRUE)
+ord.pg[which(Pg[ord.pg]==1 & com10[ord.pg]==1)]
 ## Full without G
 ord.p = order(Pnog, decreasing=TRUE)
 
