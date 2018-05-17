@@ -11,7 +11,7 @@
 ## subDir = ''                          # directory to print the results 
 ## NO.CORES = 2                         # maximum cores to use
 ## COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
-set.seed(23456)
+
 ## Loading required packages
 library(parallel)
 
@@ -19,7 +19,11 @@ library(parallel)
 source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
-source('example-GMPD/load_GMPD.R')      # see matrix 'com'
+if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    load(PATH.TO.FILE)
+}else{
+    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+}
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
@@ -36,18 +40,19 @@ tree = cleaned$tree                     # cleaned tree
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+## warning('CV is run using minimum of 2 interactions per column! to change this ')
+folds = cross.validate.fold(com, n= 5, CV.MIN.PER.COL)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
-res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
+res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.ROWS, ALPHA.COLS){
     ## Analysis for a single fold
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
 
     ## running the model of interest
     obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type,
-                      a_y = 6, a_w = 0.03)
+                      a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
 
     ## Probability matrix
     ## Extracting mean posteriors
@@ -78,6 +83,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
          TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
 },folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
+    ALPHA.COLS= ALPHA.COLS, ALPHA.ROWS = ALPHA.ROWS,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
 
 ## Some analysis results, AUC, %1 recovered
