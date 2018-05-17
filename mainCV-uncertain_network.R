@@ -19,11 +19,15 @@ library(parallel)
 source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
-source('example-GMPD/load_GMPD.R')      # see matrix 'com'
+if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    load(PATH.TO.FILE)
+}else{
+    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+}
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
-dim(com)
+
 ## sourcing MCMC script
 source('network_MCMC.R')
 
@@ -47,11 +51,11 @@ com10=1*(com10>0)
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 1)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5, CV.MIN.PER.COL)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
-res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
+res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.ROWS, ALPHA.COLS){
     ## Analysis for a single fold
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
@@ -59,7 +63,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     ## ################################################
     ## running the model of interest with uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
-        model.type=model.type, uncertainty = TRUE, a_y = 6, a_w = 0.03)
+        model.type=model.type, uncertainty = TRUE, a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
     ## Extracting mean posteriors
     y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
     w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
@@ -83,6 +87,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     list(withG = withG, withOutG = withOutG)
     
 },folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
+    ALPHA.COLS = ALPHA.COLS, ALPHA.ROWS = ALPHA.ROWS,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
 
 ## Averaging mean posterior estimates
@@ -104,7 +109,7 @@ if(grepl('(full|dist)', MODEL)){
 
 ## Probability matrix with G
 P =  1 - exp(-outer(Y, W)*distance)
-Pg = G*P/(1-P + G*P + tol.err)
+Pg = G*P/(1-P + G*P)
 Pg[com>0]<-P[com>0]
 
 ## Model with uncertainty
