@@ -20,6 +20,8 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    if(grepl('.rds', PATH.TO.FILE, ignore.case = TRUE))
+        com <- readRDS(PATH.TO.FILE) else 
     load(PATH.TO.FILE)
 }else{
     source('example-GMPD/load_GMPD.R')           # see matrix 'com'    

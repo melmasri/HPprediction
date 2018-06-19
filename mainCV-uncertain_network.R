@@ -20,6 +20,8 @@ source('example-GMPD/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    if(grepl('.rds', PATH.TO.FILE, ignore.case = TRUE))
+        com <- readRDS(PATH.TO.FILE) else 
     load(PATH.TO.FILE)
 }else{
     source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
@@ -137,7 +139,7 @@ Pnog = Pnog[, indices]
 
 ## Histogram of G
 pdf(paste0(subDir, 'hist_g.pdf'),height=4)
-hist(rowMeans(G.sample),freq=F,col='ivory4', xlab='Posterior estimate of g', main='', breaks=20)
+hist(rowMeans(G.sample),freq=F,col='ivory4', xlab='Posterior estimate of g', main='', breaks=20, cex.lab=1.4)
 abline(v=quantile(rowMeans(G.sample),probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
 dev.off()
 ## Printing posterior mean and empirical quantiles
@@ -184,28 +186,30 @@ write.csv(tb, file=paste0(subDir, 'AUC-PRED.tex'))
 
 ## Printing ROC curves
 pdf(paste0(subDir, 'ROC-g_', MODEL,'.pdf'))
-names = paste(MODEL, c('with g', 'without g'))
-plot(rocG$roc$FPR, rocG$roc$TPR, xlab='1-specificity', ylab = 'sensitivity',type ='b', col='black', main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1), lty=1, lwd=3, pch=5)
-lines(rocNoG$roc$FPR, rocNoG$roc$TPR,type='b', col='ivory4',lty=2, lwd=3,pch=2)
-abline(a = 0, b=1,col='black',lty=2, lwd=2)
-legend('bottomright', legend = names, col=c('black', 'ivory4'), lty=c(1,2),lwd=3, pch=c(5,2))
+names = paste('LS-net: ', MODEL, c('with g', 'without g'))
+plot(rocG$roc$FPR, rocG$roc$TPR, xlab='1-specificity', ylab = 'sensitivity',type ='l', col='black', main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1), lty=1, lwd=3, cex.lab=1.3)
+lines(rocNoG$roc$FPR, rocNoG$roc$TPR,type='l', lty=2, lwd=3)
+## abline(a = 0, b=1,col='black',lty=2, lwd=2)
+legend('bottomright', legend = names, col=c('black', 'black'), lty=c(1,2),lwd=3, cex=1.5)
 dev.off()
 
 ## Printing  obs unk graphs
 pdf(paste0(subDir,'with_g_hist_obs_unk_', name,'.pdf'))
-colass = rgb(0,0.8,0.8,0.5)
-colnoass = rgb(1,0,0.4,0.4,0.5)
-hist(log(Pg[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-12,0), breaks=30)
-hist(log(Pg[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
-legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5) 
+colass = rgb(0,0,0,0.3)
+colnoass = rgb(0,0,0,0.6)
+## colass = rgb(0,0.8,0.8,0.5)
+## colnoass = rgb(1,0,0.4,0.4,0.5)
+hist(log(Pg[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-12,0), breaks=30, cex.lab=1.5, lty=1, lwd=4)
+hist(log(Pg[com10==0]),col=colnoass,freq=FALSE, add=TRUE, lty=2, lwd=4)
+legend(x='top', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5, lty=c(1,2)) 
 dev.off()
 
 pdf(paste0(subDir,'hist_obs_unk_', name,'.pdf'))
-colass = rgb(0,0.8,0.8,0.5)
-colnoass = rgb(1,0,0.4,0.4,0.5)
-hist(log(Pnog[com10>0]),col=colass,main ='', ylab = 'Density', freq=FALSE, xlab='Log of probability', ylim = c(0,0.38), xlim=c(-8,0), breaks=20)
-hist(log(Pnog[com10==0]),col=colnoass,freq=FALSE, add=TRUE)
-legend(x='topleft', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5)
+colass = rgb(0,0,0,0.3)
+colnoass = rgb(0,0,0,0.6)
+hist(log(Pnog[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-8,0), breaks=20, cex.lab=1.5, lty=1, lwd=4)
+hist(log(Pnog[com10==0]),col=colnoass,freq=FALSE, add=TRUE, lty=2, lwd=4)
+legend(x='top', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5, lty=c(1,2))
 dev.off()
 
 ## Degree Distribution with and without G
@@ -234,11 +238,11 @@ topm = data.frame(t(sapply(1:m, function(r) c(actual = sum(com10[ord.pg[1:r]]),
     withOutG= sum(com10[ord.p[1:r]]*ZpostNoG[ord.p[1:r]])))))
 
 pdf(paste0(subDir, 'TopM_.pdf'))
-plot(x=1:m,y = topm[,'withG'], xlab='Number of validated pairwise interactions', ylab = 'Number of recovered pairwise interactions',  col='red',lty=1, type='l', lwd=2)
-lines(x=1:m,y = topm[,'withOutG'], lty=3, type='l', lwd=2, col='red')
-lines(x=1:m, y=1:m, lty=5, lwd=1, col='black')
-gnames = c(paste(MODEL, c('with uncertainty', '')), 'x=y')
-legend('bottomright', legend = gnames,col=c('red','red','black'),lty=c(1,3,5),lwd=c(2,1))
+plot(x=1:m,y = topm[,'withG'], xlab='Number of validated pairwise interactions', ylab = 'Number of recovered pairwise interactions',  col='black',lty=1, type='l', lwd=2, cex.lab=1.5)
+lines(x=1:m,y = topm[,'withOutG'], lty=5, type='l', lwd=2, col='black')
+lines(x=1:m, y=1:m, lty=3, lwd=2, col='black')
+gnames = c(paste('LS-net: ', MODEL, c('model with uncertainty', 'model')), 'x=y')
+legend('bottomright', legend = gnames,lty=c(1,5,3),lwd=c(2,2,2), cex=1.3)
 dev.off()
 
 
