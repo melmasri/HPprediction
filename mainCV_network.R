@@ -133,6 +133,9 @@ indices = lof(com, indices = TRUE)
 com = com[, indices]
 P = P[, indices]
 
+## print topPairs
+topPairs(P,1*(com>0),topX=50)
+
 ## printing posterior interaction matrix
 pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
 plot_Z(1*(P > mean(sapply(res, function(r) r$tb$thres))))
