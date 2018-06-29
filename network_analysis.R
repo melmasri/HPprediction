@@ -81,7 +81,7 @@ rocCurves<-function(Z.test,Z.train,P, plot=TRUE,bins=400, all=FALSE){
 
 topPairs<-function(P,Z,topX=20){
     ## Returning pairs with highest posterior probability
-    require(reshape)
+    require(reshape2)
     P[Z>0]<--1
     aux =   melt(P)
     aux = aux[order(aux$value,decreasing=TRUE),]
