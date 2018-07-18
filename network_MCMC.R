@@ -150,8 +150,8 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     ## New code to same memory
     w0.new = w0.count = w0.sum=0
     y0.new = y0.count = y0.sum=0
-    w0.last = w
-    y0.last = y
+    w0.last = if(length(w)==1) rep(w, nw) else w
+    y0.last = if(length(y)==1) rep(y, ny) else y
     peta.new = peta.count = peta.sum =0
     peta.last = eta
     
@@ -540,7 +540,7 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
         likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
             sum(ywU*(pdist.new - pdist.old))
     }
-    if(!is.nan(likeli) && runif(1)<= min(1, exp(likeli)))
+    if(!is.na(likeli) && runif(1)<= min(1, exp(likeli)))
         { eta.old  = eta.prop; pdist.old = c(pdist.new);change=TRUE}
     
     list (eta=eta.old, dist=pdist.old, change=change)
