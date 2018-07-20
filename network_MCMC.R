@@ -169,7 +169,10 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     tree.ht = arrange.tree(tree)
     tree$tip.label = 1:length(tree$tip.label) # removing tip labels
 
-    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex, ny)
+    ##    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex, ny)
+    dist = 1/cophenetic(eb.phylo(tree, tree.ht, peta[1]))
+    diag(dist)<-0
+    
     sparseZ = Z
     if(sparse){
         ind <- which(Z==1, arr.ind=TRUE)
@@ -195,7 +198,9 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             }
             
             ## Updating the tee
-            dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
+            ## dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
+            dist = 1/cophenetic(eb.phylo(tree, tree.ht, peta[s]))
+            diag(dist)<-0
             pdist = dist%*%sparseZ
             ## conversion takes less time then extraction/insertion from dgMatrix class
             if(sparse) pdist = as(pdist, 'matrix') 
@@ -529,6 +534,9 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
     dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
+    if(any(is.na(dist))){
+        return( list (eta=eta.old, dist=pdist.old, change=change))
+    }else{
     pdist.new = dist[i,]%*%sZ
     if(sparse)
         pdist.new= pdist.new@x
@@ -540,10 +548,11 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
         likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
             sum(ywU*(pdist.new - pdist.old))
     }
-    if(!is.na(likeli) && runif(1)<= min(1, exp(likeli)))
+    if(!is.na(likeli) && !is.nan(likeli) && runif(1)<= min(1, exp(likeli)))
         { eta.old  = eta.prop; pdist.old = c(pdist.new);change=TRUE}
     
     list (eta=eta.old, dist=pdist.old, change=change)
+}
 }
 
 ### ==================================================
