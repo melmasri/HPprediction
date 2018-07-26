@@ -17,7 +17,7 @@ option_list = list(
     make_option("--no.cores", type="integer",
                 default=5, 
                 help="number of cores to use (1, 2, ..) [default= %default]."),
-    make_option("--data.file", type="path",
+    make_option("--data.file", type="character",
                 default=NULL, 
                 help="relative path to com RData file. File must contain a single HxJ interaction matrix named 'com' [default= %default]."),
     make_option("--alpha.rows", type="double",

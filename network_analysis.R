@@ -10,12 +10,12 @@ plot_Z<-function(Z, xlab, ylab, ...){
     ## ploting interaction matrix as a binary image
     if(missing(ylab)) ylab = 'hosts'
 	if(missing(xlab)) xlab = 'parasites'
-
+    ## par(mar=c(4.5,4.5,1,1))
 	image(1:ncol(Z), 1:nrow(Z), t(Z[nrow(Z):1,]),
 		col = c('white', 'black'), ylab=ylab, xlab=xlab,
-		useRaster=TRUE,srt=45, axes=FALSE)
-	axis(1, at = 5*0:(ceiling(ncol(Z)/5)))
-	axis(2, at = c(1,10*1:(ceiling(nrow(Z)/10))), labels = c(10*(ceiling(nrow(Z)/10)):1,1))
+          useRaster=TRUE,srt=45, axes=FALSE,cex.lab=1.8)
+	axis(1, at = 100*0:(ceiling(ncol(Z)/100)), cex.axis=1.5)
+	axis(2, at = c(1,50*1:(ceiling(nrow(Z)/50))), labels = c(50*(ceiling(nrow(Z)/50)):1,1), cex.axis=1.5)
 }
 
 lof<-function(Z, indices = FALSE){
@@ -81,7 +81,7 @@ rocCurves<-function(Z.test,Z.train,P, plot=TRUE,bins=400, all=FALSE){
 
 topPairs<-function(P,Z,topX=20){
     ## Returning pairs with highest posterior probability
-    require(reshape)
+    require(reshape2)
     P[Z>0]<--1
     aux =   melt(P)
     aux = aux[order(aux$value,decreasing=TRUE),]
