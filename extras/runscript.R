@@ -55,6 +55,11 @@ MODEL = if(grepl('(full|aff|dist)', tolower(opt$model)))
 COUNT = if(grepl('uncer', tolower(opt$runtype))) FALSE else TRUE
 run_script = NULL
 
+## Git branch
+print('Git info:')
+system('git status -b -s')               # pring branch info
+system('git show --oneline -s')         # pring git commit 
+
 ## validation test
 if(grepl('dist', opt$model, ignore.case=TRUE) && grepl('(cv|uncer)', opt$runtype, ignore.case=TRUE) && CV.MIN.PER.COL==1){
     warning('minimum interactions per column are advised to be 2 when running cross-validation under the distance-only model. cv.min.per.col changed to 2!')
