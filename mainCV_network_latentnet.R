@@ -35,7 +35,7 @@ tree = cleaned$tree                     # cleaned tree
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 1)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5,  CV.MIN.PER.COL)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
@@ -97,6 +97,10 @@ P = matrix(aux, nrow(com), ncol(com))
 indices = lof(com, indices = TRUE)
 com = com[, indices]
 P = P[, indices]
+
+
+## print topPairs
+topPairs(P,1*(com>0),topX=50)
 
 ## printing posterior interaction matrix
 pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
