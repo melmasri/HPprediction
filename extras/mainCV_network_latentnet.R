@@ -70,9 +70,6 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
 },folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
 
-if(SAVE_PARAM)
-    save.image(file = paste0(subDir, SAVE_FILE))
-
 ## Some analysis results, AUC, %1 recovered
 TB = data.frame(
     m.auc = sapply(res, function(r) r$tb$auc),
@@ -97,7 +94,8 @@ write.csv(ROCgraph, file = paste0(subDir, 'ROC-xy-points.csv'))
 ## Constructing the P probability matrix from CV results
 aux = rowMeans(sapply(res, function(r) r$param$P))
 P = matrix(aux, nrow(com), ncol(com))
-
+rownames(P)<-rownames(com)
+colnames(P)<-colnames(com)
 
 ## left ordering of interaction and probability matrix
 indices = lof(com, indices = TRUE)
@@ -121,6 +119,9 @@ dev.off()
 pdf(paste0(subDir, 'tree_input.pdf'))
 plot(tree, show.tip.label=FALSE)
 dev.off()
+
+if(SAVE_PARAM)
+    save.image(file = paste0(subDir, SAVE_FILE))
 
 ##################################################
 ##################################################
