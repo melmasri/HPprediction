@@ -55,10 +55,6 @@ MODEL = if(grepl('(full|aff|dist)', tolower(opt$model)))
 COUNT = if(grepl('uncer', tolower(opt$runtype))) FALSE else TRUE
 run_script = NULL
 
-## Git branch
-print('Git info:')
-system('git status -b -s')               # pring branch info
-system('git show --oneline -s')         # pring git commit 
 
 ## validation test
 if(grepl('dist', opt$model, ignore.case=TRUE) && grepl('(cv|uncer)', opt$runtype, ignore.case=TRUE) && CV.MIN.PER.COL==1){
@@ -117,6 +113,11 @@ print(date())
 print(run_script)
 print(opt)
 print(subDir)
+## Git branch
+print('Git info:')
+system('git status -b -s')               # pring branch info
+system('git show --oneline -s')         # pring git commit 
+
 ## Process started at:
 print(sprintf('Start time %s.',format(sTime, "%Y-%m-%d %H:%M:%S")))
 ##-----------------------------------------------------------
