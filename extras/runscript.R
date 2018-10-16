@@ -115,8 +115,8 @@ print(opt)
 print(subDir)
 ## Git branch
 print('Git info:')
-system('git status -b -s',intern=TRUE)              # pring branch info
-system('git show --oneline -s',intern=TRUE)         # pring git commit 
+system('git status -b -s',intern=TRUE)              # print branch info
+system('git show --oneline -s',intern=TRUE)         # prin git commit 
 
 ## Process started at:
 print(sprintf('Start time %s.',format(sTime, "%Y-%m-%d %H:%M:%S")))
