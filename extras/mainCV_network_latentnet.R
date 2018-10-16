@@ -45,9 +45,10 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
     aux = which(rowSums(Z.train)==0)
+    aux = numeric(0)
     ## running the model of interest
     X = if(length(aux)>0) network(Z.train[-aux,]) else network(Z.train)
-    fit<-ergmm(X~ euclidean(d=2)+ rsociality, control=ergmm.control(mle.maxit=10,burnin=0),verbose=TRUE)
+    fit<-ergmm(X~ euclidean(d=1)+ rsociality, control=ergmm.control(mle.maxit=10,burnin=0),verbose=TRUE)
     pred <- predict(fit)
 
     parasites = which(network.vertex.names(X) %in% colnames(Z))
