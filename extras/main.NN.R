@@ -22,7 +22,6 @@ print(date())
 ## rm(list= ls())
 ## Global Variable
 SAVE_PARAM = TRUE
-SEARCH_NNK = TRUE
 
 set.seed(23456)
 ## Loading required packages
@@ -46,7 +45,6 @@ cleaned = network_clean(com, tree, 'full')
 com = cleaned$Z                         # cleaned binary interaction matrix
 com = 1*(com>0)
 tree = cleaned$tree    
-com = com[sample.int(nrow(com)),]
 
 ## load useful network analysis functions
 source('network_analysis.R')
@@ -56,9 +54,9 @@ folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, gr
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## for the optimal nnk.
-if(SEARCH_NNK){
+search.for.nnk<-function(X){
     min.nnk = 2
-    max.nnk = nrow(com) - 1
+    max.nnk = nrow(X) - 1
     qartP = floor((max.nnk - min.nnk)/4)
     midP = qartP*2
     qart2P = qartP*3
@@ -90,9 +88,9 @@ if(SEARCH_NNK){
                 P = P/nn.k
                 roc = rocCurves(Z, Z, P, plot=FALSE, bins=400, all=TRUE)
                 roc$auc
-            },Z = com, nn.k=nnk))))
+            },Z = X, nn.k=nnk))))
         auc[which(auc==0)]<-auc1
-        print(rbind(pointlist, auc))
+        print(rbind(grid = pointlist, AUC = auc))
         a =  which.max(auc)
         min.nnk = pointlist[max(1,a-1)]
         max.nnk = pointlist[min(5, a+1)]
@@ -103,11 +101,14 @@ if(SEARCH_NNK){
     }    
     nnk = pointlist[a]
     print(sprintf('nnk is: %d', nnk))
+    return(nnk)
 }
 
-res = lapply(1:tot.gr ,function(x, pairs, Z, nn.k){
+
+res = lapply(1:tot.gr ,function(x, pairs, Z){
     Z.train = Z
     Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
+    nn.k = search.for.nnk(Z.train)
     zeros = which(Z.train==0,arr.ind=TRUE)
     P = Z.train*0
     ## jaccard distance including the interaction itself. This is removed next.
@@ -117,9 +118,9 @@ res = lapply(1:tot.gr ,function(x, pairs, Z, nn.k){
     nn = apply(dist,1,function(r) order(r, decreasing=TRUE)[1:nn.k])
     for(j in 1:ncol(Z))
         for(i in 1:nrow(Z))
-            if(Z.train[i,j]==0)
+            if(Z.train[i,j]==0){
                 P[i,j]<-sum(Z.train[nn[,i],j])
-            else{
+            }else{
                 ## removing self interaction in determining distance to hosts
                 z = Z.train[i,]
                 z[j]=0
@@ -128,15 +129,15 @@ res = lapply(1:tot.gr ,function(x, pairs, Z, nn.k){
                 P[i,j]<-sum(Z.train[order(nei, decreasing=TRUE)[1:nn.k], j])
             }
     P = P/nn.k
-    roc = rocCurves(Z, Z.train, P, plot=TRUE, bins=400, all=FALSE)
+    roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, Z.train, P,roc, plot=FALSE)
-    roc.all = rocCurves(Z, Z.train, P, plot=TRUE, bins=400, all=TRUE)
+    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P,roc.all, plot=FALSE)
     
     list(nnk=nn.k, P=P,tb = tb, tb.all = tb.all,
          FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR,
          FPR = roc$roc$FPR, TPR=roc$roc$TPR)
-},pairs=folds,Z = com,nn.k=nnk)        
+},pairs=folds,Z = com)        
 
 
 TB = data.frame(
@@ -164,11 +165,16 @@ write.csv(ROCgraph, file = paste0(subDir, 'ROC-xy-points.csv'))
 ## Constructing the P probability matrix from CV results
 aux = rowMeans(sapply(res, function(r) r$P))
 P = matrix(aux, nrow(com), ncol(com))
+rownams(P)<-rownames(com)
+colnames(P)<-colnames(com)
 
 ## left ordering of interaction and probability matrix
 indices = lof(com, indices = TRUE)
 com = com[, indices]
 P = P[, indices]
+
+## print topPairs
+topPairs(P,1*(com>0),topX=50)
 
 ## printing posterior interaction matrix
 pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
