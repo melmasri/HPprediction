@@ -90,7 +90,7 @@ topPairs<-function(P,Z,topX=20){
 }
 
 
-cross.validate.fold<-function(Z, n= 10, min.per.col = 1, missing.pattern=c('prop.to.col.sums','random')){
+cross.validate.fold<-function(Z, n= 10, min.per.col = 1, missing.pattern=c('random','prop.to.col.sums')){
     ## n-fold cross validation
     ## Returns a matrix of 3 columns, the first two are the (row,col) index of the pair,
     ## the third is the group
