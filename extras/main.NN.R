@@ -165,7 +165,7 @@ write.csv(ROCgraph, file = paste0(subDir, 'ROC-xy-points.csv'))
 ## Constructing the P probability matrix from CV results
 aux = rowMeans(sapply(res, function(r) r$P))
 P = matrix(aux, nrow(com), ncol(com))
-rownams(P)<-rownames(com)
+rownames(P)<-rownames(com)
 colnames(P)<-colnames(com)
 
 ## left ordering of interaction and probability matrix
