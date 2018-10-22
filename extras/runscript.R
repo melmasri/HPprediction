@@ -55,6 +55,7 @@ MODEL = if(grepl('(full|aff|dist)', tolower(opt$model)))
 COUNT = if(grepl('uncer', tolower(opt$runtype))) FALSE else TRUE
 run_script = NULL
 
+
 ## validation test
 if(grepl('dist', opt$model, ignore.case=TRUE) && grepl('(cv|uncer)', opt$runtype, ignore.case=TRUE) && CV.MIN.PER.COL==1){
     warning('minimum interactions per column are advised to be 2 when running cross-validation under the distance-only model. cv.min.per.col changed to 2!')
@@ -112,6 +113,11 @@ print(date())
 print(run_script)
 print(opt)
 print(subDir)
+## Git branch
+print('Git info:')
+system('git status -b -s',intern=TRUE)              # print branch info
+system('git show --oneline -s',intern=TRUE)         # prin git commit 
+
 ## Process started at:
 print(sprintf('Start time %s.',format(sTime, "%Y-%m-%d %H:%M:%S")))
 ##-----------------------------------------------------------
