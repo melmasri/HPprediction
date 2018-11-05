@@ -10,12 +10,16 @@ plot_Z<-function(Z, xlab, ylab, ...){
     ## ploting interaction matrix as a binary image
     if(missing(ylab)) ylab = 'hosts'
 	if(missing(xlab)) xlab = 'parasites'
-    ## par(mar=c(4.5,4.5,1,1))
+    par(mar = c(5,5,1,1)+0.1)
 	image(1:ncol(Z), 1:nrow(Z), t(Z[nrow(Z):1,]),
 		col = c('white', 'black'), ylab=ylab, xlab=xlab,
-          useRaster=TRUE,srt=45, axes=FALSE,cex.lab=1.8)
-	axis(1, at = 100*0:(ceiling(ncol(Z)/100)), cex.axis=1.5)
-	axis(2, at = c(1,50*1:(ceiling(nrow(Z)/50))), labels = c(50*(ceiling(nrow(Z)/50)):1,1), cex.axis=1.5)
+          useRaster=TRUE,srt=45, axes=FALSE,cex.lab=3)
+           
+
+    a = 100*round(ncol(Z)*0.25 /100,0)
+	axis(1, at = a*0:(ceiling(ncol(Z)/a)), cex.axis= 2)
+    b = 100*round(nrow(Z)*0.25 /100,0)
+	axis(2, at = b*0:(ceiling(nrow(Z)/b)),cex.axis = 2)
 }
 
 lof<-function(Z, indices = FALSE){

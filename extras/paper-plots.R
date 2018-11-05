@@ -687,3 +687,6 @@ print(xtable(WIL, digits = 3),
 pdf('tree-GMPD.pdf')
 plot(tree, font=1, cex=0.5,label.offset=1)
 dev.off()
+
+
+
