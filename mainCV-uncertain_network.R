@@ -216,7 +216,7 @@ dev.off()
 ZpostG = 1*(Pg>rocG$threshold)
 ZpostNoG = 1*(Pnog>rocNoG$threshold)
 pdf(paste0(subDir,'degree_dist.pdf'))
-par(mfrow = c(2,2))
+par(mfrow = c(2,2), mar = c(4.1, 4, 0.2, 0.2) +0.1)
 plot_degree(com10, ZpostG, type='hosts',host.col = 'red')
 plot_degree(com10, ZpostG, type='parasites', parasite.col = 'blue')
 plot_degree(com10, ZpostNoG, type='hosts',host.col = 'red')
@@ -238,11 +238,13 @@ topm = data.frame(t(sapply(1:m, function(r) c(actual = sum(com10[ord.pg[1:r]]),
     withOutG= sum(com10[ord.p[1:r]]*ZpostNoG[ord.p[1:r]])))))
 
 pdf(paste0(subDir, 'TopM_.pdf'))
-plot(x=1:m,y = topm[,'withG'], xlab='Number of validated pairwise interactions', ylab = 'Number of recovered pairwise interactions',  col='black',lty=1, type='l', lwd=2, cex.lab=1.5)
+par(mar = c(5, 5, 1, 0.2)+ 0.1)
+plot(x=1:m,y = topm[,'withG'], xlab='Number of validated interactions', ylab = 'Number of recovered interactions',
+     col='black',lty=1, type='l', lwd=2, cex.lab=2, cex.axis = 1.5)
 lines(x=1:m,y = topm[,'withOutG'], lty=5, type='l', lwd=2, col='black')
 lines(x=1:m, y=1:m, lty=3, lwd=2, col='black')
 gnames = c(paste('LS-net: ', MODEL, c('model with uncertainty', 'model')), 'x=y')
-legend('bottomright', legend = gnames,lty=c(1,5,3),lwd=c(2,2,2), cex=1.3)
+legend('bottomright',legend = gnames,lty=c(1,5,3),lwd=c(2,2,2), cex=1.5)
 dev.off()
 
 

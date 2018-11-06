@@ -222,35 +222,35 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     }
     gpch = c('+', '*')
     if(type=='parasites'){
-        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        legend(xlim[2]*0.15, ylim[2]*0.6, c("Parasites"), col = parasite.col,
-               pch = gpch[2], box.col="white")
+        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = 1.5,cex.axis = 1.5)
+        legend(xlim[2]*0.03, ylim[2]*1.4, c("Parasites"), col = parasite.col,
+               pch = gpch[2], bty="n",pt.cex=1.5, cex=2)
         if(!missing(Z_est)){
             points((para_est), type="p", col=parasite.col, pch=16)
-            legend(xlim[2]*0.15, ylim[2]*0.4, c("Est"), col = parasite.col,
-               pch = 16, box.col="white")
+            legend(xlim[2]*0.03, ylim[2]*0.8, c("Est"), col = parasite.col,
+               pch = 16, bty='n', pt.cex=1.5, cex=2)
         }
     }
     if(type=='hosts'){
-        plot((host_degrees), type="p", col=host.col, pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
-        legend(xlim[2]*0.15, ylim[2]*0.6, c("Hosts"), col = host.col,
-               pch = gpch[1], box.col="white")
+        plot((host_degrees), type="p", col=host.col, pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = 1.5,cex.axis = 1.5)
+        legend(xlim[2]*0.03, ylim[2]*1.4, c("Hosts"), col = host.col,
+               pch = gpch[1], bty="n", pt.cex=1.5, cex=2)
         if(!missing(Z_est)){
             points((host_est), type="p", col=host.col, pch=16)
-            legend(xlim[2]*0.15, ylim[2]*0.4, c("Est"), col = host.col,
-                   pch = 16, box.col="white")
+            legend(xlim[2]*0.03, ylim[2]*0.8, c("Est"), col = host.col,
+                   pch = 16, bty='n',pt.cex=1.5, cex=2)
         }
     }
     if(type=='both'){
-        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of Nodes", xlab="Degree")
+        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = 1.5,cex.axis = 1.5)
         points((host_degrees), type="p", col=host.col, pch=gpch[1])
-    legend(xlim[2]*0.15, ylim[2]*0.6, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
-           pch = gpch[2:1], box.col="white")
+    legend(xlim[2]*0.03, ylim[2]*1.4, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
+           pch = gpch[2:1], bty = 'n', pt.cex=1.5, cex=2)
         if (!missing(Z_est)) {
             points((para_est), type="p", col=parasite.col, pch=16)
             points((host_est), type="p", col=host.col, pch=16)
-            legend(xlim[2]*0.15, ylim[2]*0.33, c("Est"), col = c("black"),
-                   pch = 16, box.col="white")
+            legend(xlim[2]*0.03, ylim[2]*0.33, c("Est"), col = c("black"),
+                   pch = 16, bty='n', pt.cex=1.5, cex=2)
         }
     }
 }
