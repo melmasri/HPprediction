@@ -139,7 +139,8 @@ Pnog = Pnog[, indices]
 
 ## Histogram of G
 pdf(paste0(subDir, 'hist_g.pdf'),height=4)
-hist(rowMeans(G.sample),freq=F,col='ivory4', xlab='Posterior estimate of g', main='', breaks=20, cex.lab=1.4)
+par(mar = c(5,5,1,1)+0.1)
+hist(rowMeans(G.sample),freq=F,col='ivory4', xlab='Posterior estimate of g', main='', breaks=20, cex.lab=2, cex.axis = 1.5)
 abline(v=quantile(rowMeans(G.sample),probs = c(0.05, 0.95)), col="red", lty=2, lwd=2)
 dev.off()
 ## Printing posterior mean and empirical quantiles
@@ -187,10 +188,13 @@ write.csv(tb, file=paste0(subDir, 'AUC-PRED.tex'))
 ## Printing ROC curves
 pdf(paste0(subDir, 'ROC-g_', MODEL,'.pdf'))
 names = paste('LS-net: ', MODEL, c('with g', 'without g'))
-plot(rocG$roc$FPR, rocG$roc$TPR, xlab='1-specificity', ylab = 'sensitivity',type ='l', col='black', main = 'ROC Curve', xlim = c(0,1), ylim = c(0,1), lty=1, lwd=3, cex.lab=1.3)
+par(mar = c(5,5,1,1)+0.1)
+plot(rocG$roc$FPR, rocG$roc$TPR, xlab='1-specificity', ylab = 'sensitivity',
+     type ='l', col='black', main = '', xlim = c(0,1), ylim = c(0,1), lty=1, lwd=3, cex.lab=2, cex.axis=1.5,
+      lab=c(x=2,y=2, llen=15))
 lines(rocNoG$roc$FPR, rocNoG$roc$TPR,type='l', lty=2, lwd=3)
 ## abline(a = 0, b=1,col='black',lty=2, lwd=2)
-legend('bottomright', legend = names, col=c('black', 'black'), lty=c(1,2),lwd=3, cex=1.5)
+legend('bottomright', legend = names, col=c('black', 'black'), lty=c(1,2),lwd=3, cex=1.5, pt.cex=1.5)
 dev.off()
 
 ## Printing  obs unk graphs
@@ -199,17 +203,21 @@ colass = rgb(0,0,0,0.3)
 colnoass = rgb(0,0,0,0.6)
 ## colass = rgb(0,0.8,0.8,0.5)
 ## colnoass = rgb(1,0,0.4,0.4,0.5)
-hist(log(Pg[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-12,0), breaks=30, cex.lab=1.5, lty=1, lwd=4)
+par(mar = c(5,5,1,1)+0.1)
+hist(log(Pg[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.45), xlim=c(-12,0),
+     breaks=30, cex.lab=2, lty=1, lwd=4, cex.axis= 1.5)
 hist(log(Pg[com10==0]),col=colnoass,freq=FALSE, add=TRUE, lty=2, lwd=4)
-legend(x='top', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5, lty=c(1,2)) 
+legend(x='top', legend=c('Observed associations', 'Unobserved associations'), lwd=4,
+       col=c(colass, colnoass),pt.cex=1.5, cex=1.5, lty=c(1,2)) 
 dev.off()
 
 pdf(paste0(subDir,'hist_obs_unk_', name,'.pdf'))
 colass = rgb(0,0,0,0.3)
 colnoass = rgb(0,0,0,0.6)
-hist(log(Pnog[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.38), xlim=c(-8,0), breaks=20, cex.lab=1.5, lty=1, lwd=4)
+par(mar = c(5,5,1,1)+0.1)
+hist(log(Pnog[com10>0]),col=colass,main ='', ylab='Density', freq=FALSE, xlab='Log of probability',ylim=c(0, 0.45), xlim=c(-8,0), breaks=20, cex.lab=2, lty=1, lwd=4, cex.axis = 1.5)
 hist(log(Pnog[com10==0]),col=colnoass,freq=FALSE, add=TRUE, lty=2, lwd=4)
-legend(x='top', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1, cex=1.5, lty=c(1,2))
+legend(x='top', legend=c('Observed associations', 'Unobserved associations'), lwd=4, col=c(colass, colnoass),pt.cex=1.5, cex=1.5, lty=c(1,2))
 dev.off()
 
 ## Degree Distribution with and without G
@@ -240,11 +248,11 @@ topm = data.frame(t(sapply(1:m, function(r) c(actual = sum(com10[ord.pg[1:r]]),
 pdf(paste0(subDir, 'TopM_.pdf'))
 par(mar = c(5, 5, 1, 0.2)+ 0.1)
 plot(x=1:m,y = topm[,'withG'], xlab='Number of validated interactions', ylab = 'Number of recovered interactions',
-     col='black',lty=1, type='l', lwd=2, cex.lab=2, cex.axis = 1.5)
-lines(x=1:m,y = topm[,'withOutG'], lty=5, type='l', lwd=2, col='black')
+     col='black',lty=1, type='l', lwd=3, cex.lab=2, cex.axis = 1.5, ylim = c(0,4000))
+lines(x=1:m,y = topm[,'withOutG'], lty=5, type='l', lwd=3, col='black')
 lines(x=1:m, y=1:m, lty=3, lwd=2, col='black')
 gnames = c(paste('LS-net: ', MODEL, c('model with uncertainty', 'model')), 'x=y')
-legend('bottomright',legend = gnames,lty=c(1,5,3),lwd=c(2,2,2), cex=1.5)
+legend('topleft',legend = gnames,lty=c(1,5,3),lwd=c(3,3,2), cex=1.4)
 dev.off()
 
 
