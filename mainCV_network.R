@@ -56,23 +56,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
     obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type,
                       a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
 
-    ## Probability matrix
-    ## Extracting mean posteriors
-    y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
-    w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
-    eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
-
-    if(!is.null(obj$param$eta)){
-        distance = 1/cophenetic(rescale(tree, 'EB', eta))
-        diag(distance)<-0
-        distance = distance %*% Z.train
-        if(grepl('dist', model.type)) distance[distance==0]<-Inf else 
-        distance[distance==0]<-1
-    }else distance = 1
-
-    ## Probability matrix
-    if(grepl('dist', model.type))  P = 1-exp(-distance) else
-    P  =1 - exp(-outer(y, w)*distance)
+    P = sample_parameter(obj$param, model.type, Z.train, tree)
     
     ## order the rows in Z.test as in Z.train
     roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
@@ -80,7 +64,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
     roc.all = rocCurves(Z, Z.train, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P, roc.all, plot=FALSE)
     
-    list(param=list(y=y, w=w, eta=eta), tb = tb,
+    list(param=list(P=P), tb = tb,
          tb.all = tb.all, FPR.all = roc.all$roc$FPR,
          TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
@@ -110,29 +94,15 @@ ROCgraph = cbind(
 write.csv(ROCgraph, file = paste0(subDir, 'ROC-xy-points.csv'))
 
 ## Constructing the P probability matrix from CV results
-if(grepl('(full|aff)', MODEL)){
-    W = rowMeans(sapply(res, function(r) r$param$w))
-    Y = rowMeans(sapply(res, function(r) r$param$y))
-    YW = outer(Y, W)
-} else W=Y=YW=1
-
-if(grepl('(full|dist)', MODEL)){
-    Eta = mean(sapply(res, function(r) r$param$eta))
-    distance = 1/cophenetic(rescale(tree, 'EB', Eta))
-    diag(distance)<-0
-    distance = distance %*% com
-    if(grepl('dist', MODEL)) distance[distance==0]<-Inf else 
-    distance[distance==0]<-1
-}else distance = 1
-
-## Probability matrix
-P = 1-  exp(-YW*distance)
+P = matrix(rowMeans(sapply(res, function(r) r$param$P)),
+    nrow = nrow(com), ncol = ncol(com))
 
 ## left ordering of interaction and probability matrix
 indices = lof(com, indices = TRUE)
 com = com[, indices]
 P = P[, indices]
-
+rownames(P)<-rownames(com)
+colnames(P)<-colnames(com)
 ## print topPairs
 topPairs(P,1*(com>0),topX=50)
 

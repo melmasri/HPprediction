@@ -255,3 +255,44 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     }
 }
 
+sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
+    sample_mcmc<-function(mcmc_sample,nObs,  size =1000){
+        if(is.matrix(mcmc_sample))
+            mcmc_sample[, sample.int(nObs, size, replace = TRUE)] else
+        mcmc_sample[sample.int(nObs, size, replace = TRUE)]
+    }
+    if(grepl('dist', MODEL)) {
+        Y = W = 1
+    }else{
+        Y = sample_mcmc(param$y, ncol(param$y), size)
+        W = sample_mcmc(param$w, ncol(param$w), size)
+    }
+    if(grepl('(dist|full)', MODEL)){
+        Eta = sample_mcmc(param$eta, length(param$eta), size)
+    }else Eta = 1
+    
+    aux = sapply(1:size, function(s){
+        ## setting affinity to 1 in distance model
+        if(grepl('(aff|full)', MODEL)){
+            YW = outer(Y[,s], W[,s])
+        } else YW = 1
+        ## Full or distance model
+        ## Creating distance
+        if(grepl('(full|dist)', MODEL)){
+            distance = 1/cophenetic(rescale(tree, 'EB', Eta[s]))
+            diag(distance)<-0
+            distance = distance %*% Z
+            distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
+        } else distance = 1
+        ## models
+        ## P = 1-exp(-outer(Y, W))                 # affinity model
+        ## P = 1-exp(-distance)                    # distance model
+        ## P = 1-exp(-YW*distance)                 # full model
+        ## All in one probability matrix
+        P = 1-  exp(-YW*distance)
+        P
+    })
+    aux = rowMeans(aux)
+    matrix(aux, nrow = nrow(com), ncol = ncol(com))
+
+}

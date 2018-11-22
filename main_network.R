@@ -37,32 +37,10 @@ names(obj$param)
 source('network_analysis.R')
 
 ## Probability matrix
-## Extracting mean posteriors
-Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
-W = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
-Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
-YW = outer(Y, W)
-## setting affinity to 1 in distance model
-if(grepl('dist', MODEL)) YW = 1 
+## Extracting mean posteriors of P
+P = sample_parameter(obj$param, MODEL, obj$Z, obj$tree)
+    
 
-### Full or distance model
-## Creating distance
-if(grepl('(full|dist)', MODEL)){
-    distance = 1/cophenetic(rescale(obj$tree, 'EB', Eta))
-    diag(distance)<-0
-    distance = distance %*% obj$Z
-    distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
-} else distance = 1
-
-## models
-## P = 1-exp(-outer(Y, W))                 # affinity model
-## P = 1-exp(-distance)                    # distance model
-## P = 1-exp(-YW*distance)                 # full model
-
-## All in one probability matrix
-P = 1-  exp(-YW*distance)
-
-## ROC curves and AUC
 roc = rocCurves(obj$Z, obj$Z, P = P, all = TRUE, plot = FALSE) # ROC
 
 ## some numerical analysis
@@ -84,13 +62,19 @@ dev.off()
 pdf(paste0(subDir, 'tree_input.pdf'))
 plot(obj$tree, show.tip.label=FALSE)
 dev.off()
+
+## printing output tree
+if(grepl('(full|dist)', MODEL)){
+    Eta = mean(obj$param$eta)
+    pdf(paste0(subDir, 'tree_', MODEL,'.pdf'))
+    plot(rescale(obj$tree, 'EB', Eta), show.tip.label=FALSE)
+    dev.off()
+}
+
 ## printing posterior interaction matrix
-pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
+pdf(paste0(subDir, 'Z_', MODEL, 'new.pdf'))
 plot_Z(1*(P[, indices]>roc$threshold))                     
 dev.off()
-
-
-
 
 ## MCMC trace plots and ACF
 require(coda)

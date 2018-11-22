@@ -85,7 +85,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
         if(!all(tree$tip.label %in% rownames(Z))){
             warning('not all species in tree exist in Z; missing are removed from tree!',
                     immediate.= TRUE, call. = FALSE)
-            tree = drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(Z)])
+            tree = drop.tip(tree, tree$tip.label[!(tree$tip.label %in% rownames(Z))])
         }
         ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% tree$tip.label)){
