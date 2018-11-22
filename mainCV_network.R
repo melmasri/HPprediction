@@ -151,6 +151,12 @@ pdf(paste0(subDir, 'tree_input.pdf'))
 plot(tree, show.tip.label=FALSE)
 dev.off()
 
+## printing output tree
+if(grepl('(full|dist)', MODEL)){
+    pdf(paste0(subDir, 'tree_', MODEL,'.pdf'))
+    plot(cophenetic(rescale(tree, 'EB', Eta)), show.tip.label=FALSE)
+    dev.off()
+}
 ## Saving workspace
 if(SAVE_PARAM)
     save.image(file = paste0(subDir, SAVE_FILE))
