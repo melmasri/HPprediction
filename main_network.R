@@ -72,7 +72,7 @@ if(grepl('(full|dist)', MODEL)){
 }
 
 ## printing posterior interaction matrix
-pdf(paste0(subDir, 'Z_', MODEL, 'new.pdf'))
+pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
 plot_Z(1*(P[, indices]>roc$threshold))                     
 dev.off()
 
