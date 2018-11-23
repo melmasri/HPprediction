@@ -57,6 +57,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
                       a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
 
     P = sample_parameter(obj$param, model.type, Z.train, tree)
+    Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
     
     ## order the rows in Z.test as in Z.train
     roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
@@ -64,7 +65,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
     roc.all = rocCurves(Z, Z.train, P=P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P, roc.all, plot=FALSE)
     
-    list(param=list(P=P), tb = tb,
+    list(param=list(P=P, Eta = Eta), tb = tb,
          tb.all = tb.all, FPR.all = roc.all$roc$FPR,
          TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
     
@@ -123,6 +124,7 @@ dev.off()
 
 ## printing output tree
 if(grepl('(full|dist)', MODEL)){
+    Eta = mean(sapply(res, function(r) r$Eta))
     pdf(paste0(subDir, 'tree_', MODEL,'.pdf'))
     plot(cophenetic(rescale(tree, 'EB', Eta)), show.tip.label=FALSE)
     dev.off()
