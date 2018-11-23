@@ -164,12 +164,12 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     ## indexing the upper and lower triangular of the matrix
     lowerIndex = lower.tri.Index(ny)
     upperIndex = upper.tri.Index(ny)
-
+    dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
     tree.ht = arrange.tree(tree)
     tree$tip.label = 1:length(tree$tip.label) # removing tip labels
-
-    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex, ny)
+    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex,
+        ny, dummyMat)
     sparseZ = Z
     if(sparse){
         ind <- which(Z==1, arr.ind=TRUE)
@@ -181,7 +181,6 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     pdist0 = apply(pdist, 1, function(r) which(r==0))
     if(length(pdist0) && length(pdist0)!=ny) stop('pdist0 error')
     pdist00 = which(pdist==0)
-
     ## starting the loop
     print(sprintf("Run for %i slices with %i burn-ins",slices, burn.in))
     print(paste('Matrix dimension:', nrow(Z)[1],'x', ncol(Z) ))
@@ -195,7 +194,8 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             }
             
             ## Updating the tee
-            dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
+            dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny,
+                           dummyMat)
             pdist = dist%*%sparseZ
             ## conversion takes less time then extraction/insertion from dgMatrix class
             if(sparse) pdist = as(pdist, 'matrix') 
@@ -222,7 +222,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                     w0.last = w0.new
                     ## Updating host parameters
                     y0.new<-raffinity.MH(y0.last,mr,
-                                         tcrossprod(w0.new,Upd),
+                                         mmult(Upd, w0.new),
                                          sig=y_sd, c(a_y, b_y))
                     y0.count = y0.count + 1*(abs(y0.new-y0.last) > tol.err)
                     y0.sum = y0.sum + y0.new
@@ -234,7 +234,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                     pdist[i,],
                     if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
                     y0.new[i]*(w0[,s]*U0[i,]),
-                    eta_sd, lowerIndex, upperIndex, ny, ind, sparse)
+                    eta_sd, lowerIndex, upperIndex, ny, ind, sparse, dummyMat)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new*mr[i]
@@ -515,20 +515,20 @@ upper.tri.Index<-function(n){
 }
 
 
-cophFast<-function(tree, lowerIndex, upperIndex, n){
+cophFast<-function(tree, lowerIndex, upperIndex, n, dummyMat){
     ## a fast version of phylo tree using phangorn:::coph
     ## phangorn:::coph returns a dist object.
-    b = matrix(0, n,n)
-    b[lowerIndex]<- b[upperIndex]<-(1/phangorn:::coph(tree))
-    b
+    ## dummyMat = matrix(0, n,n)
+    dummyMat[lowerIndex]<- dummyMat[upperIndex]<-(1/phangorn:::coph(tree))
+    dummyMat
 }
 
 rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
-                              eta_sd =0.01, a, b,nr, ind, sparse){
+                              eta_sd =0.01, a, b,nr, ind, sparse, dummyMat){
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
-    dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
+    dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr, dummyMat)
     pdist.new = dist[i,]%*%sZ
     if(sparse)
         pdist.new= pdist.new@x
@@ -564,3 +564,26 @@ row_extract<-function(m, i, ind){
 
 
 ### ==================================================
+
+require( Rcpp )
+
+#  Source code for our function
+func <- 'NumericVector mmult( NumericMatrix m , NumericVector v , bool byrow = true ){
+  if( byrow );
+    if( ! m.nrow() == v.size() ) stop("Non-conformable arrays") ;
+  if( ! byrow );
+    if( ! m.ncol() == v.size() ) stop("Non-conformable arrays") ;
+
+  NumericVector out(m.nrow()) ;
+
+  for (int j = 0; j < m.ncol(); j++) {
+     for (int i = 0; i < m.nrow(); i++) {
+       out[i] =++  m(i,j) * v[j];
+     }
+  }
+  return out ;
+}'
+
+#  Make it available
+cppFunction( func )
+
