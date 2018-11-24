@@ -124,7 +124,7 @@ dev.off()
 
 ## printing output tree
 if(grepl('(full|dist)', MODEL)){
-    Eta = mean(sapply(res, function(r) r$Eta))
+    Eta = mean(sapply(res, function(r) r$param$Eta))
     pdf(paste0(subDir, 'tree_', MODEL,'.pdf'))
     plot(cophenetic(rescale(tree, 'EB', Eta)), show.tip.label=FALSE)
     dev.off()
