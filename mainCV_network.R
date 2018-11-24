@@ -26,6 +26,8 @@ if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
 }else{
     source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
 }
+
+cat("dim com:" dim(com), 'no.interactions:', sum(1*(com>0)), '\n')
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
@@ -125,8 +127,9 @@ dev.off()
 ## printing output tree
 if(grepl('(full|dist)', MODEL)){
     Eta = mean(sapply(res, function(r) r$param$Eta))
+    print(paste('Eta is', Eta))
     pdf(paste0(subDir, 'tree_', MODEL,'.pdf'))
-    plot(cophenetic(rescale(tree, 'EB', Eta)), show.tip.label=FALSE)
+    plot(rescale(tree, 'EB', Eta), show.tip.label=FALSE)
     dev.off()
 }
 ## Saving workspace
