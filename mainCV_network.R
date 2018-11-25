@@ -27,7 +27,7 @@ if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
     source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
 }
 
-cat("dim com:" dim(com), 'no.interactions:', sum(1*(com>0)), '\n')
+cat("dim com:", dim(com), 'no.interactions:', sum(1*(com>0)), '\n')
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
