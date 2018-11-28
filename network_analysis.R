@@ -270,8 +270,10 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
     if(grepl('(dist|full)', MODEL)){
         Eta = sample_mcmc(param$eta, length(param$eta), size)
     }else Eta = 1
-    
-    aux = sapply(1:size, function(s){
+
+    P <- 0
+    for(s in 1:size){
+        ## aux = sapply(1:size, function(s){
         ## setting affinity to 1 in distance model
         if(grepl('(aff|full)', MODEL)){
             YW = outer(Y[,s], W[,s])
@@ -289,10 +291,9 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         ## P = 1-exp(-distance)                    # distance model
         ## P = 1-exp(-YW*distance)                 # full model
         ## All in one probability matrix
-        P = 1-  exp(-YW*distance)
-        P
-    })
-    aux = rowMeans(aux)
-    matrix(aux, nrow = nrow(com), ncol = ncol(com))
+        P = P + 1-  exp(-YW*distance)
+    }
+    ## })
+    matrix(P/size, nrow = nrow(com), ncol = ncol(com))
 
 }
