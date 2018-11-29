@@ -167,6 +167,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
     tree.ht = arrange.tree(tree)
+    t.max = get.tree.max(tree)
     tree$tip.label = 1:length(tree$tip.label) # removing tip labels
     dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex,
         ny, dummyMat)
@@ -443,6 +444,19 @@ rg<-function(Z,l){
 ### ==================================================
 ### Tree functions
 ### ==================================================
+get.tree.max<-function(phy){
+    ht=heights.phylo(phy)
+	N=Ntip(phy)
+	Tmax=ht$start[N+1]
+    Tmax
+}
+
+EB.distance<-function(dist, tmax, a){
+    if(a==0) return(dist)
+    x = dist/2
+    2*(exp(a*tmax)-exp(a*(tmax - x)))/a
+}
+
 arrange.tree<-function(phy){
     ## taken from .b.phylo from
     ## https://github.com/mwpennell/geiger-v2/blob/master/R/utilities-phylo.R#L1353-L1382
