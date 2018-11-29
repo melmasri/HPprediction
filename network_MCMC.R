@@ -171,7 +171,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
     dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex,
         ny, dummyMat)
-    dist.original = dist
+    dist.original = dist/2
     sparseZ = Z
     if(sparse){
         ind <- which(Z==1, arr.ind=TRUE)
@@ -454,8 +454,7 @@ get.tree.max<-function(phy){
 
 EB.distance<-function(dist, tmax, a){
     if(a==0) return(dist)
-    x = dist/2
-    2*(exp(a*tmax)-exp(a*(tmax - x)))/a
+    (2/a)*exp(a*tmax)*(1-exp(-a*dist))
 }
 
 arrange.tree<-function(phy){
@@ -543,9 +542,9 @@ rEta.copheneticSuperFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z,
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
-    dist = EB.distance(dist.org, tmax, eta.prop)
+    dist = EB.distance(dist.org[i,], tmax, eta.prop)
     ## dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr, dummyMat)
-    pdist.new = dist[i,]%*%sZ
+    pdist.new = dist%*%sZ
     if(sparse)
         pdist.new= pdist.new@x
     if(length(no0)){
