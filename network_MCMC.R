@@ -167,7 +167,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
     ## tree.ht = arrange.tree(tree)
-    t.max = get.tree.max(tree)
+    t.max = get.max.depth(tree)
     ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
     dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex,
         ny, dummyMat)
@@ -197,7 +197,9 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             
             ## Updating the tee
             ##dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny, dummyMat)
-            dist = EB.distance(dist.original, t.max, peta[s])
+            dist = 1/EB.distance(dist.original, t.max, peta[s])
+            diag(dist)<-0
+            
             pdist = dist%*%sparseZ
             ## conversion takes less time then extraction/insertion from dgMatrix class
             if(sparse) pdist = as(pdist, 'matrix') 
@@ -445,7 +447,7 @@ rg<-function(Z,l){
 ### ==================================================
 ### Tree functions
 ### ==================================================
-get.tree.max<-function(phy){
+get.max.depth<-function(phy){
     ht=heights.phylo(phy)
 	N=Ntip(phy)
 	Tmax=ht$start[N+1]
@@ -542,7 +544,8 @@ rEta.copheneticSuperFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z,
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
-    dist = EB.distance(dist.org[i,], tmax, eta.prop)
+    dist = 1/EB.distance(dist.org[i,], tmax, eta.prop)
+    dist[i]<-0
     ## dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr, dummyMat)
     pdist.new = dist%*%sZ
     if(sparse)
