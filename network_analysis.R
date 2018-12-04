@@ -261,7 +261,9 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
             mcmc_sample[, sample.int(nObs, size, replace = TRUE)] else
         mcmc_sample[sample.int(nObs, size, replace = TRUE)]
     }
-    if(grepl('dist', MODEL)) {
+    t.max = get.max.depth(tree)
+    dist.original = cophenetic(tree)
+      if(grepl('dist', MODEL)) {
         Y = W = 1
     }else{
         Y = sample_mcmc(param$y, ncol(param$y), size)
@@ -281,7 +283,7 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         ## Full or distance model
         ## Creating distance
         if(grepl('(full|dist)', MODEL)){
-            distance = 1/cophenetic(rescale(tree, 'EB', Eta[s]))
+            distance = 1/EB.distance(dist.original, t.max, Eta[s])
             diag(distance)<-0
             distance = distance %*% Z
             distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
