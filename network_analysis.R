@@ -255,12 +255,14 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     }
 }
 
-sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
+sample_parameter<-function(param, MODEL,Z, tree, size = 1000, weights=NULL){
     sample_mcmc<-function(mcmc_sample,nObs,  size =1000){
         if(is.matrix(mcmc_sample))
             mcmc_sample[, sample.int(nObs, size, replace = TRUE)] else
         mcmc_sample[sample.int(nObs, size, replace = TRUE)]
     }
+    if(!is.null(weights) & length(weights)!=size)
+        stop('weights are not the same sampling size.')
     t.max = get.max.depth(tree)
     dist.original = cophenetic(tree)
       if(grepl('dist', MODEL)) {
@@ -273,6 +275,8 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         Eta = sample_mcmc(param$eta, length(param$eta), size)
     }else Eta = 1
 
+    
+    zeroZ = which(Z>0)
     P <- 0
     for(s in 1:size){
         ## aux = sapply(1:size, function(s){
@@ -293,7 +297,13 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         ## P = 1-exp(-distance)                    # distance model
         ## P = 1-exp(-YW*distance)                 # full model
         ## All in one probability matrix
-        P = P + 1-  exp(-YW*distance)
+        if(!is.null(weights)){
+            a =  1-  exp(-YW*distance)
+            Pg = a * weights[s] /(1-a + weights[s] * a)
+            Pg[zeroZ] <- a[zeroZ]
+        }else{
+            P = P + 1-  exp(-YW*distance)
+        }
     }
     ## })
     matrix(P/size, nrow = nrow(com), ncol = ncol(com))
