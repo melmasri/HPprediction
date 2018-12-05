@@ -301,6 +301,7 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000, weights=NULL){
             a =  1-  exp(-YW*distance)
             Pg = a * weights[s] /(1-a + weights[s] * a)
             Pg[zeroZ] <- a[zeroZ]
+            P = P + Pg
         }else{
             P = P + 1-  exp(-YW*distance)
         }
