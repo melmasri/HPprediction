@@ -69,7 +69,7 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
     Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
     g = if(is.null(obj$param$g)) 0 else mean(obj$param$g) 
     weights = obj$param$g[sample.int(length(obj$param$g), 1000, replace = TRUE)]
-    P = sample_parameter(obj$param, model.type, Z.train, tree, weigts  = weights)
+    P = sample_parameter(obj$param, model.type, Z.train, tree, weights  = weights)
     withG = list(P = P, eta=Eta, g=g, g.sample = obj$param$g)
 
     ## ################################################
