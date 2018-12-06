@@ -92,14 +92,12 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
 ## Averaging mean posterior estimates
 
 ## Model with uncertainty
-P = matrix(rowMeans(sapply(res, function(r) r[['withG']][['P']])),  nrow = nrow(com), ncol = ncol(com))
-Eta = mean(sapply(res, function(r) r[['withG']][['Eta']]))
+Pg = matrix(rowMeans(sapply(res, function(r) r[['withG']][['P']])),  nrow = nrow(com), ncol = ncol(com))
 G = mean(sapply(res, function(r) r[['withG']][['g']]))
 G.sample = sapply(res, function(r)r[['withG']][['g.sample']])
 
 ## Model with uncertainty
 Pnog = matrix(rowMeans(sapply(res, function(r)  r[['withOutG']][['P']])),  nrow = nrow(com), ncol = ncol(com))
-Eta = mean(sapply(res, function(r) r[['withOutG']][['Eta']]))
 
 ## left ordering based on com10
 indices = lof(com10, indices = TRUE)
