@@ -104,11 +104,24 @@ search.for.nnk<-function(X){
     return(nnk)
 }
 
+find.nnk<-function(Z){
+    Z = 1*(Z>0)
+    fol = cross.validate.fold(Z, n= 5, 2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+    gr = length(unique(fol[,'gr']))   # total number of CV groups
+    res = lapply(1:gr ,function(x, pairs, Z){
+        Z.train = Z
+        Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
+        nn.k = search.for.nnk(Z.train)
+        list(nn.k)
+    },pairs=fol,Z = Z)        
+    mean(unlist(res))
+}
 
+nn.k = find.nnk(com)
+cat('nn.k:', nn.k, '\n')
 res = lapply(1:tot.gr ,function(x, pairs, Z){
     Z.train = Z
     Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    nn.k = search.for.nnk(Z.train)
     zeros = which(Z.train==0,arr.ind=TRUE)
     P = Z.train*0
     ## jaccard distance including the interaction itself. This is removed next.
