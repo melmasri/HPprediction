@@ -54,7 +54,7 @@ folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, gr
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## for the optimal nnk.
-search.for.nnk<-function(X){
+search.for.nnk<-function(X, X.train){
     min.nnk = 2
     max.nnk = nrow(X) - 1
     qartP = floor((max.nnk - min.nnk)/4)
@@ -86,9 +86,9 @@ search.for.nnk<-function(X){
                         }
                 
                 P = P/nn.k
-                roc = rocCurves(Z, Z, P, plot=FALSE, bins=400, all=TRUE)
+                roc = rocCurves(X, Z, P, plot=FALSE, bins=400, all=FALSE)
                 roc$auc
-            },Z = X, nn.k=nnk))))
+            }, Z = X.train, nn.k=nnk))))
         auc[which(auc==0)]<-auc1
         print(rbind(grid = pointlist, AUC = auc))
         a =  which.max(auc)
@@ -111,7 +111,7 @@ find.nnk<-function(Z){
     res = lapply(1:gr ,function(x, pairs, Z){
         Z.train = Z
         Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-        nn.k = search.for.nnk(Z.train)
+        nn.k = search.for.nnk(Z, Z.train)
         list(nn.k)
     },pairs=fol,Z = Z)        
     mean(unlist(res))
