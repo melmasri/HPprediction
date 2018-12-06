@@ -144,7 +144,7 @@ res = lapply(1:tot.gr ,function(x, pairs, Z){
     P = P/nn.k
     roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, Z.train, P,roc, plot=FALSE)
-    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=TRUE)
+    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
     tb.all  = ana.table(Z, Z.train, P,roc.all, plot=FALSE)
     
     list(nnk=nn.k, P=P,tb = tb, tb.all = tb.all,
