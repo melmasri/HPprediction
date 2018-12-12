@@ -114,23 +114,20 @@ cross.validate.fold<-function(Z, n= 10, min.per.col = 1, missing.pattern=c('rand
     gr = rep(size, n)
     if(sum(colm) %% size!=0)
         gr[n] =  gr[n] + sum(colm) %% size
-
-    pair.list = list()
-    for(i in 1:n){
-        bank=c()
-        for(k in 1:gr[i]){
-            a = which(colm>0)
-            if(missing.pattern=='random')
-                b = a[sample(length(a),1)] else
-            if (missing.pattern=='prop.to.col.sums')
-                b = a[sample(length(a),1, prob=colm[a]/sum(colm[a]))] else
-            stop('missing pattern has to be specified from selection!')
-            bank = c(bank, b)
-            colm[b] = colm[b]-1
-        }
-        pair.list[[i]]<-bank
+    
+    group.colm = rep(1:n,times = gr)[sample.int(sum(colm), sum(colm))]
+    pair.list = numeric(sum(colm))
+    for(i in 1:sum(colm)){
+        a = which(colm>0)
+        if(missing.pattern=='random')
+            b = a[sample.int(length(a),1)] else
+        if (missing.pattern=='prop.to.col.sums')
+            b = a[sample.int(length(a),1, prob=colm[a]/sum(colm[a]))] else
+        stop('missing pattern has to be specified from selection!')
+        colm[b] = colm[b]-1
+        pair.list[i]<-b
     }
-
+    pair.list= tapply(pair.list, group.colm,identity)
     
     gr.list= list()
     bank= c()
