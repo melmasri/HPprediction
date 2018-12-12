@@ -264,7 +264,7 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000, weights=NULL){
     if(!is.null(weights) & length(weights)!=size)
         stop('weights are not the same sampling size.')
     t.max = get.max.depth(tree)
-    dist.original = cophenetic(tree)
+    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
       if(grepl('dist', MODEL)) {
         Y = W = 1
     }else{
