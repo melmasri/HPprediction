@@ -16,10 +16,10 @@ plot_Z<-function(Z, xlab, ylab, ...){
           useRaster=TRUE,srt=45, axes=FALSE,cex.lab=3)
            
 
-    a = 100*round(ncol(Z)*0.25 /100,0)
+    a = 100*max(1,round(ncol(Z)*0.25 /100,0))
 	axis(1, at = a*0:(ceiling(ncol(Z)/a)), cex.axis= 2)
-    b = 100*round(nrow(Z)*0.25 /100,0)
-	axis(2, at = b*0:(ceiling(nrow(Z)/b)),cex.axis = 2)
+    b = 100*max(1,round(nrow(Z)*0.25 /100,0))
+    axis(2, at = b*0:(ceiling(nrow(Z)/b)),cex.axis = 2)
 }
 
 lof<-function(Z, indices = FALSE){
