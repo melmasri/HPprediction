@@ -221,7 +221,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                                          y0.last[i]*(Upd[i,]),
                                          sig=w_sd, c(a_w, b_w))
                     w0.count = w0.count + 1*(abs(w0.new-w0.last) > tol.err)
-                    w0.sum = w0.sum + w0.new*mr[i]
+                    w0.sum = w0.sum + w0.new
                     w0.last = w0.new
                     ## Updating host parameters
                     y0.new<-raffinity.MH(y0.last,mr,
@@ -235,11 +235,11 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                 ## Updating similarity matix parameter
                 new.eta = rEta.copheneticSuperFast(peta.last, pdist[i,],
                     if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
-                    if(distOnly) U0[i, ] else  y0.new[i]*(w0[,s]*U0[i,]),
+                    if(distOnly) U0[i, ] else  y0.new[i]*(w0.new*U0[i,]),
                     eta_sd, sparse, dist.original, t.max)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
-                peta.sum = peta.sum + peta.new*mr[i]
+                peta.sum = peta.sum + peta.new
                 peta.last = peta.new
                 if(new.eta$change){
                     pdist[i,] = new.eta$dist # very slow when using sparse assignment
@@ -258,7 +258,7 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             eta_sd = eta_sd*exp(beta*(peta.count/subItra-0.44)/log(1 +s))
             
             if(!distOnly){
-                w0[,s+1] <- w0.sum/sum(mr)
+                w0[,s+1] <- w0.sum/subItra
                 w0.new = w0.count = w0.sum=0
                 w0.last = w0[,s+1]
 
@@ -266,12 +266,12 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
                 y0.new = y0.count = y0.sum=0
                 y0.last = y0[,s+1]
             }
-            peta[s+1]<- peta.sum/sum(mr)
+            peta[s+1]<- peta.sum/subItra
             peta.new = peta.count = peta.sum =0
             peta.last = peta[s+1]
 
             if(uncertainty){
-                g0[s+1] = sum(g0in[-1]*mr)/sum(mr)
+                g0[s+1] = sum(g0in[-1])/subItra
                 g0in = rep(g0[s+1], subItra+1)
             }
         }
