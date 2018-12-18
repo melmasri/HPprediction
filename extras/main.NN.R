@@ -5,7 +5,8 @@ COUNT = TRUE
 SAVE_FILE = 'param.RData'
 sTime = Sys.time()
 ## Formating the sub-directory name
-subDir =  paste(toupper('cv'),toupper(MODEL), format(sTime, "%d-%m-%Hh%M"), sep='-')
+postdix= 'NOSINGLE-FOLD'
+subDir =  paste(toupper('cv'),toupper(MODEL),toupper(postdix) ,format(sTime, "%d-%m-%Hh%M"), sep='-')
 
 ## adding sub-extension
 subDir = paste0('./', subDir, '/')
@@ -54,7 +55,33 @@ folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, gr
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## for the optimal nnk.
-search.for.nnk<-function(X, X.train){
+
+get.P.nnk<-function(X, nnk){
+    P = X * 0
+    dist  = X%*%t(X)
+    diag(dist)<--10
+    nn = lapply(1:nrow(dist),function(r){
+        r = dist[r,]
+        shared.parasites = sort(r, decreasing = TRUE)[nnk]
+        nei= which(r>=shared.parasites)
+    })
+    for(j in 1:ncol(X))
+        for(i in 1:nrow(X))
+            if(X[i,j]==0){
+                P[i,j]<-mean(X[nn[[i]],j])
+            }else{
+                ## removing self interaction in determining distance to hosts
+                z = X[i,]
+                z[j]=0
+                nei = tcrossprod(z, X)
+                nei[i]<--10
+                shar.para = sort(nei, decreasing = TRUE)[nnk]
+                P[i,j]<-mean(X[which(nei>=shar.para), j])
+            }
+    P
+}
+
+search.for.nnk<-function(X, Xorg = NULL){
     min.nnk = 2
     max.nnk = nrow(X) - 1
     qartP = floor((max.nnk - min.nnk)/4)
@@ -65,30 +92,15 @@ search.for.nnk<-function(X, X.train){
     repeat{
         q = floor((max.nnk - min.nnk)/4)
         pointlist = c(min.nnk, min.nnk + q,  min.nnk + 2*q, min.nnk + 3*q, max.nnk)
-        auc1= sapply(pointlist[which(auc==0)], function(nnk)
-            mean(unlist(lapply(1:tot.gr ,function(x, Z, nn.k){
-                zeros = which(Z==0,arr.ind=TRUE)
-                P = Z*0
-                dist  = Z%*%t(Z)
-                diag(dist)<--10
-                nn = apply(dist,1,function(r) order(r, decreasing=TRUE)[1:nn.k])
-                for(j in 1:ncol(Z))
-                    for(i in 1:nrow(Z))
-                        if(Z[i,j]==0)
-                            P[i,j]<-sum(Z[nn[,i],j])
-                        else{
-                            ## removing self interaction in determining distance to hosts
-                            z = Z[i,]
-                            z[j]=0
-                            nei = tcrossprod(z, Z)
-                            nei[i]<--10
-                            P[i,j]<-sum(Z[order(nei, decreasing=TRUE)[1:nn.k], j])
-                        }
-                
-                P = P/nn.k
-                roc = rocCurves(X, Z, P, plot=FALSE, bins=400, all=FALSE)
-                roc$auc
-            }, Z = X.train, nn.k=nnk))))
+        auc1= sapply(pointlist[which(auc==0)], function(nnk){
+            P = get.P.nnk(X, nnk)
+            if(is.null(Xorg)){
+                roc = rocCurves(X, X, P, plot=FALSE, bins=200, all=TRUE)
+            }else{
+                roc = rocCurves(Xorg, X, P, plot=FALSE, bins=200, all=FALSE)
+            }
+            roc$auc
+        })
         auc[which(auc==0)]<-auc1
         print(rbind(grid = pointlist, AUC = auc))
         a =  which.max(auc)
@@ -104,50 +116,30 @@ search.for.nnk<-function(X, X.train){
     return(nnk)
 }
 
-find.nnk<-function(Z){
-    Z = 1*(Z>0)
-    fol = cross.validate.fold(Z, n= 5, 2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
-    gr = length(unique(fol[,'gr']))   # total number of CV groups
-    res = lapply(1:gr ,function(x, pairs, Z){
-        Z.train = Z
-        Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-        nn.k = search.for.nnk(Z, Z.train)
-        nn.k
-    },pairs=fol,Z = Z)     
-    mean(unlist(res))
+search.for.nnk.folds<-function(X){
+    fol = cross.validate.fold(X, n= 5, 0)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+    tot.gr = length(unique(fol[,'gr']))   # total number of CV groups
+    nn = sapply(1:tot.gr, function(x){
+        X.train = X
+        X.train[fol[which(fol[,'gr']==x),c('row', 'col')]]<-0
+        search.for.nnk(X.train, X)
+    })
+    mean(nn)
+
 }
 
-nn.k = find.nnk(com)
-cat('nn.k:', nn.k, '\n')
-
+## nn.k = search.for.nnk(com)
+## cat('nn.k:', nn.k, '\n')
 res = lapply(1:tot.gr ,function(x, pairs, Z){
     Z.train = Z
     Z.train[pairs[which(pairs[,'gr']==x),c('row', 'col')]]<-0
-    zeros = which(Z.train==0,arr.ind=TRUE)
-    P = Z.train * 0
-    ## jaccard distance including the interaction itself. This is removed next.
-    dist  = Z.train%*%t(Z.train)
-    diag(dist)<- -10
-    
-    nn = apply(dist,1,function(r) order(r, decreasing=TRUE)[1:nn.k])
-    for(j in 1:ncol(Z))
-        for(i in 1:nrow(Z))
-            if(Z.train[i,j]==0){
-                P[i,j]<-sum(Z.train[nn[,i],j])
-            }else{
-                ## removing self interaction in determining distance to hosts
-                z = Z.train[i,]
-                z[j]=0
-                nei = tcrossprod(z, Z.train)
-                nei[i]<--10
-                P[i,j]<-sum(Z.train[order(nei, decreasing=TRUE)[1:nn.k], j])
-            }
-    P = P/nn.k
+    nn.k = search.for.nnk(Z.train)
+    ##    nn.k = search.for.nnk.folds(Z.train)
+    P = get.P.nnk(Z.train, nn.k)
     roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
     tb  = ana.table(Z, Z.train, P,roc, plot=FALSE)
-    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
+    roc.all = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=TRUE)
     tb.all  = ana.table(Z, Z.train, P,roc.all, plot=FALSE)
-    
     list(nnk=nn.k, P=P,tb = tb, tb.all = tb.all,
          FPR.all = roc.all$roc$FPR, TPR.all=roc.all$roc$TPR,
          FPR = roc$roc$FPR, TPR=roc$roc$TPR)
