@@ -36,7 +36,7 @@ tree = cleaned$tree                     # cleaned tree
 source('network_analysis.R')
 
 ## indexing 5-folds of interactions
-folds = cross.validate.fold(com, n= 5, 2)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+folds = cross.validate.fold(com, n= 5, CV.MIN.PER.COL)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
 tot.gr = length(unique(folds[,'gr']))   # total number of CV groups
 
 ## A loop ran over all CV groups
@@ -45,10 +45,10 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     Z.train = Z
     Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
     aux = which(rowSums(Z.train)==0)
+    aux = numeric(0)
     ## running the model of interest
     X = if(length(aux)>0) network(Z.train[-aux,]) else network(Z.train)
-    fit<-ergmm(X~ euclidean(d=2)+ rsociality,
-               control=ergmm.control(mle.maxit=10,burnin=0,threads=2),verbose=TRUE)
+    fit<-ergmm(X~ euclidean(d=1)+ rsociality, control=ergmm.control(mle.maxit=10,burnin=0),verbose=TRUE)
     pred <- predict(fit)
 
     parasites = which(network.vertex.names(X) %in% colnames(Z))
@@ -70,9 +70,6 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type){
     
 },folds=folds,Z = com, tree=tree, model.type=MODEL, slice = SLICE,
     mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
-
-if(SAVE_PARAM)
-    save.image(file = paste0(subDir, SAVE_FILE))
 
 ## Some analysis results, AUC, %1 recovered
 TB = data.frame(
@@ -98,15 +95,19 @@ write.csv(ROCgraph, file = paste0(subDir, 'ROC-xy-points.csv'))
 ## Constructing the P probability matrix from CV results
 aux = rowMeans(sapply(res, function(r) r$param$P))
 P = matrix(aux, nrow(com), ncol(com))
-
+rownames(P)<-rownames(com)
+colnames(P)<-colnames(com)
 
 ## left ordering of interaction and probability matrix
 indices = lof(com, indices = TRUE)
 com = com[, indices]
 P = P[, indices]
 
+## print topPairs
+topPairs(P,1*(com>0),topX=50)
+
 ## printing posterior interaction matrix
-pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
+pdf(paste0(subDir, 'Z_latent_', MODEL, '.pdf'))
 plot_Z(1*(P > mean(sapply(res, function(r) r$tb$thres))))
 dev.off()
 
@@ -119,6 +120,9 @@ dev.off()
 pdf(paste0(subDir, 'tree_input.pdf'))
 plot(tree, show.tip.label=FALSE)
 dev.off()
+
+if(SAVE_PARAM)
+    save.image(file = paste0(subDir, SAVE_FILE))
 
 ##################################################
 ##################################################
