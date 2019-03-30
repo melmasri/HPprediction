@@ -37,32 +37,10 @@ names(obj$param)
 source('network_analysis.R')
 
 ## Probability matrix
-## Extracting mean posteriors
-Y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
-W = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
-Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
-YW = outer(Y, W)
-## setting affinity to 1 in distance model
-if(grepl('dist', MODEL)) YW = 1 
+## Extracting mean posteriors of P
+P = sample_parameter(obj$param, MODEL, obj$Z, obj$tree)
+    
 
-### Full or distance model
-## Creating distance
-if(grepl('(full|dist)', MODEL)){
-    distance = 1/cophenetic(rescale(obj$tree, 'EB', Eta))
-    diag(distance)<-0
-    distance = distance %*% obj$Z
-    distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
-} else distance = 1
-
-## models
-## P = 1-exp(-outer(Y, W))                 # affinity model
-## P = 1-exp(-distance)                    # distance model
-## P = 1-exp(-YW*distance)                 # full model
-
-## All in one probability matrix
-P = 1-  exp(-YW*distance)
-
-## ROC curves and AUC
 roc = rocCurves(obj$Z, obj$Z, P = P, all = TRUE, plot = FALSE) # ROC
 
 ## some numerical analysis
@@ -84,39 +62,46 @@ dev.off()
 pdf(paste0(subDir, 'tree_input.pdf'))
 plot(obj$tree, show.tip.label=FALSE)
 dev.off()
+
+## printing output tree
+if(grepl('(full|dist)', MODEL)){
+    Eta = mean(obj$param$eta)
+    pdf(paste0(subDir, 'tree_', MODEL,'.pdf'))
+    plot(rescale(obj$tree, 'EB', Eta), show.tip.label=FALSE)
+    dev.off()
+}
+
 ## printing posterior interaction matrix
 pdf(paste0(subDir, 'Z_', MODEL, '.pdf'))
 plot_Z(1*(P[, indices]>roc$threshold))                     
 dev.off()
-
-
-
 
 ## MCMC trace plots and ACF
 require(coda)
 pdf(paste0(subDir, 'param_mcmc_acf.pdf'))
 r = which.max(rowSums(com))
 c = which.max(colSums(com))
-if(grepl('aff', MODEL)) par(mfrow=c(2,2))
-if(grepl('dist', MODEL)) par(mfrow=c(1,2))
-if(grepl('full', MODEL)) par(mfrow=c(3,2))
+par(mar = c(5,5,1,1)+0.1)
+if(grepl('aff', MODEL)) par(mfcol=c(2,2))
+if(grepl('dist', MODEL)) par(mfcol=c(1,2))
+if(grepl('full', MODEL)) par(mfcol=c(3,2))
 if(grepl('(aff|full)', MODEL)){
-    plot(obj$param$y[r,], type='l', main='',xlab='Iteration', ylab='Host')
-    plot(obj$param$w[c,], type='l', main='', xlab = 'Iteration', ylab='Parasite')
+    plot(obj$param$y[r,], type='l', main='',xlab='Iteration', ylab='Host',  cex.lab=2, cex.axis=1.5)
+    plot(obj$param$w[c,], type='l', main='', xlab = 'Iteration', ylab='Parasite',  cex.lab=2, cex.axis=1.5)
 }
 if(grepl('(dist|full)', MODEL))
-    plot(obj$param$eta, type='l', main = '', xlab = 'Iteration', ylab='Tree scaling parameter')
+    plot(obj$param$eta, type='l', main = '', xlab = 'Iteration', ylab='Scale', cex.axis=1.5, cex.lab=2)
 if(grepl('(aff|full)', MODEL)){
-    acf(obj$param$y[r,],lag.max=100, main='Host - most active')
-    text(30, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$y[r,]))))
+    acf(obj$param$y[r,],lag.max=100, main='', cex.axis=1.5, cex.lab=1.5)
+    text(50, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$y[r,]))), cex = 1.5)
     round(effectiveSize(obj$param$y[r,]))
-    acf(obj$param$w[c,],lag.max=100, main='Parasite - most active')
-    text(30, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$w[c,]))))
+    acf(obj$param$w[c,],lag.max=100, main='', cex.axis=1.5, cex.lab=1.5)
+    text(50, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$w[c,]))), cex = 1.5)
     round(effectiveSize(obj$param$w[c,]))
 }
 if(grepl('(dist|full)', MODEL)){
-    acf(obj$param$eta,lag.max=100, main='Scale parameter')
-    text(30, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$eta))))
+    acf(obj$param$eta,lag.max=100, main='', cex.axis=1.5, cex.lab=1.5)
+    text(50, 0.9, paste0('Effective sample size: ',round(effectiveSize(obj$param$eta))), cex = 1.5)
     round(effectiveSize(obj$param$eta))
 }
 dev.off()
