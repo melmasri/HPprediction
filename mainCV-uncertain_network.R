@@ -66,24 +66,21 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
     ## running the model of interest with uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
         model.type=model.type, uncertainty = TRUE, a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
-    ## Extracting mean posteriors
-    y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
-    w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
-    eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
+    Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
     g = if(is.null(obj$param$g)) 0 else mean(obj$param$g) 
-
-    withG = list(w=w, y=y, eta=eta, g=g, g.sample = obj$param$g)
+    weights = obj$param$g[sample.int(length(obj$param$g), 1000, replace = TRUE)]
+    P = sample_parameter(obj$param, model.type, Z.train, tree, weights  = weights)
+    withG = list(P = P, eta=Eta, g=g, g.sample = obj$param$g)
 
     ## ################################################
     ## running the model of interest without uncertainty
     obj = network_est(Z.train, slices=slice, tree=tree,
         model.type=model.type, a_y = 6, a_w = 0.03)
     ## Extracting mean posteriors
-    y = if(is.matrix(obj$param$y)) rowMeans(obj$param$y) else  mean(obj$param$y)
-    w = if(is.matrix(obj$param$w)) rowMeans(obj$param$w) else  mean(obj$param$w)
-    eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
+    Pnog = sample_parameter(obj$param, model.type, Z.train, tree)
+    Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
 
-    withOutG = list(w=w, y=y, eta=eta)
+    withOutG = list(P = Pnog, eta=Eta)
     ## ################################################
     ## return
     list(withG = withG, withOutG = withOutG)
@@ -95,40 +92,12 @@ res = mclapply(1:tot.gr ,function(x, folds, Z, tree, slice, model.type, ALPHA.RO
 ## Averaging mean posterior estimates
 
 ## Model with uncertainty
-W = rowMeans(sapply(res, function(r) r[['withG']][['w']]))
-Y = rowMeans(sapply(res, function(r) r[['withG']][['y']]))
-Eta = mean(sapply(res, function(r) r[['withG']][['eta']]))
+Pg = matrix(rowMeans(sapply(res, function(r) r[['withG']][['P']])),  nrow = nrow(com), ncol = ncol(com))
 G = mean(sapply(res, function(r) r[['withG']][['g']]))
 G.sample = sapply(res, function(r)r[['withG']][['g.sample']])
 
-if(grepl('(full|dist)', MODEL)){
-    distance = 1/cophenetic(rescale(tree, 'EB', Eta))
-    diag(distance)<-0
-    distance = distance %*% com
-    if(grepl('dist', MODEL)) distance[distance==0]<-Inf else 
-    distance[distance==0]<-1
-}else distance = 1
-
-## Probability matrix with G
-P =  1 - exp(-outer(Y, W)*distance)
-Pg = G*P/(1-P + G*P)
-Pg[com>0]<-P[com>0]
-
 ## Model with uncertainty
-W = rowMeans(sapply(res, function(r) r[['withOutG']][['w']]))
-Y = rowMeans(sapply(res, function(r) r[['withOutG']][['y']]))
-Eta = mean(sapply(res, function(r) r[['withOutG']][['eta']]))
-
-if(grepl('(full|dist)', MODEL)){
-    distance = 1/cophenetic(rescale(tree, 'EB', Eta))
-    diag(distance)<-0
-    distance = distance %*% com
-    if(grepl('dist', MODEL)) distance[distance==0]<-Inf else 
-    distance[distance==0]<-1
-}else distance = 1
-## Probability matrix with G
-Pnog =  1 - exp(-outer(Y, W)*distance)
-
+Pnog = matrix(rowMeans(sapply(res, function(r)  r[['withOutG']][['P']])),  nrow = nrow(com), ncol = ncol(com))
 
 ## left ordering based on com10
 indices = lof(com10, indices = TRUE)

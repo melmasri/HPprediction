@@ -16,10 +16,10 @@ plot_Z<-function(Z, xlab, ylab, ...){
           useRaster=TRUE,srt=45, axes=FALSE,cex.lab=3)
            
 
-    a = 100*round(ncol(Z)*0.25 /100,0)
+    a = 100*max(1,round(ncol(Z)*0.25 /100,0))
 	axis(1, at = a*0:(ceiling(ncol(Z)/a)), cex.axis= 2)
-    b = 100*round(nrow(Z)*0.25 /100,0)
-	axis(2, at = b*0:(ceiling(nrow(Z)/b)),cex.axis = 2)
+    b = 100*max(1,round(nrow(Z)*0.25 /100,0))
+    axis(2, at = b*0:(ceiling(nrow(Z)/b)),cex.axis = 2)
 }
 
 lof<-function(Z, indices = FALSE){
@@ -114,23 +114,20 @@ cross.validate.fold<-function(Z, n= 10, min.per.col = 1, missing.pattern=c('rand
     gr = rep(size, n)
     if(sum(colm) %% size!=0)
         gr[n] =  gr[n] + sum(colm) %% size
-
-    pair.list = list()
-    for(i in 1:n){
-        bank=c()
-        for(k in 1:gr[i]){
-            a = which(colm>0)
-            if(missing.pattern=='random')
-                b = a[sample(length(a),1)] else
-            if (missing.pattern=='prop.to.col.sums')
-                b = a[sample(length(a),1, prob=colm[a]/sum(colm[a]))] else
-            stop('missing pattern has to be specified from selection!')
-            bank = c(bank, b)
-            colm[b] = colm[b]-1
-        }
-        pair.list[[i]]<-bank
+    
+    group.colm = rep(1:n,times = gr)[sample.int(sum(colm), sum(colm))]
+    pair.list = numeric(sum(colm))
+    for(i in 1:sum(colm)){
+        a = which(colm>0)
+        if(missing.pattern=='random')
+            b = a[sample.int(length(a),1)] else
+        if (missing.pattern=='prop.to.col.sums')
+            b = a[sample.int(length(a),1, prob=colm[a]/sum(colm[a]))] else
+        stop('missing pattern has to be specified from selection!')
+        colm[b] = colm[b]-1
+        pair.list[i]<-b
     }
-
+    pair.list= tapply(pair.list, group.colm,identity)
     
     gr.list= list()
     bank= c()
@@ -255,13 +252,17 @@ plot_degree <- function(Z, Z_est, type='both', host.col='blue', parasite.col='re
     }
 }
 
-sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
+sample_parameter<-function(param, MODEL,Z, tree, size = 1000, weights=NULL){
     sample_mcmc<-function(mcmc_sample,nObs,  size =1000){
         if(is.matrix(mcmc_sample))
             mcmc_sample[, sample.int(nObs, size, replace = TRUE)] else
         mcmc_sample[sample.int(nObs, size, replace = TRUE)]
     }
-    if(grepl('dist', MODEL)) {
+    if(!is.null(weights) & length(weights)!=size)
+        stop('weights are not the same sampling size.')
+    t.max = get.max.depth(tree)
+    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+      if(grepl('dist', MODEL)) {
         Y = W = 1
     }else{
         Y = sample_mcmc(param$y, ncol(param$y), size)
@@ -271,6 +272,8 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         Eta = sample_mcmc(param$eta, length(param$eta), size)
     }else Eta = 1
 
+    
+    zeroZ = which(Z>0)
     P <- 0
     for(s in 1:size){
         ## aux = sapply(1:size, function(s){
@@ -281,7 +284,7 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         ## Full or distance model
         ## Creating distance
         if(grepl('(full|dist)', MODEL)){
-            distance = 1/cophenetic(rescale(tree, 'EB', Eta[s]))
+            distance = 1/EB.distance(dist.original, t.max, Eta[s])
             diag(distance)<-0
             distance = distance %*% Z
             distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
@@ -291,7 +294,14 @@ sample_parameter<-function(param, MODEL,Z, tree, size = 1000){
         ## P = 1-exp(-distance)                    # distance model
         ## P = 1-exp(-YW*distance)                 # full model
         ## All in one probability matrix
-        P = P + 1-  exp(-YW*distance)
+        if(!is.null(weights)){
+            a =  1-  exp(-YW*distance)
+            Pg = a * weights[s] /(1-a + weights[s] * a)
+            Pg[zeroZ] <- a[zeroZ]
+            P = P + Pg
+        }else{
+            P = P + 1-  exp(-YW*distance)
+        }
     }
     ## })
     matrix(P/size, nrow = nrow(com), ncol = ncol(com))
