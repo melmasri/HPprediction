@@ -84,7 +84,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
         if(!all(tree$tip.label %in% rownames(Z))){
             warning('not all species in tree exist in Z; missing are removed from tree!',
                     immediate.= TRUE, call. = FALSE)
-            tree = drop.tip(tree, tree$tip.label[!tree$tip.label %in% rownames(Z)])
+            tree = drop.tip(tree, tree$tip.label[!(tree$tip.label %in% rownames(Z))])
         }
         ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% tree$tip.label)){
@@ -106,7 +106,7 @@ network_clean<-function(Z, tree = NULL, model.type = c('full', 'distance', 'affi
         }
         if(max(range(tree$edge.length))>1){
             print('normalizing tree edges by the maximum pairwise distance!')
-            tree$edge.length = tree$edge.length/max(aux)
+            tree$edge.length = tree$edge.length/(max(aux)/2)
         }
     }
     list(Z = Z, tree = tree)
@@ -132,7 +132,6 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.005
 
     ## Burn in set-up
-    batch.size = if(!is.null(el$batch.size)) el$batch.size else 50
     beta = if(!is.null(el$beta)) el$beta else 1
     burn.in = if(is.null(el$burn.in)) floor(0.5*slices) else floor(el$burn.in*slices)
 
@@ -145,8 +144,16 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
 
     ## inner loop
     subItra = ny 
-    petain = rep(eta, subItra+1)
+    g0in = rep(0, subItra+1)
 
+    ## New code to same memory
+    w0.new = w0.count = w0.sum=0
+    y0.new = y0.count = y0.sum=0
+    w0.last = if(length(w)==1) rep(w, nw) else w
+    y0.last = if(length(y)==1) rep(y, ny) else y
+    peta.new = peta.count = peta.sum =0
+    peta.last = eta
+    
     ## special variables
     Z00 = Z==0
     Z0 <- which(Z==0)
@@ -156,12 +163,14 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     ## indexing the upper and lower triangular of the matrix
     lowerIndex = lower.tri.Index(ny)
     upperIndex = upper.tri.Index(ny)
-
+    dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
-    tree.ht = arrange.tree(tree)
-    tree$tip.label = 1:length(tree$tip.label) # removing tip labels
-
-    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex, ny)
+    ## tree.ht = arrange.tree(tree)
+    t.max = get.max.depth(tree)
+    ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
+    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+    dist = 1/EB.distance(dist.original, t.max, peta[1])
+    diag(dist)<-0
     sparseZ = Z
     if(sparse){
         ind <- which(Z==1, arr.ind=TRUE)
@@ -173,10 +182,9 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
     pdist0 = apply(pdist, 1, function(r) which(r==0))
     if(length(pdist0) && length(pdist0)!=ny) stop('pdist0 error')
     pdist00 = which(pdist==0)
-
     ## starting the loop
     print(sprintf("Run for %i slices with %i burn-ins",slices, burn.in))
-    
+    print(paste('Matrix dimension:', nrow(Z)[1],'x', ncol(Z) ))
     i=1;s=1
     tryCatch(
         for(s in 1:slices){
@@ -187,7 +195,9 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
             }
             
             ## Updating the tee
-            dist =cophFast(eb.phylo(tree, tree.ht, peta[s]),lowerIndex, upperIndex, ny)
+            dist = 1/EB.distance(dist.original, t.max, peta[s])
+            diag(dist)<-0
+            
             pdist = dist%*%sparseZ
             ## conversion takes less time then extraction/insertion from dgMatrix class
             if(sparse) pdist = as(pdist, 'matrix') 
@@ -203,49 +213,66 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
 
             ## looping over nrow(Z), for ICM
             Upd = U0*pdist
-            if(!distOnly){                
-                ## Updating the parasite parameters
-                w0[, s+1]<-raffinity.MH(w0[,s],mc,crossprod(y0[,s],Upd),
-                                        sig=w_sd, c(a_w, b_w))
-                ## Updating host parameters
-                y0[, s+1]<-raffinity.MH(y0[,s],mr,tcrossprod(w0[,s+1],Upd),
-                                        sig=y_sd, c(a_y, b_y))
-            }
-            
-            ywU = outer(y0[,s+1], w0[,s+1])*U0
             for (i in 1:subItra){
-                ## Updating similarity matix parameter
-                new.eta = rEta.copheneticFast(petain[i],tree,tree.ht,
+                if(!distOnly){                
+                    ## Updating the parasite parameters
+                    w0.new<-raffinity.MH(w0.last,Z[i,],
+                                         y0.last[i]*(Upd[i,]),
+                                         sig=w_sd, c(a_w, b_w))
+                    w0.count = w0.count + 1*(abs(w0.new-w0.last) > tol.err)
+                    w0.sum = w0.sum + w0.new
+                    w0.last = w0.new
+                    ## Updating host parameters
+                    y0.new<-raffinity.MH(y0.last,mr,
+                                         mmult(Upd, w0.new),
+                                         sig=y_sd, c(a_y, b_y))
+                    y0.count = y0.count + 1*(abs(y0.new-y0.last) > tol.err)
+                    y0.sum = y0.sum + y0.new
+                    y0.last = y0.new
+                    
+                }## Updating similarity matix parameter
+                new.eta = rEta.copheneticSuperFast(peta.last,
                     pdist[i,],
                     if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
-                    ywU[i,],
-                    eta_sd, lowerIndex, upperIndex, ny, ind, sparse)
-                petain[i+1] = new.eta$eta
-                if(new.eta$change)
+                    if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,
+                    ]), eta_sd, sparse, dist.original, t.max)
+                peta.new = new.eta$eta
+                peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
+                peta.sum = peta.sum + peta.new
+                peta.last = peta.new
+                if(new.eta$change){
                     pdist[i,] = new.eta$dist # very slow when using sparse assignment
-            }
-
-            if(uncertainty)
-                g0[s+1] = rg(Z, l=U0)
-                     
-            ## MH Adaptiveness
-            if(s%%batch.size==0){
-                ## Parasite parameters (w)
-                ss = s+1 - 1:batch.size
-                ac =1- rowMeans(abs(w0[,ss] - w0[,ss+1])<tol.err)
-                w_sd = w_sd*exp(beta*(ac-0.44)/log(1 +s/batch.size))
+                }
                 
-                ac =1- rowMeans(abs(y0[,ss] - y0[,ss+1])<tol.err)
-                y_sd = y_sd*exp(beta*(ac-0.44)/log(1 +s/batch.size))
-                
+                if(uncertainty){
+                    g0in[i+1] = rg(Z[i,], l=U0[i,])
+                }
             }
-
-            ## Tree scaling parameter (eta)
-            ac =1- mean(abs(petain[1:subItra] - petain[1:subItra +1])<tol.err)
-            eta_sd = eta_sd*exp(beta*(ac-0.44)/log(1 +s))
             
-            peta[s+1]<- sum(petain[-1]*mr)/sum(mr)
-            petain = rep(peta[s+1], subItra+1)
+            ## MH Adaptiveness
+            # Parasite parameters (w)
+            w_sd = w_sd*exp(beta*(w0.count/subItra-0.44)/log(1 +s))
+            y_sd = y_sd*exp(beta*(y0.count/subItra-0.44)/log(1 +s))
+            ## Tree scaling parameter (eta)
+            eta_sd = eta_sd*exp(beta*(peta.count/subItra-0.44)/log(1 +s))
+            
+            if(!distOnly){
+                w0[,s+1] <- w0.sum/subItra
+                w0.new = w0.count = w0.sum=0
+                w0.last = w0[,s+1]
+
+                y0[,s+1]<- y0.sum/subItra
+                y0.new = y0.count = y0.sum=0
+                y0.last = y0[,s+1]
+            }
+            peta[s+1]<- peta.sum/subItra
+            peta.new = peta.count = peta.sum =0
+            peta.last = peta[s+1]
+
+            if(uncertainty){
+                g0[s+1] = sum(g0in[-1])/subItra
+                g0in = rep(g0[s+1], subItra+1)
+            }
         }
        ,warning = function(war)
            {print(c('warning at (s,i):', c(s,i))); print(war);traceback()},
@@ -268,8 +295,6 @@ ICM_est<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, s
          burn.in = max(burn.in)-1,
          sd = list(w=w_sd, y = y_sd, eta= eta_sd))
 }
-
-
 
 fullJoint_est<-function(Z, iter = 10, uncertainty = FALSE, ...){
     ## loading extra args
@@ -420,6 +445,18 @@ rg<-function(Z,l){
 ### ==================================================
 ### Tree functions
 ### ==================================================
+get.max.depth<-function(phy){
+    ht=heights.phylo(phy)
+	N=Ntip(phy)
+	Tmax=ht$start[N+1]
+    Tmax
+}
+
+EB.distance<-function(dist, tmax, a){
+    if(a==0) return(2*dist)
+    (2/a)*exp(a*tmax)*(1-exp(-a*dist))
+}
+
 arrange.tree<-function(phy){
     ## taken from .b.phylo from
     ## https://github.com/mwpennell/geiger-v2/blob/master/R/utilities-phylo.R#L1353-L1382
@@ -492,20 +529,49 @@ upper.tri.Index<-function(n){
 }
 
 
-cophFast<-function(tree, lowerIndex, upperIndex, n){
+cophFast<-function(tree, lowerIndex, upperIndex, n, dummyMat){
     ## a fast version of phylo tree using phangorn:::coph
     ## phangorn:::coph returns a dist object.
-    b = matrix(0, n,n)
-    b[lowerIndex]<- b[upperIndex]<-(1/phangorn:::coph(tree))
-    b
+    ## dummyMat = matrix(0, n,n)
+    dummyMat[lowerIndex]<- dummyMat[upperIndex]<-(1/phangorn:::coph(tree))
+    dummyMat
 }
 
+rEta.copheneticSuperFast<-function(eta.old,pdist.old, no0,i, sZ, Z, ywU,
+                              eta_sd =0.01, sparse, dist.org, tmax){
+    ## a faster version of rEta using faster cophenetic and sparse matrices
+    change = FALSE
+    if(length(no0) && length(no0)==sum(Z[i,])){
+        likeli = -Inf
+    }else{
+        eta.prop = eta.old + eta_sd*rnorm(1)
+        dist = 1/EB.distance(dist.org[i,], tmax, eta.prop)
+        dist[i]<-0
+        pdist.new = dist%*%sZ
+        if(sparse)
+            pdist.new= pdist.new@x
+        if(length(no0)){
+            likeli = sum(((log(pdist.new)- log(pdist.old))*Z[i,])[-no0])-
+                sum((ywU*(pdist.new - pdist.old))[-no0]) 
+        }else{
+            likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
+                sum(ywU*(pdist.new - pdist.old))
+        }
+    }
+    
+    if(!is.na(likeli) && runif(1)<= min(1, exp(likeli)))
+        { eta.old  = eta.prop; pdist.old = c(pdist.new);change=TRUE}
+    
+    list (eta=eta.old, dist=pdist.old, change=change)
+}
+
+
 rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
-                              eta_sd =0.01, a, b,nr, ind, sparse){
+                              eta_sd =0.01, a, b,nr, ind, sparse, dummyMat){
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     eta.prop = eta.old + eta_sd*rnorm(1)
-    dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
+    dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr, dummyMat)
     pdist.new = dist[i,]%*%sZ
     if(sparse)
         pdist.new= pdist.new@x
@@ -517,7 +583,7 @@ rEta.copheneticFast<-function(eta.old,tree,tree.ht,pdist.old, no0,i, sZ, Z, ywU,
         likeli = sum((log(pdist.new)- log(pdist.old))*Z[i,] )-
             sum(ywU*(pdist.new - pdist.old))
     }
-    if(!is.nan(likeli) && runif(1)<= min(1, exp(likeli)))
+    if(!is.na(likeli) && runif(1)<= min(1, exp(likeli)))
         { eta.old  = eta.prop; pdist.old = c(pdist.new);change=TRUE}
     
     list (eta=eta.old, dist=pdist.old, change=change)
@@ -541,12 +607,13 @@ row_extract<-function(m, i, ind){
 
 
 ### ==================================================
-rEta.over.acc<-function(eta.old,tree,tree.ht,pdist.old, pdist0,pdist00, sZ, Z, ywU,
-                        eta_sd =0.01, a, b,nr, ind, sparse, mr){
+rEta.over.acc<-function(eta.old, pdist.old, pdist0,pdist00, sZ, Z, ywU,
+                        eta_sd =0.01, sparse, dist.org, tmax){
     ## a faster version of rEta using faster cophenetic and sparse matrices
     eta.prop = eta.old + eta_sd*rnorm(1)
-    dist = cophFast(eb.phylo(tree, tree.ht, eta.prop), a, b,nr)
-    pdist.new = dist%*%sZ
+    dist = 1/EB.distance(dist.org, tmax, eta.prop)
+    diag(dist)<-0
+    pdist.new =  dist%*%sZ
     if(sparse) pdist.new = as(pdist.new, 'matrix') 
     pdist.new[pdist00]<-1
     acc = sapply(1:nrow(Z), function(i){
@@ -562,7 +629,7 @@ rEta.over.acc<-function(eta.old,tree,tree.ht,pdist.old, pdist0,pdist00, sZ, Z, y
         likeli
     })
     ##acc
-    acc = sum(pmin(1, exp(acc))*mr/sum(mr))
+    acc = mean(pmin(1, exp(acc)))
     if(!is.nan(acc) && runif(1)<= acc)
         return(list(eta = eta.prop,dist= pdist.new,change=TRUE))
     else return(list(eta = eta.old,change=FALSE))
@@ -612,12 +679,15 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
     ## indexing the upper and lower triangular of the matrix
     lowerIndex = lower.tri.Index(ny)
     upperIndex = upper.tri.Index(ny)
-
+    dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
-    tree.ht = arrange.tree(tree)
-    tree$tip.label = 1:length(tree$tip.label) # removing tip labels
 
-    dist = cophFast(eb.phylo(tree, tree.ht, peta[1]), lowerIndex, upperIndex, ny)
+    ## tree.ht = arrange.tree(tree)
+    t.max = get.max.depth(tree)
+    ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
+    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+    dist = 1/EB.distance(dist.original, t.max, peta[1])
+    diag(dist)<-0
     sparseZ = Z
     if(sparse){
         ind <- which(Z==1, arr.ind=TRUE)
@@ -629,14 +699,23 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
     pdist0 = apply(pdist, 1, function(r) which(r==0))
     if(length(pdist0) && length(pdist0)!=ny) stop('pdist0 error')
     pdist00 = which(pdist==0)
-
+    
     ## starting the loop
     print(sprintf("Run for %i slices with %i burn-ins",slices, burn.in))
-    
+    print(paste('Matrix dimension:', nrow(Z)[1],'x', ncol(Z) ))
     tryCatch(
         for(s in 1:slices){
             if(s%%200==0)
                 print(sprintf('slice: %d, at %s', s, Sys.time())) # iteration update
+
+            ## Updating the tee
+            dist = 1/EB.distance(dist.original, t.max, peta[s])
+            diag(dist)<-0
+            
+            pdist = dist%*%sparseZ
+            ## conversion takes less time then extraction/insertion from dgMatrix class
+            if(sparse) pdist = as(pdist, 'matrix') 
+            pdist[pdist00]<-1
             
             ## Updating latent scores
             yw = outer(y0[,s],w0[, s])
@@ -649,18 +728,20 @@ ICM_est_over_acc<-function(Z, tree, slices = 10, distOnly = FALSE, uncertainty =
             ## looping over nrow(Z), for ICM
             Upd = U0 *pdist
             if(!distOnly){
+                ## Updating the parasite parameters
                 w0[, s+1]<-raffinity.MH(w0[,s],mc,
-                                        crossprod(y0[,s],Upd),
+                                        crossprod(y0[,s],U0),
                                         sig=w_sd, c(a_w, b_w))
-            ## Updating host parameters
+                ## Updating host parameters
                 y0[, s+1]<-raffinity.MH(y0[,s],mr,
-                                        tcrossprod(w0[,s+1],Upd),
+                                        tcrossprod(w0[,s+1],U0),
                                         sig=y_sd, c(a_y, b_y))
+                ## Uncertain parameter sampling
             }
             ## Updating similarity matix parameter
-            new.eta = rEta.over.acc(peta[s],tree,tree.ht,pdist,
-                pdist0,pdist00, sparseZ, Z,outer(y0[,s+1], w0[,s+1])*U0,
-                eta_sd, lowerIndex, upperIndex,ny, ind, sparse, mr)
+            new.eta = rEta.over.acc(peta[s],pdist,pdist0,pdist00, sparseZ,
+                Z,outer(y0[,s+1], w0[,s+1])*U0,eta_sd,sparse,
+                                    dist.original, t.max)
             peta[s+1] = new.eta$eta
             if(new.eta$change)
                 pdist = new.eta$dist # very slow when using sparse assignment
