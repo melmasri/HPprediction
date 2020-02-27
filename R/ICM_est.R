@@ -118,7 +118,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
                     y0.last = y0.new
                     
                 }## Updating similarity matix parameter
-                new.eta = rEta.copheneticSuperFast(peta.last,
+                new.eta = rEta.EB.local(peta.last,
                     pdist[i,],
                     if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
                     if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,

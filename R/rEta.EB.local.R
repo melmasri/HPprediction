@@ -1,4 +1,4 @@
-rEta.copheneticSuperFast <-
+rEta.EB.local.R <-
 function(eta.old,pdist.old, no0,i, sZ, Z, ywU,
                               eta_sd =0.01, sparse, dist.org, tmax){
     ## a faster version of rEta using faster cophenetic and sparse matrices
