@@ -1,6 +1,6 @@
 Package: HP-prediction
 Type: Package
-Title: What the package does (short line)
+Title: Host-parasite prediction based on phylogeny
 Version: 0.0.0.9
 Date: 2019-09-28
 Authors@R: c(
@@ -12,10 +12,10 @@ Authors@R: c(
            family = "Farrell",
            role = "ctb")
            )
-Description: More about what it does (maybe more than one line)
+Description: This package does A, B, and C
 Maintainer: Mohamad Elmasri <elmasri.m@gmail.com>
 URL: https://github.com/melmasri/HP-prediction
 BugReports: BugReports: https://github.com/melmasri/HP-prediction/issues
 License: GPL-3
 Encoding: UTF-8
-
+RoxygenNote: 6.1.1
