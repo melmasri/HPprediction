@@ -5,8 +5,8 @@
 
 require(ape)
 
-if(!file.exists("example-GMPD/mammal_supertree.tre")){
+if(!file.exists("data/mammal_supertree.tre")){
 	require(fulltext)
 	tree <- read.nexus(ft_get_si("10.1111/j.1461-0248.2009.01307.x", 1, "wiley"))[[1]]
-	write.tree(tree, file="example-GMPD/mammal_supertree.tre")
-} else tree <- read.tree('example-GMPD/mammal_supertree.tre')
+	write.tree(tree, file="data/mammal_supertree.tre")
+} else tree <- read.tree('data/mammal_supertree.tre')
