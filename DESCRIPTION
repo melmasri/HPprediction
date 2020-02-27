@@ -1,4 +1,4 @@
-Package: HP-prediction
+Package: HPprediction
 Type: Package
 Title: Host-parasite prediction based on phylogeny
 Version: 0.0.0.9
