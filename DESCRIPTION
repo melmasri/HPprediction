@@ -1,9 +1,21 @@
 Package: HP-prediction
 Type: Package
 Title: What the package does (short line)
-Version: 1.0
+Version: 0.0.0.9
 Date: 2019-09-28
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
+Authors@R: c(
+    person(given = "Mohamad",
+           family = "Elmasri",
+           role = c("aut", "cre"),
+           email = "elmasri.m@gmail.com"),
+    person(given = "Maxwell J.",
+           family = "Farrell",
+           role = "ctb")
+           )
 Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Maintainer: Mohamad Elmasri <elmasri.m@gmail.com>
+URL: https://github.com/melmasri/HP-prediction
+BugReports: BugReports: https://github.com/melmasri/HP-prediction/issues
+License: GPL-3
+Encoding: UTF-8
+

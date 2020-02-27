@@ -1,11 +1,13 @@
 ### Global settings
 rm(list=ls())                           # clear environment
+devtools::load_all()
+
 set.seed(23456)                         # fixing seed for replication results
 
 ## General variables
 SAVE_PARAM = TRUE                    # should workspace be saved
 SAVE_FILE = 'param.RData'            # name of output R workspace file
-NO.CORES = 5                         # no. of cores effective for runtype CV and uncertain
+NO.CORES = 1                         # no. of cores effective for runtype CV and uncertain
 SLICE = 200                           # no. of cycles over the matrix
 PATH.TO.FILE = NULL                  # relative path to com RData file., NULL to execute '   source('example-GMPD/load_GMPD.R')'
 ALPHA.ROWS = 6                          # hyperparameter for prior over rows (>0), effective under affinity and full models
@@ -18,7 +20,17 @@ subDir = ''                             #sub-directory where the saved output an
 
 ### creating a directory if it doesn't exists
 if(subDir!='')  dir.create(file.path(subDir))
+## loading mammal supertree included in Fritz et al. (2009)
+source('example-GMPD/download_tree.R')       # see variable 'tree'
 
+## loading GMPD
+if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
+    if(grepl('.rds', PATH.TO.FILE, ignore.case = TRUE))
+        com <- readRDS(PATH.TO.FILE) else 
+    load(PATH.TO.FILE)
+}else{
+    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+}
 
 #################################
 ## Running the possible 3 options 
