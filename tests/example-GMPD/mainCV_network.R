@@ -16,7 +16,7 @@
 library(parallel)
 
 ## loading mammal supertree included in Fritz et al. (2009)
-source('example-GMPD/download_tree.R')  # see variable 'tree'
+source('data/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
@@ -24,7 +24,7 @@ if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
         com <- readRDS(PATH.TO.FILE) else 
     load(PATH.TO.FILE)
 }else{
-    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+    source('data/load_GMPD.R')           # see matrix 'com'    
 }
 
 
@@ -32,16 +32,11 @@ if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
 cat("dim com:", dim(com), 'no.interactions:', sum(1*(com>0)), '\n')
-## sourcing MCMC script
-source('network_MCMC.R')
 
 ## preparing tree and com
 cleaned = network_clean(com, tree, 'full')
 com = cleaned$Z                         # cleaned binary interaction matrix
 tree = cleaned$tree                     # cleaned tree
-
-## load useful network analysis functions
-source('network_analysis.R')
 
 ## indexing 5-folds of interactions
 ## warning('CV is run using minimum of 2 interactions per column! to change this ')

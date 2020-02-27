@@ -1,9 +1,21 @@
-Package: HP-prediction
+Package: HPprediction
 Type: Package
-Title: What the package does (short line)
-Version: 1.0
+Title: Host-parasite prediction based on phylogeny
+Version: 0.0.0.9
 Date: 2019-09-28
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Authors@R: c(
+    person(given = "Mohamad",
+           family = "Elmasri",
+           role = c("aut", "cre"),
+           email = "elmasri.m@gmail.com"),
+    person(given = "Maxwell J.",
+           family = "Farrell",
+           role = "ctb")
+           )
+Description: This package does A, B, and C
+Maintainer: Mohamad Elmasri <elmasri.m@gmail.com>
+URL: https://github.com/melmasri/HP-prediction
+BugReports: BugReports: https://github.com/melmasri/HP-prediction/issues
+License: GPL-3
+Encoding: UTF-8
+RoxygenNote: 6.1.1

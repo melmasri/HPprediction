@@ -12,7 +12,7 @@
 ## COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
 
 ## loading mammal supertree included in Fritz et al. (2009)
-source('example-GMPD/download_tree.R')       # see variable 'tree'
+source('data/download_tree.R')       # see variable 'tree'
 
 ## loading GMPD
 if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
@@ -20,21 +20,16 @@ if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
         com <- readRDS(PATH.TO.FILE) else 
     load(PATH.TO.FILE)
 }else{
-    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+    source('data/load_GMPD.R')           # see matrix 'com'    
 }
 
 
-## sourcing MCMC script
-source('network_MCMC.R')
 
 ## running the model of interest
 obj = network_est(Z = com, slices=SLICE, tree=tree, model.type=MODEL,
                   a_y=ALPHA.ROWS, a_w= ALPHA.COLS, burn.in=0) # full model
 names(obj)
 names(obj$param)
-
-## load useful network analysis functions
-source('network_analysis.R')
 
 ## Probability matrix
 ## Extracting mean posteriors of P

@@ -2,6 +2,7 @@ rExp2 <-
 function(l, g, Z, Z0, Z00){
     ## Sampling from a zero-inflated Gumbel or a one-inflated Exponential
     ## Method one: P(z=0|g) = 1\delta_{s=0} + g\delta_{s>0}; dirac delta
+    tol.err = 1e-4
     p = 1- exp(-l)
     unif = matrix(runif(length(l)), dim(p))
     U = 1 + 0*p

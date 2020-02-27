@@ -16,7 +16,7 @@
 library(parallel)
 
 ## loading mammal supertree included in Fritz et al. (2009)
-source('example-GMPD/download_tree.R')  # see variable 'tree'
+source('data/download_tree.R')  # see variable 'tree'
 
 ## loading GMPD
 if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
@@ -24,14 +24,11 @@ if(exists("PATH.TO.FILE") && !is.null(PATH.TO.FILE)){
         com <- readRDS(PATH.TO.FILE) else 
     load(PATH.TO.FILE)
 }else{
-    source('example-GMPD/load_GMPD.R')           # see matrix 'com'    
+    source('data/load_GMPD.R')           # see matrix 'com'    
 }
 ## aux = which(colSums(1*(com>0))==1)
 ## com = com[, -aux]
 ## com = com[-which(rowSums(1*(com>0))==0), ]
-
-## sourcing MCMC script
-source('network_MCMC.R')
 
 ## preparing tree and com
 cleaned = network_clean(com, tree, 'full', uncertainty=TRUE)
@@ -49,8 +46,6 @@ print(sprintf("No. of left out interactions between year %d and end of dataset i
 print(sprintf("accounts for %f%%  of the data", 100*(sum(1*(com10>0)) - sum(com>0))/sum(com10>0)))
 com10=1*(com10>0)
 
-## load useful network analysis functions
-source('network_analysis.R')
 
 ## indexing 5-folds of interactions
 folds = cross.validate.fold(com, n= 5, CV.MIN.PER.COL)  # a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group

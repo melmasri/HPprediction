@@ -6,7 +6,7 @@ function(Z, iter = 10, uncertainty = FALSE, ...){
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
-
+    tol.err = 1e-4
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1

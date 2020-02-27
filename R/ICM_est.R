@@ -6,7 +6,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
-
+    tol.err = 1e-4
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
@@ -111,14 +111,14 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
                     w0.last = w0.new
                     ## Updating host parameters
                     y0.new<-raffinity.MH(y0.last,mr,
-                                         mmult(Upd, w0.new),
+                                         tcrossprod(w0.new,Upd),
                                          sig=y_sd, c(a_y, b_y))
                     y0.count = y0.count + 1*(abs(y0.new-y0.last) > tol.err)
                     y0.sum = y0.sum + y0.new
                     y0.last = y0.new
                     
                 }## Updating similarity matix parameter
-                new.eta = rEta.copheneticSuperFast(peta.last,
+                new.eta = rEta.EB.local(peta.last,
                     pdist[i,],
                     if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
                     if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,
