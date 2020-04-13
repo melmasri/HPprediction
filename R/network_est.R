@@ -106,5 +106,5 @@ network_est <-
             }
             
         }
-        list(param =param , Z = Z, tree=tree)
+        list(param=param , Z = Z, tree=tree)
     }

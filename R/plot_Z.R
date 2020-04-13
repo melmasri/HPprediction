@@ -1,3 +1,24 @@
+#' A function to plot a bipartite interaction matrix
+#'
+#' @param Z bipartite interaction matrix
+#' @param xlab labels for the x axis (default is 'parasites')
+#' @param ylab labels for the y axis (default is 'hosts')
+#' @param ... Additional parameters that control graphing parameters
+#' 
+#' @description
+#' 
+#' This function generates a raster plot of the binary interaction matrix 'Z' using the 'image' function in the 'graphics' package.
+#'
+#' @examples
+#' 
+#' # Simluate a Z matrix and plot it
+#' 
+#' Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
+#' Z <- Z[,colSums(Z)>0]
+#' plot_Z(tree)
+#' 
+#' @export
+#' 
 plot_Z <-
 function(Z, xlab, ylab, ...){
     ## ploting interaction matrix as a binary image

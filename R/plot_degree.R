@@ -1,3 +1,28 @@
+#' A function to plot degree distributions  
+#'
+#' @param Z bipartite interaction matrix
+#' @param Z_est the posterior bipartite interaction matrix (optional)
+#' @param type whether to plot 'hosts', 'parasites', or 'both'
+#' @param host.col  Colour to use for hosts (default is 'blue')
+#' @param parasite.col Colour to use for parasites (default is 'red')
+#' 
+#' @description
+#' 
+#' This function generates a degree distribution plot for the binary interaction matrix 'Z'.
+#' Optionally, you can compare the observed matrix to the posterior matrix by including it as 'Z_est'.
+#' By default the function plots the degree for both rows (hosts) and columns (parasites), but you can modify this with the parameter 'type'.
+#' 
+#'
+#' @examples
+#' 
+#' # Simluate a Z matrix and plot the degree distributions
+#' 
+#' Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
+#' Z <- Z[,colSums(Z)>0]
+#' plot_degree(tree)
+#'  
+#' @export
+#' 
 plot_degree <-
 function(Z, Z_est, type='both', host.col='blue', parasite.col='red'){
     ## Plots the degree distribution per marginal on a bipartite biadjacency matrix

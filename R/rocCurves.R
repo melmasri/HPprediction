@@ -1,5 +1,31 @@
+#' A function to calculate and plot ROC curves
+#'
+#' @param Z.test the bipartite interaction matrix used for the test set
+#' @param Z_est the estimated bipartite interaction matrix used
+#' @param P the posterior probability matrix output by \code{\link{sample_parameter}}
+#' @param plot TRUE/FALSE to plot the ROC curve.
+#' @param bins the number of bins that the interval (0,1) is divided into (default is 400)
+#' @param all TRUE/FALSE to calculate the ROC curve based on the whole dataset, or only the held-out portion
+#' 
+#' @description
+#' 
+#' Computes the ROC curves as x = false positive rate (FPR) and y = true positive rate (TPR)
+#' 
+#' FPR = False Positives / (False Positives + True Negatives)
+#' TPR = True Positives / (True Positives + False Negatives) 
+#'
+#' @return 
+#' Returns: 
+#' 'auc': the maximum AUC value
+#' 'threshold': the threshold where P > threshold has the maximum AUC value
+#' 'roc': a matrix containing the threthold, FPR, and TPR 
+#' 
+#' @examples
+#'  
+#' @export
+#'
 rocCurves <-
-function(Z.test,Z.train,P, plot=TRUE,bins=400, all=FALSE){
+function(Z.test, Z.train, P, plot=TRUE,bins=400, all=FALSE){
     ## Computes the ROC curves as x = FPR and y = TPR
     ##  FPR = FP/(FP +TN)
     ##  TPR = TP/(TP+FN)
@@ -9,7 +35,7 @@ function(Z.test,Z.train,P, plot=TRUE,bins=400, all=FALSE){
     ## all = TRUE, when TPR and FPR are calculated on the whole dataset, FALSE on the held out portion only
     ## Returns:
     ## auc = the maximum AUC value
-    ## threshold = the threshold where (P> threshold) has maximum AUC
+    ## threshold = the threshold where (P>threshold) has maximum AUC
     ## roc = a matrix of (threshold, FPR, TPR)
     Z.test= 1*(Z.test>0)
     Z.train = 1*(Z.train>0)
@@ -42,5 +68,5 @@ function(Z.test,Z.train,P, plot=TRUE,bins=400, all=FALSE){
              xlim = c(0,1), ylim = c(0,1), pch =6, lty=4)
         abline(a = 0, b=1,col='black',lty=2, lwd=2)
     }
-    list(auc = auc, threshold = threshold,roc=roc)
+    list(auc = auc, threshold = threshold, roc=roc)
 }
