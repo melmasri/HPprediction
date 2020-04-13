@@ -27,5 +27,5 @@ topUndoc<-function(P, Z, topX=10){
     aux = aux[order(aux$value,decreasing=TRUE),]
     colnames(aux)<-c('Host', 'Parasite', 'p(interaction)')
     aux
-    aux[1:topX,]
+    print(aux[1:topX,], row.names=FALSE)
 }

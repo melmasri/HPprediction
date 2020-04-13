@@ -46,7 +46,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
         Z = 1*(Z>0)
     }
     if(any(colSums(Z)==0)){
-        stop('Z has empty columns, please remove!', immediate. = TRUE, call.= FALSE)
+        print('Z has empty columns - these have been removed!')
         Z = Z[,which(colSums(Z)>0)]
     }
     if(grepl('aff', model.type)){
