@@ -21,8 +21,8 @@ topUndoc<-function(P, Z, topX=10){
     ## Plotting the top interactions that were not documented in the original data
     require(reshape2)
     P[Z==1]<--1
-    # rownames(P) <- rownames(Z)
-    # colnames(P) <- colnames(Z)
+    rownames(P) <- rownames(Z)
+    colnames(P) <- colnames(Z)
     aux = melt(P)
     aux = aux[order(aux$value,decreasing=TRUE),]
     colnames(aux)<-c('Host', 'Parasite', 'p(interaction)')

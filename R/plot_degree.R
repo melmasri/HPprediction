@@ -24,7 +24,7 @@
 #' @export
 #' 
 plot_degree <-
-function(Z, Z_est, type='both', host.col='blue', parasite.col='red'){
+function(Z, Z_est, type='both', host.col='blue', parasite.col='red', cex.lab=1.5, cex.axis=2, pt.cex=1.5, legend.cex=2){
     ## Plots the degree distribution per marginal on a bipartite biadjacency matrix
     ## input
     ## Z - interaction matrix
@@ -57,35 +57,35 @@ function(Z, Z_est, type='both', host.col='blue', parasite.col='red'){
     }
     gpch = c('+', '*')
     if(type=='parasites'){
-        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = 1.5,cex.axis = 1.5)
-        legend(xlim[2]*0.03, ylim[2]*1.4, c("Parasites"), col = parasite.col,
-               pch = gpch[2], bty="n",pt.cex=1.5, cex=2)
+        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = cex.lab , cex.axis = cex.axis)
+        legend(xlim[2]*0.2, ylim[2]*1.4, c("Parasites"), col = parasite.col,
+               pch = gpch[2], bty="n",pt.cex=pt.cex, cex=legend.cex)
         if(!missing(Z_est)){
             points((para_est), type="p", col=parasite.col, pch=16)
-            legend(xlim[2]*0.03, ylim[2]*0.8, c("Est"), col = parasite.col,
-               pch = 16, bty='n', pt.cex=1.5, cex=2)
+            legend(xlim[2]*0.2, ylim[2]*0.8, c("Est"), col = parasite.col,
+               pch = 16, bty='n', pt.cex=pt.cex, cex=legend.cex)
         }
     }
     if(type=='hosts'){
-        plot((host_degrees), type="p", col=host.col, pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = 1.5,cex.axis = 1.5)
-        legend(xlim[2]*0.03, ylim[2]*1.4, c("Hosts"), col = host.col,
-               pch = gpch[1], bty="n", pt.cex=1.5, cex=2)
+        plot((host_degrees), type="p", col=host.col, pch=gpch[1], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = cex.lab, cex.axis = cex.axis)
+        legend(xlim[2]*0.2, ylim[2]*1.4, c("Hosts"), col = host.col,
+               pch = gpch[1], bty="n", pt.cex=pt.cex, cex=legend.cex)
         if(!missing(Z_est)){
             points((host_est), type="p", col=host.col, pch=16)
-            legend(xlim[2]*0.03, ylim[2]*0.8, c("Est"), col = host.col,
-                   pch = 16, bty='n',pt.cex=1.5, cex=2)
+            legend(xlim[2]*0.2, ylim[2]*0.8, c("Est"), col = host.col,
+                   pch = 16, bty='n',pt.cex=pt.cex, cex=legend.cex)
         }
     }
     if(type=='both'){
-        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = 1.5,cex.axis = 1.5)
+        plot((para_degrees), type="p", col=parasite.col, pch=gpch[2], log="xy", xlim=xlim, ylim=ylim, ylab="Number of nodes", xlab="Degree", cex.lab = cex.lab ,cex.axis = cex.axis)
         points((host_degrees), type="p", col=host.col, pch=gpch[1])
-    legend(xlim[2]*0.03, ylim[2]*1.4, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
-           pch = gpch[2:1], bty = 'n', pt.cex=1.5, cex=2)
+    legend(xlim[2]*0.2, ylim[2]*1.4, c("Parasites", "Hosts"), col = c(parasite.col, host.col),
+           pch = gpch[2:1], bty = 'n', pt.cex=pt.cex, cex=legend.cex)
         if (!missing(Z_est)) {
             points((para_est), type="p", col=parasite.col, pch=16)
             points((host_est), type="p", col=host.col, pch=16)
-            legend(xlim[2]*0.03, ylim[2]*0.33, c("Est"), col = c("black"),
-                   pch = 16, bty='n', pt.cex=1.5, cex=2)
+            legend(xlim[2]*0.2, ylim[2]*0.33, c("Est"), col = c("black"),
+                   pch = 16, bty='n', pt.cex=pt.cex, cex=legend.cex)
         }
     }
 }

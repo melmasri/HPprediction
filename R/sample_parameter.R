@@ -74,6 +74,6 @@ function(param, MODEL, Z, tree, size = 1000, weights = NULL){
         }
     }
     ## })
-    matrix(P/size, nrow = nrow(com), ncol = ncol(com))
+    matrix(P/size, nrow = nrow(Z), ncol = ncol(Z))
 
 }

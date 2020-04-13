@@ -1,0 +1,128 @@
+---
+title: "Elmasri et al. Host-Parasite Link Prediction Vignette"
+author: "Maxwell J. Farrell & Mohamad Elmasri"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output: rmarkdown::html_document
+vignette: >
+  %\VignetteIndexEntry{Elmasri et al. Host-Parasite Link Prediction Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+## Packages
+```{r packages, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
+require(ape)
+
+# Source package files
+sourceDir <- function(path, trace = TRUE, ...) {
+    for (nm in list.files(path, pattern = "\\.[RrSsQq]$")) {
+       if(trace) cat(nm,":")           
+       source(file.path(path, nm), ...)
+       if(trace) cat("\n")
+    }
+}
+sourceDir("../R/")
+
+```
+
+
+
+## Data
+
+To begin we will use a subsection of the [GMPD 2.0](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/ecy.1799) and the associated Mammal supertree updated by [Fritz et al. 2009](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1461-0248.2009.01307.x)
+
+```{r loadData, eval=TRUE}
+
+dat <- read.csv("data/GMPD_main.csv", as.is=TRUE, encoding = "UTF-8")
+
+# Removing parasites not reported to species
+dat <- dat[grep("sp[.]",dat$ParasiteCorrectedName, invert=TRUE),]
+
+# Subsetting host family Bovidae
+dat <- dat[dat$HostFamily=="Bovidae",]
+
+# Formatting host names to match phylogeny
+dat$HostCorrectedName <- gsub(" ","_", dat$HostCorrectedName)
+
+# Creating binary interaction matrix
+com <- table(dat$HostCorrectedName, dat$ParasiteCorrectedName)
+com[com>1] <- 1
+com <- as.matrix(unclass(com), nrow=nrow(com), ncol=ncol(com))
+
+# loading phylogeny and pruning to hosts in the interaction matrix
+tree <- read.tree("data/mammal_supertree.tre")
+tree <- drop.tip(tree, tree$tip.label[!tree$tip.label%in%rownames(com)])
+
+```
+
+
+## Plotting Input Data
+
+To visualize the structure of the input interaction matrix we can use two built-in plotting functions.
+
+```{r plotZ, echo=TRUE, eval=TRUE,fig.align='center'}
+
+plot_Z(com, tickMarks=20, cex.lab=1, cex.axis=1)
+
+```
+
+We can also use the function `lof` to left order the interaction matrix before plotting:
+
+```{r plotZ_lof, eval=TRUE, echo=TRUE,fig.align='center'}
+
+plot_Z(lof(com), tickMarks=20, cex.lab=1, cex.axis=1)
+
+```
+
+Another interesting property of networks to explore is the degree distribution. We can look at the degree distribution for both hosts and parasites with the following function: 
+
+```{r plotDD, eval=TRUE, echo=TRUE,fig.align='center'}
+
+plot_degree(com, cex.lab=1, cex.axis=1, pt.cex=1, legend.cex=1)
+
+```
+
+
+## Running the model
+
+Running for 1500 slices (iterations) on a Dell XPS 13-9350 laptop with i7-6560U and 16GB RAM took about 39 seconds. 
+
+```{r network_est, eval=TRUE, echo=TRUE}
+
+out <- network_est(Z = com, tree = tree, slices = 1500, model.type = 'full')
+str(out)
+
+```
+
+### Example traceplots
+
+```{r traceplots, echo=TRUE, eval=TRUE}
+
+# Affinity parameter of parasite 1
+plot(out$param$w[1,],type="l", col=2, ylab="Affinity parameter for parasite 1", xlab="Iteration")
+
+# Affinity parameter of host 1
+plot(out$param$y[1,],type="l", col=4, ylab="Affinity parameter for host 1", xlab="Iteration")
+
+# Phylogeny scaling parameter
+plot(out$param$eta, type="l",col="darkgreen", ylab="Phylogeny scaling parameter (EB model)", xlab="Iteration")
+
+```
+
+
+### Generating posterior probability matrix
+
+```{r sample_param, eval=TRUE, echo=TRUE}
+
+P <- sample_parameter(param=out$param, MODEL="full", Z=out$Z, tree=out$tree, size = 500)
+
+```
+
+### Identfying top predicted links with no documentation
+
+```{r topundoc, echo=TRUE, eval=TRUE}
+
+topUndoc(Z=out$Z, P=P)
+
+```
+
