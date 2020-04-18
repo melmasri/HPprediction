@@ -1,31 +1,30 @@
 ---
-title: "Elmasri et al. Host-Parasite Link Prediction Vignette"
+title: "Introduction to Elmasri et al.(2020) Host-Parasite Link Prediction Package"
 author: "Maxwell J. Farrell & Mohamad Elmasri"
 date: "`r format(Sys.time(), '%B %d %Y')`"
-output: rmarkdown::html_document
+output:
+    rmarkdown::html_vignette:
+        toc: yes
+        toc_depth: 3
+        number_sections: yes
+    pdf_document:
+        toc: true
+        toc_depth: 3
+        number_sections: yes
 vignette: >
-  %\VignetteIndexEntry{Elmasri et al. Host-Parasite Link Prediction Vignette}
+  %\VignetteIndexEntry{Elmasri et al. Host-Parasite Link Prediction}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
 
-## Packages
-```{r packages, eval=TRUE, echo=TRUE, message=FALSE, warning=FALSE}
-require(ape)
-
-# Source package files
-sourceDir <- function(path, trace = TRUE, ...) {
-    for (nm in list.files(path, pattern = "\\.[RrSsQq]$")) {
-       if(trace) cat(nm,":")           
-       source(file.path(path, nm), ...)
-       if(trace) cat("\n")
-    }
-}
-sourceDir("../R/")
+## Introduction
+```{r setup, include = FALSE, eval=TRUE, echo=TRUE, message=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 
 ```
-
-
 
 ## Data
 

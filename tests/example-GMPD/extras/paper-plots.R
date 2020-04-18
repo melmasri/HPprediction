@@ -6,7 +6,7 @@ s##################################################
 rm(list=ls())
 library(xtable)
 library(coda)
-files = grep('(ALL)-', list.dirs(recursive  =FALSE), value=TRUE)
+files = grep('(ALL)-', list.dirs(recurse  =FALSE), value=TRUE)
 files = paste0(files,'/param.RData')
 files = files[order(files, decreasing=TRUE)]
 rho_col <- "blue"
@@ -383,7 +383,7 @@ print(xtable(cbind(ll[['gmp']], ll[['eid']]),digits=3),
 setwd('../')
 
 rm(list=ls())
-files = grep('uncertain', list.dirs(recursive=FALSE), value=TRUE, ignore.case = TRUE)
+files = grep('uncertain', list.dirs(recurse=FALSE), value=TRUE, ignore.case = TRUE)
 all.data = list()
 rho_col <- "blue"
 gamma_col <- "red"
