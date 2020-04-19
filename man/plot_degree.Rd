@@ -27,9 +27,9 @@ By default the function plots the degree for both rows (hosts) and columns (para
 \examples{
 
 # Simluate a Z matrix and plot the degree distributions
-
+\dontrun{
 Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
 Z <- Z[,colSums(Z)>0]
 plot_degree(tree)
- 
+ }
 }

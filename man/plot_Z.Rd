@@ -21,9 +21,9 @@ This function generates a raster plot of the binary interaction matrix 'Z' using
 \examples{
 
 # Simluate a Z matrix and plot it
-
+\dontrun{
 Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
 Z <- Z[,colSums(Z)>0]
 plot_Z(tree)
-
+}
 }

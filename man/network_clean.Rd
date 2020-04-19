@@ -28,8 +28,7 @@ Returns a list of the cleaned Z and tree objects
 \examples{
 
 # Simluate a tree and Z matrix
-
-require(ape)
+\dontrun{
 tree <- rcoal(50)
 Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
 Z <- Z[,colSums(Z)>0]
@@ -38,5 +37,5 @@ rownames(Z) <- tree$tip.label
 # Clean the network and tree
 out <- network_clean(Z, tree, model='full')
 str(out)
-
+}
 }

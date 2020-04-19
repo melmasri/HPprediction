@@ -32,5 +32,5 @@ FPR = False Positives / (False Positives + True Negatives)
 TPR = True Positives / (True Positives + False Negatives)
 }
 \examples{
- 
+\dontrun{}  
 }

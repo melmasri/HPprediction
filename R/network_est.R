@@ -45,8 +45,7 @@
 #' @examples
 #' 
 #' # Simluate a tree and Z matrix
-#' 
-#' require(ape)
+#'\dontrun{ 
 #' tree <- rcoal(50)
 #' Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
 #' Z <- Z[,colSums(Z)>0]
@@ -55,7 +54,7 @@
 #' # Clean the network and tree
 #' out <- network_est(Z, tree, model='full')
 #' str(out)
-#' 
+#' }
 #' @export
 #' 
 network_est <-

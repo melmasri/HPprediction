@@ -20,7 +20,7 @@ Returns a datafame of Host, Parasite, and p(interaction) with length determined 
 This pulls out the top predicted interactions from a model
 }
 \examples{
-
+\dontrun{
 topPairs(P, Z, topX=15)
-
+}
 }

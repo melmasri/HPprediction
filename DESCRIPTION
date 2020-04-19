@@ -1,7 +1,7 @@
 Package: HPprediction
 Type: Package
 Title: Host-parasite prediction based on phylogeny
-Version: 0.0.0.9
+Version: 0.0.1
 Date: 2019-09-28
 Authors@R: c(
     person(given = "Mohamad",
@@ -23,6 +23,13 @@ Imports:
     geiger (>= 2.0.6.4),
     phangorn (>= 2.5.5),
     Matrix (>= 1.2.15),
-    ape (>= 5.3)
+    ape (>= 5.3),
+    reshape2 (>= 1.4.3)
 Depends:
     R (>= 3.0)
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+LazyData: true
+

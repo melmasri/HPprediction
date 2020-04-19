@@ -26,6 +26,6 @@ Returns the posterior probability matrix 'P'
 This function samples the affinity and phylogeny scaling parameters from the posterior and constructs the posterior probability matrix 'P'.
 }
 \examples{
-
+\dontrun{}
  
 }

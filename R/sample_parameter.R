@@ -16,7 +16,7 @@
 #' Returns the posterior probability matrix 'P'
 #'
 #' @examples
-#' 
+#' \dontrun{}
 #'  
 #' @export
 #' 

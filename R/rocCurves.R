@@ -21,7 +21,7 @@
 #' 'roc': a matrix containing the threthold, FPR, and TPR 
 #' 
 #' @examples
-#'  
+#'\dontrun{}  
 #' @export
 #'
 rocCurves <-

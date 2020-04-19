@@ -13,9 +13,9 @@
 #' Returns a datafame of Host, Parasite, and p(interaction) with length determined by topX (default is 10)
 #' 
 #' @examples
-#' 
+#' \dontrun{
 #' topPairs(P, Z, topX=15)
-#' 
+#' }
 #' @export
 #' 
 topPairs <-function(P, Z, topX=10){
