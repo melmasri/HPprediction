@@ -1,0 +1,313 @@
+---
+title: "Introduction to Elmasri et al.(2020) Host-Parasite Link Prediction Package"
+author: "Maxwell J. Farrell & Mohamad Elmasri"
+date: "`r format(Sys.time(), '%B %d %Y')`"
+output:
+    rmarkdown::html_vignette:
+        toc: yes
+        toc_depth: 3
+        number_sections: yes
+    pdf_document:
+        toc: true
+        toc_depth: 3
+        number_sections: yes
+vignette: >
+  %\VignetteIndexEntry{introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+```{r setup, include = FALSE, eval=TRUE, echo=TRUE, message=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+```
+```{r loadinglibrary}
+library(HPprediction)
+```
+
+## Data
+
+To begin we will use a subsection of the [GMPD 2.0](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/ecy.1799) and the associated Mammal supertree updated by [Fritz et al. 2009](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1461-0248.2009.01307.x)
+
+```{r loadData, eval=TRUE, echo = TRUE}
+data(gmpd)
+data(mammal_supertree)
+head(gmpd)
+print(mammal_supertree)
+
+# Removing parasites not reported to species
+gmpd <- gmpd[grep("sp[.]",gmpd$ParasiteCorrectedName, invert=TRUE),]
+gmpd <- gmpd[grep("not identified",gmpd$ParasiteCorrectedName, invert=TRUE),]
+
+# Subsetting host family Bovidae
+gmpd <- gmpd[gmpd$HostFamily=="Bovidae",]
+
+# Formatting host names to match phylogeny
+gmpd$HostCorrectedName <- gsub(" ","_", gmpd$HostCorrectedName)
+
+# Creating binary interaction matrix
+com <- table(gmpd$HostCorrectedName, gmpd$ParasiteCorrectedName)
+com[com>1] <- 1
+com <- as.matrix(unclass(com), nrow=nrow(com), ncol=ncol(com))
+
+# loading phylogeny and pruning to hosts in the interaction matrix
+mammal_supertree <- drop.tip(mammal_supertree, mammal_supertree$tip.label[!mammal_supertree$tip.label%in%rownames(com)])
+
+# merge the tree and interaction matrix
+cleaned <- network_clean(com, mammal_supertree, 'full')
+com <- cleaned$Z                         # cleaned binary interaction matrix
+tree <- cleaned$tree                     # cleaned tree
+```
+
+
+## Plotting Input Data
+
+To visualize the structure of the input interaction matrix we can use two built-in plotting functions.
+
+```{r plotZ, echo=TRUE, eval=TRUE,fig.align='center'}
+plot_Z(com, tickMarks=20, cex.lab=1, cex.axis=1)
+
+```
+
+We can also use the function `lof` to left order the interaction matrix before plotting:
+
+```{r plotZ_lof, eval=TRUE, echo=TRUE,fig.align='center'}
+plot_Z(lof(com), tickMarks=20, cex.lab=1, cex.axis=1)
+
+```
+
+Another interesting property of networks to explore is the degree distribution. We can look at the degree distribution for both hosts and parasites with the following function: 
+
+```{r plotDD, eval=TRUE, echo=TRUE,fig.align='center'}
+plot_degree(com, cex.lab=1, cex.axis=1, pt.cex=1, legend.cex=1)
+
+```
+
+
+## Running the model
+
+Running for 1500 slices (iterations) on an i7-6560U and 16GB RAM took about 25 seconds. 
+
+```{r network_est, eval=TRUE, echo=TRUE}
+out <- network_est(Z = com, tree = tree, slices = 1000, model.type = 'full')
+str(out)
+```
+
+### Example traceplots
+
+```{r traceplots, echo=TRUE, eval=TRUE}
+# Affinity parameter of parasite 1
+plot(out$param$w[1,],type="l", col=2, ylab="Affinity parameter for parasite 1", xlab="Iteration")
+
+# Affinity parameter of host 1
+plot(out$param$y[1,],type="l", col=4, ylab="Affinity parameter for host 1", xlab="Iteration")
+
+# Phylogeny scaling parameter
+plot(out$param$eta, type="l",col="darkgreen", ylab="Phylogeny scaling parameter (EB model)", xlab="Iteration")
+```
+
+
+### Generating posterior probability matrix
+
+```{r sample_param, eval=TRUE, echo=TRUE}
+P <- sample_parameter(param=out$param, MODEL="full", Z=out$Z, tree=out$tree, size = 500)
+```
+
+### Identfying top predicted links with no documentation
+
+```{r topundoc, echo=TRUE, eval=TRUE}
+topPairs(P, out$Z)
+```
+
+## General approach to running the model with 5-fold cross validation
+
+```{r cv, echo=TRUE, eval=FALSE}
+## General variables
+MODEL = 'full'                       # full, distance or affinity
+SLICE = 1000                          # no of iterations
+NO.CORES = 3                         # maximum cores to use
+COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
+ALPHA.ROWS = 0.3					 # hyperparameter for prior over rows affinity, effective under affinity and full models only
+ALPHA.COLS = 0.3					 # hyperparameter for prior over columns affinity, effective under affinity and full models only
+
+## Loading required packages
+require(parallel)
+
+## preparing tree and com
+cleaned <- network_clean(com, tree, 'full')
+com <- cleaned$Z                         # cleaned binary interaction matrix
+tree <- cleaned$tree                     # cleaned tree
+
+## indexing 5-folds of interactions
+folds <- cross.validate.fold(com, n= 5, min.per.col=2)  
+[1] "Actual cross-validation rate is 0.095"
+[2] "Actual cross-validation rate is 0.095"
+[3] "Actual cross-validation rate is 0.095"
+[4] "Actual cross-validation rate is 0.095"
+[5] "Actual cross-validation rate is 0.096"
+
+# returns a matrix of 3 columns (row, col, group), (row, col) correspond to Z, group to the CV group
+tot.gr <- length(unique(folds[,'gr']))   # total number of CV groups
+
+## A loop to run over all CV groups
+res <- mclapply(1:tot.gr, function(x, folds, Z, tree, slice, model.type, ALPHA.ROWS, ALPHA.COLS){
+
+    ## Analysis for a single fold
+    Z.train = Z
+    Z.train[folds[which(folds[,'gr']==x),c('row', 'col')]]<-0
+
+    ## running the model of interest
+    obj = network_est(Z.train, slices=slice, tree=tree, model.type=model.type,
+                      a_y = ALPHA.ROWS, a_w = ALPHA.COLS)
+
+    P = sample_parameter(obj$param, model.type, Z.train, tree)
+    Eta = if(is.null(obj$param$eta)) 0 else mean(obj$param$eta)
+    
+    ## order the rows in Z.test as in Z.train
+    roc = rocCurves(Z, Z.train, P, plot=FALSE, bins=400, all=FALSE)
+    tb  = ana.table(Z, Z.train, P, roc,  plot=FALSE)
+    roc.all = rocCurves(Z, Z.train, P=P, plot=FALSE, bins=400, all=TRUE)
+    tb.all  = ana.table(Z, Z.train, P, roc.all, plot=FALSE)
+    
+    list(param=list(P=P, Eta = Eta), tb = tb,
+         tb.all = tb.all, FPR.all = roc.all$roc$FPR,
+         TPR.all=roc.all$roc$TPR, FPR = roc$roc$FPR, TPR=roc$roc$TPR)
+    
+},  
+	folds=folds, Z = com, tree=tree, model.type=MODEL, slice = SLICE,
+    ALPHA.ROWS = ALPHA.ROWS, ALPHA.COLS= ALPHA.COLS, 
+    mc.preschedule = TRUE, mc.cores = min(tot.gr, NO.CORES))
+[1] "Running full model..."
+[1] "Running full model..."
+[1][1] "Running full model..."
+ "Run for 1000 slices with 500 burn-ins"
+[1] "Matrix dimension: 70 x 442"
+[1] "Run for 1000 slices with 500 burn-ins"
+[1] "Matrix dimension: 70 x 442"
+[1] "Run for 1000 slices with 500 burn-ins"
+[1] "Matrix dimension: 70 x 442"
+[1] "slice: 200, at 2020-04-18 18:08:37"
+[1] "slice: 200, at 2020-04-18 18:08:37"
+[1] "slice: 200, at 2020-04-18 18:08:37"
+[1] "slice: 400, at 2020-04-18 18:08:41"
+[1] "slice: 400, at 2020-04-18 18:08:41"
+[1] "slice: 400, at 2020-04-18 18:08:41"
+[1] "slice: 600, at 2020-04-18 18:08:45"
+[1] "slice: 600, at 2020-04-18 18:08:45"
+[1] "slice: 600, at 2020-04-18 18:08:45"
+[1] "slice: 800, at 2020-04-18 18:08:51"
+[1] "slice: 800, at 2020-04-18 18:08:51"
+[1] "slice: 800, at 2020-04-18 18:08:51"
+[1] "slice: 1000, at 2020-04-18 18:08:57"
+[1] "Done!"
+[1] "slice: 1000, at 2020-04-18 18:08:57"
+[1] "Done!"
+[1] "slice: 1000, at 2020-04-18 18:08:58"
+[1] "Done!"
+[1] "Running full model..."
+[1] "Run for 1000 slices with 500 burn-ins"
+[1] "Matrix dimension: 70 x 442"
+[1] "Running full model..."
+[1] "Run for 1000 slices with 500 burn-ins"
+[1] "Matrix dimension: 70 x 442"
+[1] "slice: 200, at 2020-04-18 18:09:07"
+[1] "slice: 200, at 2020-04-18 18:09:07"
+[1] "slice: 400, at 2020-04-18 18:09:12"
+[1] "slice: 400, at 2020-04-18 18:09:12"
+[1] "slice: 600, at 2020-04-18 18:09:18"
+[1] "slice: 600, at 2020-04-18 18:09:19"
+[1] "slice: 800, at 2020-04-18 18:09:25"
+[1] "slice: 800, at 2020-04-18 18:09:26"
+[1] "slice: 1000, at 2020-04-18 18:09:32"
+[1] "Done!"
+[1] "slice: 1000, at 2020-04-18 18:09:32"
+[1] "Done!"
+```
+
+We can analyze the performance of the model via the area under the receiver operating characteristic curve (AUC), and the proportion of 1s in the original data successfully recovered. 
+
+```{r echo=FALSE, eval = TRUE}
+res = readRDS('rescv.rds')
+MODEL = 'full'                       # full, distance or affinity
+SLICE = 1000                          # no of iterations
+NO.CORES = 3                         # maximum cores to use
+COUNT = TRUE                         # TRUE = count data, FALSE = year of first pub.
+ALPHA.ROWS = 0.3					 # hyperparameter for prior over rows affinity, effective under affinity and full models only
+ALPHA.COLS = 0.3					 # hyperparameter for prior over columns affinity, effective under affinity and full models only
+
+## Loading required packages
+require(parallel)
+```
+
+```{r diagnostics, eval=TRUE, echo=FALSE}
+## Some analysis results, AUC, %1 recovered
+TB = data.frame(
+    m.auc = sapply(res, function(r) r$tb$auc),
+    m.pred.held.out.ones = sapply(res,function(r) r$tb$pred.held.out.ones),
+    m.thresh = sapply(res, function(r) r$tb$thresh),
+    m.hold.out = sapply(res, function(r) r$tb$held.out.ones)
+)
+TB
+
+## Printing and writing out average MCMC 
+print(sprintf('Model: %s, AUC: %f and percent 1 recovered from held out: %f',
+              MODEL,mean(TB$m.auc), mean(TB$m.pred.held.out.ones)))
+
+## ROC curve points, can plot as plot(ROCgraph)
+ROCgraph = cbind(
+    FPR = rowMeans(sapply(res, function(r) r$FPR)),
+    TPR = rowMeans(sapply(res, function(r) r$TPR)))
+
+plot(ROCgraph, type="l", lty=2, col=2)
+
+```
+
+We can also construct the posterior probability matrix 'P' as the average across each fold, and look at the top undocumented interactions.
+
+```{r topundoc_cv, eval=TRUE, echo=TRUE}
+## Constructing the P probability matrix from CV results
+P = matrix(rowMeans(sapply(res, function(r) r$param$P)),
+    nrow = nrow(com), ncol = ncol(com))
+
+## left ordering of interaction and probability matrix
+indices = lof(com, indices = TRUE)
+com = com[, indices]
+P = P[, indices]
+rownames(P)<-rownames(com)
+colnames(P)<-colnames(com)
+
+## view top undocumented interactions
+topPairs(P,1*(com>0),topX=10)
+```
+
+We can also compare the input matrix to the posterior interaction matrix, and the orginal phylogeny compared to the phylogeny with estimated EB scaling.
+
+```{r comparison_plots, echo=TRUE, eval=TRUE}
+par(mfrow=c(1,2))
+
+## printing input Z
+plot_Z(com, tickMarks=20)
+
+## printing posterior interaction matrix
+plot_Z(1*(P > mean(sapply(res, function(r) r$tb$thres))), tickMarks=20)
+
+## printing input tree
+plot(tree, show.tip.label=FALSE)
+
+## printing output tree
+if(grepl('(full|dist)', MODEL)){
+    Eta = mean(sapply(res, function(r) r$param$Eta))
+    print(paste('Eta is', Eta))
+    plot(rescale(tree, 'EB', Eta), show.tip.label=FALSE)
+}
+```
+
+## References
+
+Elmasri, M., Farrell, M. J., Davies, T. J., & Stephens, D. A. (2020). A hierarchical Bayesian model for predicting ecological interactions using scaled evolutionary relationships. [Annals of Applied Statistics, 14(1), 221-240.](https://projecteuclid.org/euclid.aoas/1587002672)
+
+
