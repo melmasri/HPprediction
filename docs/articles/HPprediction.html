@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">HPprediction</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.1</span>
       </span>
     </div>
 
@@ -51,7 +51,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/melmasri/HP-prediction">
+  <a href="https://github.com/melmasri/HPprediction">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -73,7 +73,7 @@
             
             <h4 class="date">April 19 2020</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/melmasri/HP-prediction/blob/master/vignettes/HPprediction.Rmd"><code>vignettes/HPprediction.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/melmasri/HPprediction/blob/master/vignettes/HPprediction.Rmd"><code>vignettes/HPprediction.Rmd</code></a></small>
       <div class="hidden name"><code>HPprediction.Rmd</code></div>
 
     </div>
@@ -196,24 +196,24 @@
 <a class="sourceLine" id="cb6-3" title="3"><span class="co">#&gt; [1] "Running full model..."</span></a>
 <a class="sourceLine" id="cb6-4" title="4"><span class="co">#&gt; [1] "Run for 1000 slices with 500 burn-ins"</span></a>
 <a class="sourceLine" id="cb6-5" title="5"><span class="co">#&gt; [1] "Matrix dimension: 70 x 442"</span></a>
-<a class="sourceLine" id="cb6-6" title="6"><span class="co">#&gt; [1] "slice: 200, at 2020-04-19 17:05:09"</span></a>
-<a class="sourceLine" id="cb6-7" title="7"><span class="co">#&gt; [1] "slice: 400, at 2020-04-19 17:05:12"</span></a>
-<a class="sourceLine" id="cb6-8" title="8"><span class="co">#&gt; [1] "slice: 600, at 2020-04-19 17:05:16"</span></a>
-<a class="sourceLine" id="cb6-9" title="9"><span class="co">#&gt; [1] "slice: 800, at 2020-04-19 17:05:20"</span></a>
-<a class="sourceLine" id="cb6-10" title="10"><span class="co">#&gt; [1] "slice: 1000, at 2020-04-19 17:05:24"</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="co">#&gt; [1] "slice: 200, at 2020-04-19 17:55:55"</span></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">#&gt; [1] "slice: 400, at 2020-04-19 17:55:59"</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="co">#&gt; [1] "slice: 600, at 2020-04-19 17:56:03"</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="co">#&gt; [1] "slice: 800, at 2020-04-19 17:56:07"</span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="co">#&gt; [1] "slice: 1000, at 2020-04-19 17:56:11"</span></a>
 <a class="sourceLine" id="cb6-11" title="11"><span class="co">#&gt; [1] "Done!"</span></a>
 <a class="sourceLine" id="cb6-12" title="12"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/str">str</a></span>(out)</a>
 <a class="sourceLine" id="cb6-13" title="13"><span class="co">#&gt; List of 3</span></a>
 <a class="sourceLine" id="cb6-14" title="14"><span class="co">#&gt;  $ param:List of 6</span></a>
-<a class="sourceLine" id="cb6-15" title="15"><span class="co">#&gt;   ..$ w      : num [1:442, 1:500] 1.54 1.88 1.21 1.51 1.24 ...</span></a>
-<a class="sourceLine" id="cb6-16" title="16"><span class="co">#&gt;   ..$ y      : num [1:70, 1:500] 0.431 9.185 0.893 2.051 4.335 ...</span></a>
-<a class="sourceLine" id="cb6-17" title="17"><span class="co">#&gt;   ..$ eta    : num [1:500] 7.76 8.03 8.13 7.71 7.78 ...</span></a>
+<a class="sourceLine" id="cb6-15" title="15"><span class="co">#&gt;   ..$ w      : num [1:442, 1:500] 1.345 0.788 0.852 1.739 1.357 ...</span></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="co">#&gt;   ..$ y      : num [1:70, 1:500] 0.644 14.756 1.622 4.695 8.818 ...</span></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="co">#&gt;   ..$ eta    : num [1:500] 8.06 8.11 9.32 8.73 8.4 ...</span></a>
 <a class="sourceLine" id="cb6-18" title="18"><span class="co">#&gt;   ..$ g      : NULL</span></a>
 <a class="sourceLine" id="cb6-19" title="19"><span class="co">#&gt;   ..$ burn.in: num 500</span></a>
 <a class="sourceLine" id="cb6-20" title="20"><span class="co">#&gt;   ..$ sd     :List of 3</span></a>
-<a class="sourceLine" id="cb6-21" title="21"><span class="co">#&gt;   .. ..$ w  : num [1:442] 2.05 1.97 2.09 2.04 2.05 ...</span></a>
-<a class="sourceLine" id="cb6-22" title="22"><span class="co">#&gt;   .. ..$ y  : num [1:70] 1.16 5.68 1.82 2.64 3.91 ...</span></a>
-<a class="sourceLine" id="cb6-23" title="23"><span class="co">#&gt;   .. ..$ eta: num 0.759</span></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="co">#&gt;   .. ..$ w  : num [1:442] 2.05 2.05 2.05 2.03 2 ...</span></a>
+<a class="sourceLine" id="cb6-22" title="22"><span class="co">#&gt;   .. ..$ y  : num [1:70] 0.922 4.61 1.559 2.343 3.505 ...</span></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="co">#&gt;   .. ..$ eta: num 0.79</span></a>
 <a class="sourceLine" id="cb6-24" title="24"><span class="co">#&gt;  $ Z    : num [1:70, 1:442] 0 0 0 0 0 0 0 0 0 0 ...</span></a>
 <a class="sourceLine" id="cb6-25" title="25"><span class="co">#&gt;   ..- attr(*, "dimnames")=List of 2</span></a>
 <a class="sourceLine" id="cb6-26" title="26"><span class="co">#&gt;   .. ..$ : chr [1:70] "Addax_nasomaculatus" "Oryx_gazella" "Hippotragus_equinus" "Hippotragus_niger" ...</span></a>
@@ -250,16 +250,16 @@
 <a href="#identfying-top-predicted-links-with-no-documentation" class="anchor"></a>Identfying top predicted links with no documentation</h3>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="../reference/topPairs.html">topPairs</a></span>(P, out<span class="op">$</span>Z)</a>
 <a class="sourceLine" id="cb11-2" title="2"><span class="co">#&gt;       Hosts Parasites         p</span></a>
-<a class="sourceLine" id="cb11-3" title="3"><span class="co">#&gt; 22003    23       315 0.4901545</span></a>
-<a class="sourceLine" id="cb11-4" title="4"><span class="co">#&gt; 28449    29       407 0.4839536</span></a>
-<a class="sourceLine" id="cb11-5" title="5"><span class="co">#&gt; 27819    29       398 0.4636167</span></a>
-<a class="sourceLine" id="cb11-6" title="6"><span class="co">#&gt; 19763    23       283 0.4593431</span></a>
-<a class="sourceLine" id="cb11-7" title="7"><span class="co">#&gt; 16409    29       235 0.4508984</span></a>
-<a class="sourceLine" id="cb11-8" title="8"><span class="co">#&gt; 29073    23       416 0.4494401</span></a>
-<a class="sourceLine" id="cb11-9" title="9"><span class="co">#&gt; 1843     23        27 0.4251885</span></a>
-<a class="sourceLine" id="cb11-10" title="10"><span class="co">#&gt; 28835    65       412 0.4197883</span></a>
-<a class="sourceLine" id="cb11-11" title="11"><span class="co">#&gt; 10383    23       149 0.4185954</span></a>
-<a class="sourceLine" id="cb11-12" title="12"><span class="co">#&gt; 28975    65       414 0.4022297</span></a></code></pre></div>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">#&gt; 22003    23       315 0.4821388</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">#&gt; 28449    29       407 0.4768051</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="co">#&gt; 27819    29       398 0.4668673</span></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="co">#&gt; 29073    23       416 0.4477257</span></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="co">#&gt; 19763    23       283 0.4474221</span></a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="co">#&gt; 16409    29       235 0.4402695</span></a>
+<a class="sourceLine" id="cb11-9" title="9"><span class="co">#&gt; 1843     23        27 0.4197908</span></a>
+<a class="sourceLine" id="cb11-10" title="10"><span class="co">#&gt; 10383    23       149 0.4156050</span></a>
+<a class="sourceLine" id="cb11-11" title="11"><span class="co">#&gt; 28835    65       412 0.4117407</span></a>
+<a class="sourceLine" id="cb11-12" title="12"><span class="co">#&gt; 27855    65       398 0.3962981</span></a></code></pre></div>
 </div>
 </div>
 <div id="general-approach-to-running-the-model-with-5-fold-cross-validation" class="section level2">

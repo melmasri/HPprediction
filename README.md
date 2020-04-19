@@ -7,21 +7,21 @@ hierarchical Bayesian model for predicting ecological interactions using
 scaled evolutionary relationships. [Annals of Applied
 Statistics, 14(1), 221-240.](https://projecteuclid.org/euclid.aoas/1587002672)
 
-[Package website](https://melmasri.github.io/HP-prediction/)
+[Package website](https://melmasri.github.io/HPprediction/)
 
 ## Installation
 
 The package is functional, although if issues are encountered please
 report them.
 
-Install from [GitHub](https://github.com/melmasri/HP-prediction) with:
+Install from [GitHub](https://github.com/melmasri/HPprediction) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("melmasri/HP-prediction")
+devtools::install_github("melmasri/HPprediction")
 ```
 
 ## Bugs
 
 Please report bugs and features
-[here](https://github.com/melmasri/HP-prediction/issues).
+[here](https://github.com/melmasri/HPprediction/issues).

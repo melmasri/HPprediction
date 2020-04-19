@@ -14,8 +14,8 @@ Authors@R: c(
            )
 Description: This package implements the code and methods of the paper Elmasri, M., Farrell, M. J., Davies, T. J., & Stephens, D. A. (2020). A hierarchical Bayesian model for predicting ecological interactions using scaled evolutionary relationships. Annals of Applied Statistics, 14(1), 221-240.
 Maintainer: Mohamad Elmasri <elmsari.m@use.startmail.com>
-URL: https://github.com/melmasri/HP-prediction
-BugReports: BugReports: https://github.com/melmasri/HP-prediction/issues
+URL: https://github.com/melmasri/HPprediction
+BugReports: BugReports: https://github.com/melmasri/HPprediction/issues
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 6.1.1
