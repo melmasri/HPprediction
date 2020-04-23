@@ -71,7 +71,7 @@
       <h1>Introduction to Elmasri et al.(2020) Host-Parasite Link Prediction Package</h1>
                         <h4 class="author">Maxwell J. Farrell &amp; Mohamad Elmasri</h4>
             
-            <h4 class="date">April 19 2020</h4>
+            <h4 class="date">April 23 2020</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/melmasri/HPprediction/blob/master/vignettes/HPprediction.Rmd"><code>vignettes/HPprediction.Rmd</code></a></small>
       <div class="hidden name"><code>HPprediction.Rmd</code></div>
@@ -96,83 +96,32 @@
 <p>To begin we will use a subsection of the <a href="https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/ecy.1799">GMPD 2.0</a> and the associated Mammal supertree updated by <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1461-0248.2009.01307.x">Fritz et al. 2009</a></p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(gmpd)</a>
 <a class="sourceLine" id="cb2-2" title="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(mammal_supertree)</a>
-<a class="sourceLine" id="cb2-3" title="3"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(gmpd)</a>
-<a class="sourceLine" id="cb2-4" title="4"><span class="co">#&gt;        Group HostReportedName HostCorrectedName HostOrder HostFamily</span></a>
-<a class="sourceLine" id="cb2-5" title="5"><span class="co">#&gt; 1 carnivores Acinonyx jubatus  Acinonyx jubatus Carnivora    Felidae</span></a>
-<a class="sourceLine" id="cb2-6" title="6"><span class="co">#&gt; 2 carnivores Acinonyx jubatus  Acinonyx jubatus Carnivora    Felidae</span></a>
-<a class="sourceLine" id="cb2-7" title="7"><span class="co">#&gt; 3 carnivores Acinonyx jubatus  Acinonyx jubatus Carnivora    Felidae</span></a>
-<a class="sourceLine" id="cb2-8" title="8"><span class="co">#&gt; 4 carnivores Acinonyx jubatus  Acinonyx jubatus Carnivora    Felidae</span></a>
-<a class="sourceLine" id="cb2-9" title="9"><span class="co">#&gt; 5 carnivores Acinonyx jubatus  Acinonyx jubatus Carnivora    Felidae</span></a>
-<a class="sourceLine" id="cb2-10" title="10"><span class="co">#&gt; 6 carnivores Acinonyx jubatus  Acinonyx jubatus Carnivora    Felidae</span></a>
-<a class="sourceLine" id="cb2-11" title="11"><span class="co">#&gt;   HostEnvironment ParasiteReportedName               ParasiteCorrectedName</span></a>
-<a class="sourceLine" id="cb2-12" title="12"><span class="co">#&gt; 1     terrestrial   Feline coronavirus Alphacoronavirus Alphacoronavirus 1</span></a>
-<a class="sourceLine" id="cb2-13" title="13"><span class="co">#&gt; 2     terrestrial   Feline coronavirus Alphacoronavirus Alphacoronavirus 1</span></a>
-<a class="sourceLine" id="cb2-14" title="14"><span class="co">#&gt; 3     terrestrial   Feline coronavirus Alphacoronavirus Alphacoronavirus 1</span></a>
-<a class="sourceLine" id="cb2-15" title="15"><span class="co">#&gt; 4     terrestrial   Feline coronavirus Alphacoronavirus Alphacoronavirus 1</span></a>
-<a class="sourceLine" id="cb2-16" title="16"><span class="co">#&gt; 5     terrestrial   Feline coronavirus Alphacoronavirus Alphacoronavirus 1</span></a>
-<a class="sourceLine" id="cb2-17" title="17"><span class="co">#&gt; 6     terrestrial   Feline coronavirus Alphacoronavirus Alphacoronavirus 1</span></a>
-<a class="sourceLine" id="cb2-18" title="18"><span class="co">#&gt;   HasBinomialName ParType ParPhylum ParClass            Citation</span></a>
-<a class="sourceLine" id="cb2-19" title="19"><span class="co">#&gt; 1             yes   Virus RNA virus      ss+ Kennedy et al. 2003</span></a>
-<a class="sourceLine" id="cb2-20" title="20"><span class="co">#&gt; 2             yes   Virus RNA virus      ss+ Kennedy et al. 2003</span></a>
-<a class="sourceLine" id="cb2-21" title="21"><span class="co">#&gt; 3             yes   Virus RNA virus      ss+  Munson et al. 2004</span></a>
-<a class="sourceLine" id="cb2-22" title="22"><span class="co">#&gt; 4             yes   Virus RNA virus      ss+  Munson et al. 2004</span></a>
-<a class="sourceLine" id="cb2-23" title="23"><span class="co">#&gt; 5             yes   Virus RNA virus      ss+  Munson et al. 2004</span></a>
-<a class="sourceLine" id="cb2-24" title="24"><span class="co">#&gt; 6             yes   Virus RNA virus      ss+  Munson et al. 2004</span></a>
-<a class="sourceLine" id="cb2-25" title="25"><span class="co">#&gt;               LocationName Longitude Latitude PopulationType SamplingBasis</span></a>
-<a class="sourceLine" id="cb2-26" title="26"><span class="co">#&gt; 1 Namibia and South Africa     18.49   -22.96             WN       Animals</span></a>
-<a class="sourceLine" id="cb2-27" title="27"><span class="co">#&gt; 2 Namibia and South Africa     18.49   -22.96             WN       Animals</span></a>
-<a class="sourceLine" id="cb2-28" title="28"><span class="co">#&gt; 3                  Namibia     18.49   -22.96             WN       Animals</span></a>
-<a class="sourceLine" id="cb2-29" title="29"><span class="co">#&gt; 4                  Namibia     18.49   -22.96             WN       Animals</span></a>
-<a class="sourceLine" id="cb2-30" title="30"><span class="co">#&gt; 5                  Namibia     18.49   -22.96             WN       Animals</span></a>
-<a class="sourceLine" id="cb2-31" title="31"><span class="co">#&gt; 6                  Namibia     18.49   -22.96             WN       Animals</span></a>
-<a class="sourceLine" id="cb2-32" title="32"><span class="co">#&gt;   SampleNotes Prevalence HostsSampled HostSex  HostAge Intensity</span></a>
-<a class="sourceLine" id="cb2-33" title="33"><span class="co">#&gt; 1        &lt;NA&gt;      0.581           43    &lt;NA&gt;     &lt;NA&gt;          </span></a>
-<a class="sourceLine" id="cb2-34" title="34"><span class="co">#&gt; 2        &lt;NA&gt;      0.163           43    &lt;NA&gt;     &lt;NA&gt;          </span></a>
-<a class="sourceLine" id="cb2-35" title="35"><span class="co">#&gt; 3        &lt;NA&gt;      0.462           13    &lt;NA&gt;      All          </span></a>
-<a class="sourceLine" id="cb2-36" title="36"><span class="co">#&gt; 4        &lt;NA&gt;      0.545           11    &lt;NA&gt;    Adult          </span></a>
-<a class="sourceLine" id="cb2-37" title="37"><span class="co">#&gt; 5        &lt;NA&gt;      0.200           10    &lt;NA&gt;      All          </span></a>
-<a class="sourceLine" id="cb2-38" title="38"><span class="co">#&gt; 6        &lt;NA&gt;      0.286            7    &lt;NA&gt; Juvenile          </span></a>
-<a class="sourceLine" id="cb2-39" title="39"><span class="co">#&gt;   IntensityMeasure NativeRange NumSamples SamplingType</span></a>
-<a class="sourceLine" id="cb2-40" title="40"><span class="co">#&gt; 1             &lt;NA&gt;         Yes         43     Serology</span></a>
-<a class="sourceLine" id="cb2-41" title="41"><span class="co">#&gt; 2             &lt;NA&gt;         Yes         43          PCR</span></a>
-<a class="sourceLine" id="cb2-42" title="42"><span class="co">#&gt; 3             &lt;NA&gt;         Yes         13     Serology</span></a>
-<a class="sourceLine" id="cb2-43" title="43"><span class="co">#&gt; 4             &lt;NA&gt;         Yes         11     Serology</span></a>
-<a class="sourceLine" id="cb2-44" title="44"><span class="co">#&gt; 5             &lt;NA&gt;         Yes         10     Serology</span></a>
-<a class="sourceLine" id="cb2-45" title="45"><span class="co">#&gt; 6             &lt;NA&gt;         Yes          7     Serology</span></a>
-<a class="sourceLine" id="cb2-46" title="46"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(mammal_supertree)</a>
-<a class="sourceLine" id="cb2-47" title="47"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb2-48" title="48"><span class="co">#&gt; Phylogenetic tree with 5020 tips and 2503 internal nodes.</span></a>
-<a class="sourceLine" id="cb2-49" title="49"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb2-50" title="50"><span class="co">#&gt; Tip labels:</span></a>
-<a class="sourceLine" id="cb2-51" title="51"><span class="co">#&gt;  Tachyglossus_aculeatus, Zaglossus_bruijni, Zaglossus_bartoni, Ornithorhynchus_anatinus, Anomalurus_beecrofti, Anomalurus_derbianus, ...</span></a>
-<a class="sourceLine" id="cb2-52" title="52"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb2-53" title="53"><span class="co">#&gt; Rooted; includes branch lengths.</span></a>
-<a class="sourceLine" id="cb2-54" title="54"></a>
-<a class="sourceLine" id="cb2-55" title="55"><span class="co"># Removing parasites not reported to species</span></a>
-<a class="sourceLine" id="cb2-56" title="56">gmpd &lt;-<span class="st"> </span>gmpd[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/grep">grep</a></span>(<span class="st">"sp[.]"</span>,gmpd<span class="op">$</span>ParasiteCorrectedName, <span class="dt">invert=</span><span class="ot">TRUE</span>),]</a>
-<a class="sourceLine" id="cb2-57" title="57">gmpd &lt;-<span class="st"> </span>gmpd[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/grep">grep</a></span>(<span class="st">"not identified"</span>,gmpd<span class="op">$</span>ParasiteCorrectedName, <span class="dt">invert=</span><span class="ot">TRUE</span>),]</a>
-<a class="sourceLine" id="cb2-58" title="58"></a>
-<a class="sourceLine" id="cb2-59" title="59"><span class="co"># Subsetting host family Bovidae</span></a>
-<a class="sourceLine" id="cb2-60" title="60">gmpd &lt;-<span class="st"> </span>gmpd[gmpd<span class="op">$</span>HostFamily<span class="op">==</span><span class="st">"Bovidae"</span>,]</a>
-<a class="sourceLine" id="cb2-61" title="61"></a>
-<a class="sourceLine" id="cb2-62" title="62"><span class="co"># Formatting host names to match phylogeny</span></a>
-<a class="sourceLine" id="cb2-63" title="63">gmpd<span class="op">$</span>HostCorrectedName &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/grep">gsub</a></span>(<span class="st">" "</span>,<span class="st">"_"</span>, gmpd<span class="op">$</span>HostCorrectedName)</a>
-<a class="sourceLine" id="cb2-64" title="64"></a>
-<a class="sourceLine" id="cb2-65" title="65"><span class="co"># Creating binary interaction matrix</span></a>
-<a class="sourceLine" id="cb2-66" title="66">com &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/table">table</a></span>(gmpd<span class="op">$</span>HostCorrectedName, gmpd<span class="op">$</span>ParasiteCorrectedName)</a>
-<a class="sourceLine" id="cb2-67" title="67">com[com<span class="op">&gt;</span><span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb2-68" title="68">com &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/class">unclass</a></span>(com), <span class="dt">nrow=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(com), <span class="dt">ncol=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(com))</a>
-<a class="sourceLine" id="cb2-69" title="69"></a>
-<a class="sourceLine" id="cb2-70" title="70"><span class="co"># loading phylogeny and pruning to hosts in the interaction matrix</span></a>
-<a class="sourceLine" id="cb2-71" title="71">mammal_supertree &lt;-<span class="st"> </span><span class="kw">drop.tip</span>(mammal_supertree, mammal_supertree<span class="op">$</span>tip.label[<span class="op">!</span>mammal_supertree<span class="op">$</span>tip.label<span class="op">%in%</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(com)])</a>
-<a class="sourceLine" id="cb2-72" title="72"></a>
-<a class="sourceLine" id="cb2-73" title="73"><span class="co"># merge the tree and interaction matrix</span></a>
-<a class="sourceLine" id="cb2-74" title="74">cleaned &lt;-<span class="st"> </span><span class="kw"><a href="../reference/network_clean.html">network_clean</a></span>(com, mammal_supertree, <span class="st">'full'</span>)</a>
-<a class="sourceLine" id="cb2-75" title="75"><span class="co">#&gt; Warning: not all rows in Z exist tree; missing are removed from Z!</span></a>
-<a class="sourceLine" id="cb2-76" title="76"><span class="co">#&gt; [1] "ordering the rows of Z to match tree..."</span></a>
-<a class="sourceLine" id="cb2-77" title="77"><span class="co">#&gt; [1] "normalizing tree edges by the maximum pairwise distance!"</span></a>
-<a class="sourceLine" id="cb2-78" title="78">com &lt;-<span class="st"> </span>cleaned<span class="op">$</span>Z                         <span class="co"># cleaned binary interaction matrix</span></a>
-<a class="sourceLine" id="cb2-79" title="79">tree &lt;-<span class="st"> </span>cleaned<span class="op">$</span>tree                     <span class="co"># cleaned tree</span></a></code></pre></div>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co"># Removing parasites not reported to species</span></a>
+<a class="sourceLine" id="cb2-5" title="5">gmpd &lt;-<span class="st"> </span>gmpd[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/grep">grep</a></span>(<span class="st">"sp[.]"</span>,gmpd<span class="op">$</span>ParasiteCorrectedName, <span class="dt">invert=</span><span class="ot">TRUE</span>),]</a>
+<a class="sourceLine" id="cb2-6" title="6">gmpd &lt;-<span class="st"> </span>gmpd[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/grep">grep</a></span>(<span class="st">"not identified"</span>,gmpd<span class="op">$</span>ParasiteCorrectedName, <span class="dt">invert=</span><span class="ot">TRUE</span>),]</a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="co"># Subsetting host family Bovidae</span></a>
+<a class="sourceLine" id="cb2-9" title="9">gmpd &lt;-<span class="st"> </span>gmpd[gmpd<span class="op">$</span>HostFamily<span class="op">==</span><span class="st">"Bovidae"</span>,]</a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"><span class="co"># Formatting host names to match phylogeny</span></a>
+<a class="sourceLine" id="cb2-12" title="12">gmpd<span class="op">$</span>HostCorrectedName &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/grep">gsub</a></span>(<span class="st">" "</span>,<span class="st">"_"</span>, gmpd<span class="op">$</span>HostCorrectedName)</a>
+<a class="sourceLine" id="cb2-13" title="13"></a>
+<a class="sourceLine" id="cb2-14" title="14"><span class="co"># Creating binary interaction matrix</span></a>
+<a class="sourceLine" id="cb2-15" title="15">com &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/table">table</a></span>(gmpd<span class="op">$</span>HostCorrectedName, gmpd<span class="op">$</span>ParasiteCorrectedName)</a>
+<a class="sourceLine" id="cb2-16" title="16">com[com<span class="op">&gt;</span><span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb2-17" title="17">com &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">as.matrix</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/class">unclass</a></span>(com), <span class="dt">nrow=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(com), <span class="dt">ncol=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(com))</a>
+<a class="sourceLine" id="cb2-18" title="18"></a>
+<a class="sourceLine" id="cb2-19" title="19"><span class="co"># loading phylogeny and pruning to hosts in the interaction matrix</span></a>
+<a class="sourceLine" id="cb2-20" title="20">mammal_supertree &lt;-<span class="st"> </span><span class="kw">drop.tip</span>(mammal_supertree, mammal_supertree<span class="op">$</span>tip.label[<span class="op">!</span>mammal_supertree<span class="op">$</span>tip.label<span class="op">%in%</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(com)])</a>
+<a class="sourceLine" id="cb2-21" title="21"></a>
+<a class="sourceLine" id="cb2-22" title="22"><span class="co"># merge the tree and interaction matrix</span></a>
+<a class="sourceLine" id="cb2-23" title="23">cleaned &lt;-<span class="st"> </span><span class="kw"><a href="../reference/network_clean.html">network_clean</a></span>(com, mammal_supertree, <span class="st">'full'</span>)</a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="co">#&gt; Warning: not all rows in Z exist tree; missing are removed from Z!</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="co">#&gt; [1] "ordering the rows of Z to match tree..."</span></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="co">#&gt; [1] "normalizing tree edges by the maximum pairwise distance!"</span></a>
+<a class="sourceLine" id="cb2-27" title="27">com &lt;-<span class="st"> </span>cleaned<span class="op">$</span>Z                         <span class="co"># cleaned binary interaction matrix</span></a>
+<a class="sourceLine" id="cb2-28" title="28">tree &lt;-<span class="st"> </span>cleaned<span class="op">$</span>tree                     <span class="co"># cleaned tree</span></a></code></pre></div>
 </div>
 <div id="plotting-input-data" class="section level2">
 <h2 class="hasAnchor">
@@ -196,24 +145,24 @@
 <a class="sourceLine" id="cb6-3" title="3"><span class="co">#&gt; [1] "Running full model..."</span></a>
 <a class="sourceLine" id="cb6-4" title="4"><span class="co">#&gt; [1] "Run for 1000 slices with 500 burn-ins"</span></a>
 <a class="sourceLine" id="cb6-5" title="5"><span class="co">#&gt; [1] "Matrix dimension: 70 x 442"</span></a>
-<a class="sourceLine" id="cb6-6" title="6"><span class="co">#&gt; [1] "slice: 200, at 2020-04-19 17:55:55"</span></a>
-<a class="sourceLine" id="cb6-7" title="7"><span class="co">#&gt; [1] "slice: 400, at 2020-04-19 17:55:59"</span></a>
-<a class="sourceLine" id="cb6-8" title="8"><span class="co">#&gt; [1] "slice: 600, at 2020-04-19 17:56:03"</span></a>
-<a class="sourceLine" id="cb6-9" title="9"><span class="co">#&gt; [1] "slice: 800, at 2020-04-19 17:56:07"</span></a>
-<a class="sourceLine" id="cb6-10" title="10"><span class="co">#&gt; [1] "slice: 1000, at 2020-04-19 17:56:11"</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="co">#&gt; [1] "slice: 200, at 2020-04-23 12:29:30"</span></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">#&gt; [1] "slice: 400, at 2020-04-23 12:29:34"</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="co">#&gt; [1] "slice: 600, at 2020-04-23 12:29:38"</span></a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="co">#&gt; [1] "slice: 800, at 2020-04-23 12:29:42"</span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="co">#&gt; [1] "slice: 1000, at 2020-04-23 12:29:45"</span></a>
 <a class="sourceLine" id="cb6-11" title="11"><span class="co">#&gt; [1] "Done!"</span></a>
 <a class="sourceLine" id="cb6-12" title="12"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/str">str</a></span>(out)</a>
 <a class="sourceLine" id="cb6-13" title="13"><span class="co">#&gt; List of 3</span></a>
 <a class="sourceLine" id="cb6-14" title="14"><span class="co">#&gt;  $ param:List of 6</span></a>
-<a class="sourceLine" id="cb6-15" title="15"><span class="co">#&gt;   ..$ w      : num [1:442, 1:500] 1.345 0.788 0.852 1.739 1.357 ...</span></a>
-<a class="sourceLine" id="cb6-16" title="16"><span class="co">#&gt;   ..$ y      : num [1:70, 1:500] 0.644 14.756 1.622 4.695 8.818 ...</span></a>
-<a class="sourceLine" id="cb6-17" title="17"><span class="co">#&gt;   ..$ eta    : num [1:500] 8.06 8.11 9.32 8.73 8.4 ...</span></a>
+<a class="sourceLine" id="cb6-15" title="15"><span class="co">#&gt;   ..$ w      : num [1:442, 1:500] 1.19 1.62 1.49 1.23 2.05 ...</span></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="co">#&gt;   ..$ y      : num [1:70, 1:500] 0.87 14.03 1.79 3.6 7.3 ...</span></a>
+<a class="sourceLine" id="cb6-17" title="17"><span class="co">#&gt;   ..$ eta    : num [1:500] 7.82 8.07 8.22 8.17 7.94 ...</span></a>
 <a class="sourceLine" id="cb6-18" title="18"><span class="co">#&gt;   ..$ g      : NULL</span></a>
 <a class="sourceLine" id="cb6-19" title="19"><span class="co">#&gt;   ..$ burn.in: num 500</span></a>
 <a class="sourceLine" id="cb6-20" title="20"><span class="co">#&gt;   ..$ sd     :List of 3</span></a>
-<a class="sourceLine" id="cb6-21" title="21"><span class="co">#&gt;   .. ..$ w  : num [1:442] 2.05 2.05 2.05 2.03 2 ...</span></a>
-<a class="sourceLine" id="cb6-22" title="22"><span class="co">#&gt;   .. ..$ y  : num [1:70] 0.922 4.61 1.559 2.343 3.505 ...</span></a>
-<a class="sourceLine" id="cb6-23" title="23"><span class="co">#&gt;   .. ..$ eta: num 0.79</span></a>
+<a class="sourceLine" id="cb6-21" title="21"><span class="co">#&gt;   .. ..$ w  : num [1:442] 1.92 2.09 2 1.99 2.05 ...</span></a>
+<a class="sourceLine" id="cb6-22" title="22"><span class="co">#&gt;   .. ..$ y  : num [1:70] 1.16 5.54 1.89 2.63 3.84 ...</span></a>
+<a class="sourceLine" id="cb6-23" title="23"><span class="co">#&gt;   .. ..$ eta: num 0.748</span></a>
 <a class="sourceLine" id="cb6-24" title="24"><span class="co">#&gt;  $ Z    : num [1:70, 1:442] 0 0 0 0 0 0 0 0 0 0 ...</span></a>
 <a class="sourceLine" id="cb6-25" title="25"><span class="co">#&gt;   ..- attr(*, "dimnames")=List of 2</span></a>
 <a class="sourceLine" id="cb6-26" title="26"><span class="co">#&gt;   .. ..$ : chr [1:70] "Addax_nasomaculatus" "Oryx_gazella" "Hippotragus_equinus" "Hippotragus_niger" ...</span></a>
@@ -250,16 +199,16 @@
 <a href="#identfying-top-predicted-links-with-no-documentation" class="anchor"></a>Identfying top predicted links with no documentation</h3>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1"><span class="kw"><a href="../reference/topPairs.html">topPairs</a></span>(P, out<span class="op">$</span>Z)</a>
 <a class="sourceLine" id="cb11-2" title="2"><span class="co">#&gt;       Hosts Parasites         p</span></a>
-<a class="sourceLine" id="cb11-3" title="3"><span class="co">#&gt; 22003    23       315 0.4821388</span></a>
-<a class="sourceLine" id="cb11-4" title="4"><span class="co">#&gt; 28449    29       407 0.4768051</span></a>
-<a class="sourceLine" id="cb11-5" title="5"><span class="co">#&gt; 27819    29       398 0.4668673</span></a>
-<a class="sourceLine" id="cb11-6" title="6"><span class="co">#&gt; 29073    23       416 0.4477257</span></a>
-<a class="sourceLine" id="cb11-7" title="7"><span class="co">#&gt; 19763    23       283 0.4474221</span></a>
-<a class="sourceLine" id="cb11-8" title="8"><span class="co">#&gt; 16409    29       235 0.4402695</span></a>
-<a class="sourceLine" id="cb11-9" title="9"><span class="co">#&gt; 1843     23        27 0.4197908</span></a>
-<a class="sourceLine" id="cb11-10" title="10"><span class="co">#&gt; 10383    23       149 0.4156050</span></a>
-<a class="sourceLine" id="cb11-11" title="11"><span class="co">#&gt; 28835    65       412 0.4117407</span></a>
-<a class="sourceLine" id="cb11-12" title="12"><span class="co">#&gt; 27855    65       398 0.3962981</span></a></code></pre></div>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">#&gt; 22003    23       315 0.5215406</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">#&gt; 28449    29       407 0.5089026</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="co">#&gt; 27819    29       398 0.4914552</span></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="co">#&gt; 29073    23       416 0.4855061</span></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="co">#&gt; 19763    23       283 0.4826560</span></a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="co">#&gt; 16409    29       235 0.4731550</span></a>
+<a class="sourceLine" id="cb11-9" title="9"><span class="co">#&gt; 1843     23        27 0.4587460</span></a>
+<a class="sourceLine" id="cb11-10" title="10"><span class="co">#&gt; 28835    65       412 0.4428546</span></a>
+<a class="sourceLine" id="cb11-11" title="11"><span class="co">#&gt; 10383    23       149 0.4388038</span></a>
+<a class="sourceLine" id="cb11-12" title="12"><span class="co">#&gt; 28975    65       414 0.4312345</span></a></code></pre></div>
 </div>
 </div>
 <div id="general-approach-to-running-the-model-with-5-fold-cross-validation" class="section level2">

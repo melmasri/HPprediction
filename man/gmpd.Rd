@@ -4,9 +4,7 @@
 \name{gmpd}
 \alias{gmpd}
 \title{Host-Parasite interaction data from the Global Mammal Parasite Database 2.0}
-\format{
-An object of class \code{"data.frame"}.
-}
+\format{An object of class \code{"data.frame"}.}
 \source{
 \href{https://doi.org/10.1002/ecy.1799}{Ecology Data Papers}
 }

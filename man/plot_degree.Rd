@@ -4,17 +4,9 @@
 \alias{plot_degree}
 \title{A function to plot degree distributions}
 \usage{
-plot_degree(
-  Z,
-  Z_est,
-  type = "both",
-  host.col = "blue",
-  parasite.col = "red",
-  cex.lab = 1.5,
-  cex.axis = 2,
-  pt.cex = 1.5,
-  legend.cex = 2
-)
+plot_degree(Z, Z_est, type = "both", host.col = "blue",
+  parasite.col = "red", cex.lab = 1.5, cex.axis = 2, pt.cex = 1.5,
+  legend.cex = 2)
 }
 \arguments{
 \item{Z}{bipartite interaction matrix}

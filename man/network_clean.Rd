@@ -4,7 +4,8 @@
 \alias{network_clean}
 \title{A function to clean the network and tree:}
 \usage{
-network_clean(Z, tree = NULL, model.type = c("full", "distance", "affinity"))
+network_clean(Z, tree = NULL, model.type = c("full", "distance",
+  "affinity"))
 }
 \arguments{
 \item{Z}{bipartite interaction matrix. Rows should correspond to species in the tree. There should be no empty columns.}
