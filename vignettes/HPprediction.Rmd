@@ -36,8 +36,6 @@ To begin we will use a subsection of the [GMPD 2.0](https://esajournals.onlineli
 ```{r loadData, eval=TRUE, echo = TRUE}
 data(gmpd)
 data(mammal_supertree)
-head(gmpd)
-print(mammal_supertree)
 
 # Removing parasites not reported to species
 gmpd <- gmpd[grep("sp[.]",gmpd$ParasiteCorrectedName, invert=TRUE),]

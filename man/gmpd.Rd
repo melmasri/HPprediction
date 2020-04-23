@@ -3,15 +3,29 @@
 \docType{data}
 \name{gmpd}
 \alias{gmpd}
-\title{A title}
-\format{A data frame XXX
-\describe{
-  \item{ColA}{description about columnA}
-}}
+\title{Host-Parasite interaction data from the Global Mammal Parasite Database 2.0}
+\format{
+An object of class \code{"data.frame"}.
+}
+\source{
+\href{https://doi.org/10.1002/ecy.1799}{Ecology Data Papers}
+}
 \usage{
-gmpd
+data(gmpd)
 }
 \description{
-A description
+The GMPD 2.0 is a database of the parasites of wild ungulates (artiodactyls and perissodactyls), 
+carnivores, and primates. It comprises 24,000 entries representing data from over 2700 literature sources. 
+Host Latin binomials (column "HostCorrectedName") match those used by the Fritz et al. (2009) mammal supertree (data(mammal_supertree)).
+}
+\examples{
+data(gmpd)
+}
+\references{
+Stephens, P.R., Pappalardo, P., Huang, S., Byers, J.E., 
+Farrell, M.J., Gehman, A., Ghai, R.R., Haas, S.E., Han, B., Park, A.W., 
+Schmidt, J.P., Altizer, S., Ezenwa, V.O. and Nunn, C.L. (2017), 
+Global Mammal Parasite Database version 2.0. 
+Ecology, 98: 1476-1476. \href{https://doi.org/10.1002/ecy.1799}{doi:10.1002/ecy.1799}
 }
 \keyword{datasets}
