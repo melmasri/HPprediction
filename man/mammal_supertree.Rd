@@ -4,7 +4,9 @@
 \name{mammal_supertree}
 \alias{mammal_supertree}
 \title{Fritz et al. (2009) mammal supertree}
-\format{An object of class \code{"phylo"}.}
+\format{
+An object of class \code{"phylo"}.
+}
 \source{
 \href{https://doi.org/10.1111/j.1461-0248.2009.01307.x}{Ecology Letters}
 }

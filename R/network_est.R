@@ -79,7 +79,7 @@ network_est <-
         if(grepl('aff', model.type)){
             ## sparse option is not used for affinity
             print('Running affinity model...')
-            param = fullJoint_est(Z, iter = slices, uncertainty = uncertainty, ...)
+            param = fullJoint_est(unname(Z), iter = slices, uncertainty = uncertainty, ...)
         }
         
         ##  Full and distance model
@@ -100,7 +100,8 @@ network_est <-
                              ifelse(grepl('dist', model.type),
                                     'distance model...', 'full model...')))
                 warning('Running an experimental ICM procedure!', immediate. = TRUE, call.= FALSE)
-                param  = ICM_est_over_acc(unname(Z),tree,slices, distOnly = grepl('dist', model.type),
+                param  = ICM_est_over_acc(unname(Z),
+                                          tree,slices, distOnly = grepl('dist', model.type),
                                           uncertainty = uncertainty, sparse=sparse, ...)
             }
             

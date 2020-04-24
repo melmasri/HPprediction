@@ -10,7 +10,7 @@
 #' 
 #' @description
 #' 
-#' This function samples the affinity and phylogeny scaling parameters from the posterior and constructs the posterior probability matrix 'P'.
+#' This function samples the affinity and phylogeny scaling parameters from the posterior and constructs the posterior probability matrix 'P'. Dimension names are assigned from matrix `Z`.
 #' 
 #' @return 
 #' Returns the posterior probability matrix 'P'
@@ -74,6 +74,8 @@ function(param, MODEL, Z, tree, size = 1000, weights = NULL){
         }
     }
     ## })
-    matrix(P/size, nrow = nrow(Z), ncol = ncol(Z))
-
+    P = matrix(P/size, nrow = nrow(Z), ncol = ncol(Z))
+    colnames(P)<-colnames(Z)
+    rownames(P)<-rownames(Z)
+    P
 }

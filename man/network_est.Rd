@@ -4,8 +4,15 @@
 \alias{network_est}
 \title{A function to run an MCMC sampler based on the Iterative Conditional Modes (ICM) algorithm:}
 \usage{
-network_est(Z, tree = NULL, slices = 10, model.type = c("full",
-  "distance", "affinity"), uncertainty = FALSE, sparse = TRUE, ...)
+network_est(
+  Z,
+  tree = NULL,
+  slices = 10,
+  model.type = c("full", "distance", "affinity"),
+  uncertainty = FALSE,
+  sparse = TRUE,
+  ...
+)
 }
 \arguments{
 \item{Z}{bipartite interaction matrix}

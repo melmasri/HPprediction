@@ -23,7 +23,7 @@ sample_parameter(param, MODEL, Z, tree, size = 1000, weights = NULL)
 Returns the posterior probability matrix 'P'
 }
 \description{
-This function samples the affinity and phylogeny scaling parameters from the posterior and constructs the posterior probability matrix 'P'.
+This function samples the affinity and phylogeny scaling parameters from the posterior and constructs the posterior probability matrix 'P'. Dimension names are assigned from matrix `Z`.
 }
 \examples{
 \dontrun{}
