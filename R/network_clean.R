@@ -44,10 +44,6 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
         warning('Z is converted to binary!', immediate. = TRUE, call.= FALSE)
         Z = 1*(Z>0)
     }
-    if(any(colSums(Z)==0)){
-        print('Z has empty columns - these have been removed!')
-        Z = Z[,which(colSums(Z)>0)]
-    }
     if(grepl('aff', model.type)){
         if(!is.null(tree))
             warning('affinity model is chosen; ignoring tree!',
@@ -71,6 +67,10 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
             warning('not all rows in Z exist tree; missing are removed from Z!',
                     immediate.= TRUE, call. = FALSE)
             Z = Z[rownames(Z) %in% tree$tip.label,]
+        }
+        if(any(colSums(Z)==0)){
+            print('Z has empty columns - these have been removed!')
+            Z = Z[,which(colSums(Z)>0)]
         }
         ## Testing that names in Z exist only once
         if(!all(sapply(sapply(rownames(Z),
