@@ -31,12 +31,19 @@ function(param, MODEL, Z, tree, size = 1000, weights = NULL){
     if(!is.null(weights) & length(weights)!=size)
         stop('weights are not the same sampling size.')
     t.max = get.max.depth(tree)
-    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
-      if(grepl('dist', MODEL)) {
+    if(is.phylo(tree))
+        dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+    else
+        dist.original = tree
+    if(grepl('dist', MODEL)) {
         Y = W = 1
     }else{
         Y = sample_mcmc(param$y, ncol(param$y), size)
         W = sample_mcmc(param$w, ncol(param$w), size)
+        if(is.null(param$distance)){
+            constant_distance = 1
+        }else
+            constant_distance = param$distance
     }
     if(grepl('(dist|full)', MODEL)){
         Eta = sample_mcmc(param$eta, length(param$eta), size)
@@ -49,7 +56,7 @@ function(param, MODEL, Z, tree, size = 1000, weights = NULL){
         ## aux = sapply(1:size, function(s){
         ## setting affinity to 1 in distance model
         if(grepl('(aff|full)', MODEL)){
-            YW = outer(Y[,s], W[,s])
+            YW = outer(Y[,s], W[,s]) * constant_distance
         } else YW = 1
         ## Full or distance model
         ## Creating distance

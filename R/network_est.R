@@ -1,7 +1,7 @@
 #' A function to run an MCMC sampler based on the Iterative Conditional Modes (ICM) algorithm:
 #'
 #' @param Z bipartite interaction matrix
-#' @param tree 'phylo' object representing rows of Z
+#' @param tree 'phylo' object representing rows of Z, or a matrix of pairwise non-negative distances of rows of Z
 #' @param slices The total number of samples to take
 #' @param model.type Indicate model to use: one of 'full', 'distance', 'affinity'
 #' @param uncertainty Indicate whether to use model variant that accounts for uncertainty in unobserved interactions.
@@ -21,7 +21,7 @@
 #' `y_sd` is the standard deviation of the proposal distribution for the host affinity parameters (normal distribution with mean zero and standard deviation y_sd).
 #' `w_sd` is the standard deviation of the proposal distribution for the parasite affinity parameters (normal distribution with mean zero and standard deviation w_sd). 
 #'
-#' `eta` is the initial value for the tree scaling parameter eta ('distance' and 'full' models)
+#' `eta` is the initial value for the tree (or distance) scaling parameter eta ('distance' and 'full' models)
 #' `eta_sd` is the standard deviation of the proposal distribution for the eta parameter (normal distribution with mean zero and standard deviation eta_sd)
 #' 
 #' Burn-in set-up
@@ -79,7 +79,7 @@ network_est <-
         if(grepl('aff', model.type)){
             ## sparse option is not used for affinity
             print('Running affinity model...')
-            param = fullJoint_est(unname(Z), iter = slices, uncertainty = uncertainty, ...)
+            param = fullJoint_est(unname(Z), iter = slices, uncertainty = uncertainty, distance = tree, ...)
         }
         
         ##  Full and distance model

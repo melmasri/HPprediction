@@ -55,7 +55,10 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     ## tree.ht = arrange.tree(tree)
     t.max = get.max.depth(tree)
     ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
-    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+    if(is.phylo(tree))
+        dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+    else
+        dist.original = tree
     dist = 1/EB.distance(dist.original, t.max, peta[1])
     diag(dist)<-0
     sparseZ = Z
