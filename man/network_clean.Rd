@@ -9,7 +9,7 @@ network_clean(Z, tree = NULL, model.type = c("full", "distance", "affinity"))
 \arguments{
 \item{Z}{bipartite interaction matrix. Rows should correspond to species in the tree. There should be no empty columns.}
 
-\item{tree}{'phylo' object}
+\item{tree}{'phylo' object, or an symmetric non-negative matrix of pairwise distance between the rows of Z}
 
 \item{model.type}{Indicate model to use: one of 'full', 'distance', 'affinity'}
 }
