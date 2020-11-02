@@ -57,13 +57,10 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
     if(!is.phylo(tree) & !(isSymmetric(tree) & min(tree) >=0)){
         stop('tree must be a phylo object! or a symmetric matrix of non-negative pairwise distances between the rows of Z')
     }
-    ## removing any column of Z that has 0 interactions
-    if(any(colSums(Z)==0)){
-        print('Z has empty columns - these have been removed!')
-        Z = Z[,which(colSums(Z)>0)]
-    }
-    ## testing that all tips exist in Z
+   
+    ##Phylo tree
     if(is.phylo(tree)){
+        ## testing that all tips exist in Z
         if(!all(tree$tip.label %in% rownames(Z))){
             warning('not all species in tree exist in Z; missing are removed from tree!',
                     immediate.= TRUE, call. = FALSE)
@@ -75,12 +72,15 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
                     immediate.= TRUE, call. = FALSE)
             Z = Z[rownames(Z) %in% tree$tip.label,]
         }
-
+        ## removing any column of Z that has 0 interactions -- must exist here.
+        if(any(colSums(Z)==0)){
+            print('Z has empty columns - these have been removed!')
+            Z = Z[,which(colSums(Z)>0)]
+        }
         ## Testing that names in Z exist only once
         if(!all(sapply(sapply(rownames(Z),
                               function(r) which(r==tree$tip.label)), length)==1))
             stop('some row-species in Z exist more than once tree!')
-        
         ## Making sure the order of hosts in Z and tree are the same
         aux  = cophenetic(tree)
         if(!all(rownames(aux)==rownames(Z))){
@@ -92,13 +92,15 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
             print('normalizing tree edges by the maximum pairwise distance!')
             tree$edge.length = tree$edge.length/(max(aux)/2)
         }
-    }else{
+    }else{                              ## distance tree
+        ## testing that all tips exist in Z
         if(!all(rownames(tree) %in% rownames(Z))){
             warning('not all row names in tree exist in Z; missing are removed from tree!',
                     immediate.= TRUE, call. = FALSE)
             aux= (rownames(tree) %in% rownames(Z))
             tree = tree[aux, aux ]
         }
+        ## Testing all names in com exist in dist
         if(!all(rownames(Z) %in% rownames(tree))){
             warning('not all rows in Z exist tree; missing are removed from Z!',
                     immediate.= TRUE, call. = FALSE)
@@ -108,6 +110,12 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
             else
                 stop('No rows of Z exist in rows of tree!')
         }
+        ## removing any column of Z that has 0 interactions -- must exist here.
+        if(any(colSums(Z)==0)){
+            print('Z has empty columns - these have been removed!')
+            Z = Z[,which(colSums(Z)>0)]
+        }
+        ## Testing that names in Z exist only once
         if(!all(sapply(sapply(rownames(Z),
                               function(r) which(r==rownames(tree))), length)==1))
             stop('some row-species in Z exist more than once in rownames of distance!')
