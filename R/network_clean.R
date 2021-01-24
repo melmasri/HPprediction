@@ -10,8 +10,8 @@
 #'
 #' @param Z bipartite interaction matrix. Rows should correspond to species in the tree. There should be no empty columns.
 #' @param tree 'phylo' object, or an symmetric non-negative matrix of pairwise distance between the rows of Z
-#' @param model.type Indicate model to use: one of 'full', 'distance', 'affinity'
-#'
+#' @param model.type Indicates the model to use: one of 'full', 'distance', 'affinity'
+#' @param normalize.tree logical whether to normalize the \code{tree} by maximum distance. (Default is TRUE).
 #' @return Returns a list of the cleaned Z and tree objects
 #'
 #' @examples
@@ -30,7 +30,7 @@
 #' @export
 #' 
 network_clean <-
-function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){    
+function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normalize.tree=TRUE){    
 
     require(geiger)
     require(phangorn)
@@ -54,9 +54,10 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
             stop('distance model is chosen, but tree is null!')
     }
     ## testing tree is a phylo object
-    if(!is.phylo(tree) & !(isSymmetric(tree) & min(tree) >=0)){
-        stop('tree must be a phylo object! or a symmetric matrix of non-negative pairwise distances between the rows of Z')
-    }
+    if(is.matrix(tree))
+        if(!(isSymmetric(tree) & min(tree) >=0)){
+            stop('tree must be a phylo object! or a symmetric matrix of non-negative pairwise distances between the rows of Z')
+        }
    
     ##Phylo tree
     if(is.phylo(tree)){
@@ -88,7 +89,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
             print('ordering the rows of Z to match tree...')
             Z = Z[row.order,]
         }
-        if(max(range(tree$edge.length))>1){
+        if(normalize.tree){
             print('normalizing tree edges by the maximum pairwise distance!')
             tree$edge.length = tree$edge.length/(max(aux)/2)
         }
@@ -127,7 +128,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity')){
             print('ordering the rows of Z to match tree...')
             Z = Z[row.order,]
         }
-        if(max(tree)>1){
+        if(normalize.tree){
             print('normalizing distance edges by the maximum pairwise distance!')
             tree = tree/max(aux)
         }

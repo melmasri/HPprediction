@@ -4,14 +4,21 @@
 \alias{network_clean}
 \title{A function to clean the network and tree:}
 \usage{
-network_clean(Z, tree = NULL, model.type = c("full", "distance", "affinity"))
+network_clean(
+  Z,
+  tree = NULL,
+  model.type = c("full", "distance", "affinity"),
+  normalize.tree = TRUE
+)
 }
 \arguments{
 \item{Z}{bipartite interaction matrix. Rows should correspond to species in the tree. There should be no empty columns.}
 
 \item{tree}{'phylo' object, or an symmetric non-negative matrix of pairwise distance between the rows of Z}
 
-\item{model.type}{Indicate model to use: one of 'full', 'distance', 'affinity'}
+\item{model.type}{Indicates the model to use: one of 'full', 'distance', 'affinity'}
+
+\item{normalize.tree}{logical whether to normalize the \code{tree} by maximum distance. (Default is TRUE).}
 }
 \value{
 Returns a list of the cleaned Z and tree objects
