@@ -122,17 +122,20 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
                     
                 }## Updating similarity matix parameter
                 new.eta = rEta.EB.local(peta.last,
-                    pdist[i,],
-                    if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
-                    if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,
-                    ]), eta_sd, sparse, dist.original, t.max)
+                                        pdist[i,],
+                                        if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
+                                        if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,]),
+                                        eta_sd,
+                                        sparse,
+                                        dist.original,
+                                        t.max)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new
                 peta.last = peta.new
-                if(new.eta$change){
-                    pdist[i,] = new.eta$dist # very slow when using sparse assignment
-                }
+                ## if(new.eta$change){
+                ##     pdist[i,] = new.eta$dist # very slow when using sparse assignment
+                ## }
                 
                 if(uncertainty){
                     g0in[i+1] = rg(Z[i,], l=U0[i,])
@@ -183,5 +186,5 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
 
     list(w = w0, y = y0, eta = peta, g = g0,
          burn.in = max(burn.in)-1,
-         sd = list(w=w_sd, y = y_sd, eta= eta_sd))
+         sd = list(w= if(distOnly) NULL else w_sd, y = if(distOnly) NULL else y_sd, eta= eta_sd))
 }

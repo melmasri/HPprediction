@@ -16,25 +16,50 @@
 #' \dontrun{}
 #'  
 #' @export
-#' 
+#'
 sample_parameter <-
-    function(model, size = 1000, weights = NULL){
+    function(model, size = 1000){
+        weights  = NULL
         param = model$param
         Z = model$Z
-        tree  = model$tree
+        num.dist= model$num.distances
+        distances  = model$distances
         MODEL = model$model.type
+        ny = nrow(Z)
+        
         sample_mcmc<-function(mcmc_sample, nObs, size = 1000){
-            if(is.matrix(mcmc_sample))
+            if(is.matrix(mcmc_sample)
+               )
                 mcmc_sample[, sample.int(nObs, size, replace = TRUE)] else
                                                                           mcmc_sample[sample.int(nObs, size, replace = TRUE)]
         }
-        if(!is.null(weights) & length(weights)!=size)
-            stop('weights are not the same sampling size.')
-        t.max = get.max.depth(tree)
-        if(is.phylo(tree))
-            dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
-        else
-            dist.original = tree
+        
+        if(grepl('(dist|full)', MODEL)){
+            if(num.dist==1){
+                t.max = get.max.depth(distances)
+
+                if(is.phylo(distances)){
+                    dist.original = unname(cophenetic(rescale(distances, 'EB', 0)))/2
+                }else{
+                    dist.original = distances
+                }
+                Eta = sample_mcmc(param$eta, length(param$eta), size)
+            }else{
+                t.max = lapply(distances, get.max.depth)
+                
+                dist.original = lapply(distances,
+                                       function(r)
+                                           if(is.phylo(r))
+                                               cophenetic(rescale(r, 'EB', 0))/2
+                                           else
+                                               r
+                                       )
+                
+                Eta = sample_mcmc(param$eta, length(param$eta[1,]), size)
+                dist.weights = sample_mcmc(param$dist.weights, length(param$dist.weights[1,]), size)
+            }
+        } else Eta = 1
+        
         if(grepl('dist', MODEL)) {
             Y = W = 1
         }else{
@@ -45,11 +70,6 @@ sample_parameter <-
             }else
                 constant_distance = param$distance
         }
-        if(grepl('(dist|full)', MODEL)){
-            Eta = sample_mcmc(param$eta, length(param$eta), size)
-        }else Eta = 1
-
-        
         zeroZ = which(Z>0)
         P <- 0
         for(s in 1:size){
@@ -58,19 +78,34 @@ sample_parameter <-
             if(grepl('(aff|full)', MODEL)){
                 YW = outer(Y[,s], W[,s]) * constant_distance
             } else YW = 1
+            
             ## Full or distance model
             ## Creating distance
             if(grepl('(full|dist)', MODEL)){
-                distance = 1/EB.distance(dist.original, t.max, Eta[s])
-                diag(distance)<-0
-                distance = distance %*% Z
-                distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
+                if(num.dist ==1){
+                    ea = sign(Eta[s])*min(abs(Eta[s]), 600)
+                    distance = 1/EB.distance(dist.original, t.max, ea)
+                    diag(distance)<-0
+                    distance = distance %*% Z
+                    distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
+                }else{
+                    
+                    aa = lapply(1:num.dist, function(i){
+                        ea = sign(Eta[i,s])*min(abs(Eta[i,s]), 600)
+                        EB.distance(dist.original[[i]], t.max[[i]], ea)
+                    })
+                    dist = 1/matrix(matrix(unlist(aa), ny*ny, num.dist) %*% dist.weights[, s], ny, ny)
+                    diag(dist)<-0
+                    distance = dist %*% Z
+                    distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
+                }
             } else distance = 1
             ## models
             ## P = 1-exp(-outer(Y, W))                 # affinity model
             ## P = 1-exp(-distance)                    # distance model
             ## P = 1-exp(-YW*distance)                 # full model
             ## All in one probability matrix
+            
             if(!is.null(weights)){
                 a =  1-  exp(-YW*distance)
                 Pg = a * weights[s] /(1-a + weights[s] * a)
@@ -80,9 +115,11 @@ sample_parameter <-
                 P = P + 1-  exp(-YW*distance)
             }
         }
+
         ## })
         P = matrix(P/size, nrow = nrow(Z), ncol = ncol(Z))
         colnames(P)<-colnames(Z)
         rownames(P)<-rownames(Z)
         P
-}
+    }
+
