@@ -2,46 +2,29 @@
 % Please edit documentation in R/network_clean.R
 \name{network_clean}
 \alias{network_clean}
-\title{A function to clean the network and tree:}
+\title{A function to clean the network given multiple pairwise distance matrices or phylo tree}
 \usage{
 network_clean(
   Z,
-  tree = NULL,
+  distances,
   model.type = c("full", "distance", "affinity"),
-  normalize.tree = TRUE
+  normalize = TRUE
 )
 }
 \arguments{
 \item{Z}{bipartite interaction matrix. Rows should correspond to species in the tree. There should be no empty columns.}
 
-\item{tree}{'phylo' object, or an symmetric non-negative matrix of pairwise distance between the rows of Z}
+\item{distances}{a single object or a list of phylo objects and symmetric non-negative matrix of pairwise distance between the rows of Z}
 
 \item{model.type}{Indicates the model to use: one of 'full', 'distance', 'affinity'}
 
-\item{normalize.tree}{logical whether to normalize the \code{tree} by maximum distance. (Default is TRUE).}
+\item{normalize}{logical whether to normalize the \code{distances} by maximum distance. (Default and recommended is TRUE).}
 }
 \value{
-Returns a list of the cleaned Z and tree objects
+Returns a list of the cleaned Z and and list of ordered distances
 }
 \description{
-- converts Z to binary
-- removes empty columns from Z
-- confirms tree is a phylo object when using full or distance models
-- removes tree tips that do not exist in the rows of Z
-- removes the rows of Z with no corresponding tips in the tree
+- excutes \code{network_clean_single} on Z and every passed pairwise distance
+- finds intersection species between all distances/phyo trees and keeps only the intersection
 - orders the rows of Z according to the cophenetic function
-}
-\examples{
-
-# Simluate a tree and Z matrix
-\dontrun{
-tree <- rcoal(50)
-Z <- matrix(rbinom(50*200, 1, 0.01), nrow=50, ncol=200)
-Z <- Z[,colSums(Z)>0]
-rownames(Z) <- tree$tip.label
-
-# Clean the network and tree
-out <- network_clean(Z, tree, model='full')
-str(out)
-}
 }

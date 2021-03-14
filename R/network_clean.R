@@ -93,6 +93,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normali
             print('normalizing tree edges by the maximum pairwise distance!')
             tree$edge.length = tree$edge.length/(max(aux)/2)
         }
+        tree = cophenetic(tree)/2
     }else{                              ## distance tree
         ## testing that all tips exist in Z
         if(!all(rownames(tree) %in% rownames(Z))){
@@ -155,7 +156,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normali
 #' @export
 #' 
 network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affinity'), normalize=TRUE){    
-    
+
     require(geiger)
     require(phangorn)
     require(Matrix)
@@ -222,11 +223,11 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
     
     ## ordering all quantities based on the phylo tree if possible,
     ## Ordering all distances and rows of Z
-    order_dist <-function(d, names, twosides = TRUE) {
+    order_dist <-function(d, names1, twosides = TRUE) {
         ## we order everything based on the phylo distnace
         #+ TODO: how to order the phylo as well based on list of names
         if(!is.phylo(d)){
-            aux = which(rownames(d) %in% names)
+            aux = pmatch(names1, rownames(d))
             if(twosides)
                 return (d[aux,aux])
             else return(d[aux,])

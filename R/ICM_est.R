@@ -28,7 +28,8 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     w0<-matrix(w, nrow= nw, ncol =slices+1)
     g0<-rep(0, slices+1)
     peta = rep(eta, slices)
-
+    N = outer(rowSums(Z), colSums(Z))
+    
     ## inner loop
     subItra = ny 
     g0in = rep(0, subItra+1)
