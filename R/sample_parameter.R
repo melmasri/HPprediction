@@ -36,25 +36,10 @@ sample_parameter <-
         
         if(grepl('(dist|full)', MODEL)){
             if(num.dist==1){
-                t.max = get.max.depth(distances)
-
-                if(is.phylo(distances)){
-                    dist.original = unname(cophenetic(rescale(distances, 'EB', 0)))/2
-                }else{
-                    dist.original = distances
-                }
+                dist.original = distances_metadata(distances)
                 Eta = sample_mcmc(param$eta, length(param$eta), size)
             }else{
-                t.max = lapply(distances, get.max.depth)
-                
-                dist.original = lapply(distances,
-                                       function(r)
-                                           if(is.phylo(r))
-                                               cophenetic(rescale(r, 'EB', 0))/2
-                                           else
-                                               r
-                                       )
-                
+                dist.original = distances_metadata(distances)
                 Eta = sample_mcmc(param$eta, length(param$eta[1,]), size)
                 dist.weights = sample_mcmc(param$dist.weights, length(param$dist.weights[1,]), size)
             }
@@ -83,18 +68,25 @@ sample_parameter <-
             ## Creating distance
             if(grepl('(full|dist)', MODEL)){
                 if(num.dist ==1){
-                    ea = sign(Eta[s])*min(abs(Eta[s]), 600)
-                    distance = 1/EB.distance(dist.original, t.max, ea)
+                    ea = Eta[s]
+                    ##ea = sign(Eta[s])*min(abs(Eta[s]), 600)
+                                       
+                    distance = dist.original$kernel_func(dist = dist.original$dist,
+                                                         tmax=dist.original$t.max,
+                                                         eta=ea)
                     diag(distance)<-0
                     distance = distance %*% Z
                     distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
                 }else{
-                    
                     aa = lapply(1:num.dist, function(i){
-                        ea = sign(Eta[i,s])*min(abs(Eta[i,s]), 600)
-                        EB.distance(dist.original[[i]], t.max[[i]], ea)
+                        ea =Eta[i,s]
+                        a = dist.original[[i]]$kernel_func(
+                                                   dist = dist.original[[i]]$dist,
+                                                   tmax = dist.original[[i]]$t.max,
+                                                   eta=ea)
+                        a
                     })
-                    dist = 1/matrix(matrix(unlist(aa), ny*ny, num.dist) %*% dist.weights[, s], ny, ny)
+                    dist = matrix(matrix(unlist(aa), ny*ny, num.dist) %*% dist.weights[, s], ny, ny)
                     diag(dist)<-0
                     distance = dist %*% Z
                     distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1

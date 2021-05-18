@@ -30,12 +30,21 @@
 #' @export
 #' 
 network_clean_single <-
-function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normalize=TRUE){    
+function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normalize=TRUE, ...){    
     
     require(geiger)
     require(phangorn)
     require(Matrix)
 
+    if(is.list(tree) && 'kernel' %in% names(tree)){
+        kernel = tree$kernel
+        tree  = tree$dist
+    }else{
+        warning("no kernel is passed, assigning default kernel (EB)!, to assign a kernel pass a list(dist=tree, kernel='kernel_name'), or a list of lists of this form", immediate. = TRUE, call.= FALSE)
+        kernel = 'EB'
+        tree = tree
+        print('going in')
+    }
     model.type= tolower(model.type[1])
 
     ## General warnings are checks
@@ -137,7 +146,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normali
             stop('minimum distance is negative!, input must be non-negative')
         }
     }
-    list(Z = Z, distances = tree)
+    list(Z = Z, distances = tree, kernel = kernel)
 }
 
 #' A function to clean the network given multiple pairwise distance matrices or phylo tree
@@ -155,7 +164,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normali
 #'
 #' @export
 #' 
-network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affinity'), normalize=TRUE){    
+network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affinity'), normalize=TRUE, ...){    
 
     require(geiger)
     require(phangorn)
@@ -163,16 +172,18 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
     
     model.type= tolower(model.type[1])
     ## General warnings are checks
-    if(is.list(distances) & !is.phylo(distances)){
-        objs = lapply(distances, function(r) network_clean_single(Z, r, model.type, normalize))
+    if(is.list(distances) && is.null(distances$kernel)){
+        objs = lapply(distances, function(r)
+            network_clean_single(Z, r, model.type, normalize))
     }else{
         obj = network_clean_single(Z, distances, model.type, normalize)
+        obj$num.distances <- 1
         return (obj)
     }
     
     extract_names<-function(x) if(is.phylo(x)) x$tip.label else rownames(x)
 
-    all.names = lapply(objs, function(r) extract_names(r$distances))
+    all.names = lapply(objs, function(r) extract_names(r$distance))
     intersect.names = names(which(table(unlist(all.names)) == length(all.names)))
 
     remove_tips<-function(dist, names){
@@ -197,14 +208,14 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
                 
                 if(normalize){
                     print('normalizing distance edges by the maximum pairwise distance!')
-                    dist = dist/max(dist)
+                    dist = dist/(max(dist) + 1e-5)
                 }
             }
         }
         return(dist)
     }
     ## keeping only intersection rows/hosts and normalizing
-    distances = lapply(objs, function(r) remove_tips(r$distances, intersect.names))
+    distances = lapply(objs, function(r) list(distance = remove_tips(r$distance, intersect.names), kernel = r$kernel))
     
     ## keeping only species names in the intersection in Z 
     Z = objs[[1]]$Z
@@ -235,11 +246,11 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
         return(d)
     }
     ## finding a ordering
-    order.names = unlist(sapply(distances, function(r) if(is.phylo(r)) rownames(cophenetic(r))))
+    order.names = unlist(sapply(distances, function(r) if(is.phylo(r$dist)) rownames(cophenetic(r$dist))))
     if(is.null(order.names)) order.names = intersect.names
     
-    distances.ordered = lapply(distances, function(r) order_dist(r, order.names))
+    distances.ordered = lapply(distances, function(r) list(distance = order_dist(r$dist, order.names), kernel = r$kernel))
     Z   = order_dist(Z, order.names, FALSE)
     
-    list(Z = Z, distances = distances.ordered)
+    list(Z = Z, distances = distances.ordered, num.distances = length(distances.ordered))
 }

@@ -71,10 +71,11 @@ network_est <-
         if(slices==0)  stop('no. of slices cannot be 0!')
         
         
+        
         cleaned = network_clean(Z, distances, model.type)
         Z = cleaned$Z
         distances = cleaned$distances
-        num.distances = 1
+        num.distances = cleaned$num.distances
         ## For affinity-only model 
         if(grepl('aff', model.type)){
             ## sparse option is not used for affinity
@@ -86,31 +87,49 @@ network_est <-
         el <-list(...)
         if(grepl('(dist|full)', model.type)){
             if(is.null(el$experimental.ICM)){
-                num.distances = if(is.list(distances) &!is.phylo(distances)) length(distances) else 1
                 ## Running the MCMC
                 if(num.distances  > 1){
-                       print(paste0('Running multiple distances',
+                       print(paste0('Running multiple distances - ',
                                  ifelse(grepl('dist', model.type),
                                         'distance model...', 'full model...')))
                        
-                    param  = ICM_est_multidistance(unname(Z),distances,slices, distOnly = grepl('dist', model.type),
-                                                   uncertainty = uncertainty, sparse=sparse, ...)
+                       param  = ICM_est_multidistance(unname(Z),
+                                                      distances,
+                                                      slices,
+                                                      distOnly = grepl('dist',
+                                                                       model.type),
+                                                      uncertainty=uncertainty,
+                                                      sparse=sparse, ...)
                        
                 }else{
+                    distances = list(dist = cleaned$distances,
+                                     kernel = cleaned$kernel)
                 ## Running the MCMC
                     print(paste0('Running ',
                                  ifelse(grepl('dist', model.type),
                                         'distance model...', 'full model...')))
-                    param  = ICM_est(unname(Z),distances,slices, distOnly = grepl('dist', model.type),
-                                     uncertainty = uncertainty, sparse=sparse, ...)
+                    param  = ICM_est(unname(Z),
+                                     distances,
+                                     slices,
+                                     distOnly = grepl('dist', model.type),
+                                     uncertainty = uncertainty,
+                                     sparse=sparse, ...)
                 }
             }else{
                 warning('Running an experimental ICM procedure!', immediate. = TRUE, call.= FALSE)
                 param  = ICM_est_over_acc(unname(Z),
-                                          distances, slices, distOnly = grepl('dist', model.type),
-                                          uncertainty = uncertainty, sparse=sparse, ...)
+                                          distances,
+                                          slices,
+                                          distOnly = grepl('dist', model.type),
+                                          uncertainty = uncertainty,
+                                          sparse=sparse, ...)
                 
             }
         }
-        list(param=param , Z = Z, distances=distances, slices = slices, model.type = model.type, num.distances = num.distances)
+        list(param=param,
+             Z = Z,
+             distances=distances,
+             slices = slices,
+             model.type = model.type,
+             num.distances = num.distances)
     }

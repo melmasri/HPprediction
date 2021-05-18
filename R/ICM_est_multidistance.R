@@ -13,11 +13,10 @@ ICM_est_multidistance <-function(Z,
     
     ## number of distances
     num.dist = length(distances)
-    
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
-    tol.err = 1e-4
+    tol.err = 1e-8
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
@@ -26,12 +25,12 @@ ICM_est_multidistance <-function(Z,
     b_y = if(!is.null(el$b_y)) el$b_y else 1
     y_sd = if(is.null(el$y_sd)) rep(0.2, ny) else el$y_sd
     w_sd = if(is.null(el$w_sd)) rep(0.2, nw) else el$w_sd
-    eta = if(is.null(el$eta)) rep(0, num.dist) else el$eta
-    eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.005
+    eta = if(is.null(el$eta)) rep(0.1, num.dist) else el$eta
+    eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.1
     dist.weights  = if(!is.null(el$dist.weights)) el$dist.weights else  rep(1, num.dist)/num.dist
     weights_sd = if(is.null(el$weights_sd)) 0.2 else el$weights_sd[1]
     weights_hyper = if(is.null(el$weights_hyper)) 10*rep(1, num.dist)/num.dist else sum(el$weights_hyper)*rep(1, num.dist)/num.dist
-
+    
     if(length(eta)!=num.dist) eta = rep(eta[1], num.dist)
     if(length(eta_sd) != num.dist) eta_sd = rep(eta_sd[1], num.dist)
     if(length(dist.weights)!=num.dist || sum(dist.weights)!=1){
@@ -62,77 +61,58 @@ ICM_est_multidistance <-function(Z,
     y0.last = if(length(y)==1) rep(y, ny) else y
     peta.new = peta.count = peta.sum =numeric(num.dist)
     peta.last = eta
-
+    
     dist.weights.count =  dist.weights.sum = 0
     dist.weights.new = dist.weights.last = dist.weights
     dist.weights = matrix(0, nrow = num.dist, ncol = slices +1)
     dist.weights[,1] <-dist.weights.new
-
     ## indexing the upper and lower triangular of the matrix
     lowerIndex = lower.tri.Index(ny)
     upperIndex = upper.tri.Index(ny)
     dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
     ## tree.ht = arrange.tree(tree)
+    dist.original = distances_metadata(distances)
 
-    t.max = lapply(distances, get.max.depth)
-    ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
-    
-    dist.original = lapply(distances,
-                           function(r)
-                               if(is.phylo(r))
-                                   unname(cophenetic(rescale(r, 'EB', 0))/2)
-                               else
-                                   unname(r)
-                           )
-    
     ## special variables
     Z00 = Z==0
     Z0 <- which(Z==0)
 	mc <- colSums(Z)
 	mr <- rowSums(Z)
 
-    transform_dist <-function(d, tm, eta){
+    get_dist <-function(d, eta){
         aa = lapply(1:num.dist, function(i){
-            a = 1/(EB.distance(d[[i]], tm[[i]], eta[i]))
-            diag(a) <-0
-            a
+            d[[i]]$kernel_func(dist = d[[i]]$dist,
+                               eta = eta[i],
+                               tmax = d[[i]]$t.max)
         })
         aa
     }
-    
-    transform_dist.inv <-function(d, tm, eta){
-        aa = lapply(1:num.dist, function(i){
-            EB.distance(d[[i]], tm[[i]], eta[i])
-        })
-        aa
+
+    combine_dist<-function(d, w){
+        a = matrix(unlist(d), ny*ny, num.dist)
+        b = matrix(a %*% w, ny, ny)
+        b
     }
-    
-    
-    ## dist.list.org = transform_dist(dist.original, t.max, peta[,1])
-    ## dist = matrix(matrix(unlist(dist.list.org),
-    ##                      ny*ny, num.dist) %*% dist.weights.last, ny, ny)
 
-    dist.list.org.inv = transform_dist.inv(dist.original, t.max, peta[,1])
-
-    dist.inv = 1/matrix(matrix(unlist(dist.list.org.inv),
-                               ny*ny, num.dist) %*% dist.weights.last, ny, ny)
+    dist.list.org.inv = get_dist(dist.original, peta[,1])
+    dist.inv = combine_dist(dist.list.org.inv, dist.weights.last)
+    
     diag(dist.inv) <- 0
-    
     sparseZ = Z
     if(sparse){
         ind <- which(Z==1, arr.ind=TRUE)
         sparseZ = sparseMatrix(ind[,1], j=ind[,2], x= rep(1, nrow(ind)),  dims=dim(Z))
     }
     ind <- seq.int(1, prod(dim(sparseZ)),  nrow(sparseZ))
-
+    
     ## pdist = dist%*%sparseZ
     pdist = dist.inv %*% sparseZ
     if(sparse)  pdist = as(pdist, 'matrix')
 
     pdist0 = apply(pdist, 1, function(r) which(r==0))
     if(length(pdist0) && length(pdist0)!=ny) stop('pdist0 error')
-
+    
     pdist00 = which(pdist == 0)
     
     ## starting the loop
@@ -146,23 +126,21 @@ ICM_est_multidistance <-function(Z,
                 if(!is.null(el$backup))
                     save(y0,w0,peta,g0, file='snapshot.RData')
             }
-            
             ## Updating the tee
             ## dist.list = transform_dist(dist.original, t.max, peta[,s])
             ## dist = matrix(matrix(unlist(dist.list), ny*ny, num.dist) %*% dist.weights, ny, ny)
             ## pdist = dist %*%sparseZ
             ## pdist.list = lapply(dist.list, function(r) if(sparse) as(r %*% sparseZ, 'matrix') else r %*% sparseZ)
-            
-            dist.list.inv = transform_dist.inv(dist.original, t.max, peta[,s])
-            dist.inv = 1/matrix(matrix(unlist(dist.list.inv),
-                                       ny*ny, num.dist) %*% dist.weights.last, ny, ny)
+            dist.list.inv = get_dist(dist.original, peta[,s])
+            ##dist.inv = 1/exp(matrix(matrix(unlist(dist.list.inv),ny*ny, num.dist) %*% dist.weights.last, ny, ny))
+            dist.inv =  combine_dist(dist.list.inv, dist.weights.last)
             diag(dist.inv) <-0
             pdist = dist.inv %*%sparseZ
 
-            pdist.list = lapply(dist.list.inv,
-                                function(r)
-                                    if(sparse) as(r %*% sparseZ, 'matrix')
-                                    else r %*% sparseZ)
+            ## pdist.list = lapply(dist.list.inv,
+            ##                     function(r)
+            ##                         if(sparse) as(r %*% sparseZ, 'matrix')
+            ## else r %*% sparseZ)
             ## conversion takes less time then extraction/insertion from dgMatrix class
             if(sparse) pdist = as(pdist, 'matrix')
             
@@ -194,36 +172,32 @@ ICM_est_multidistance <-function(Z,
                     y0.count = y0.count + 1*(abs(y0.new-y0.last) > tol.err)
                     y0.sum = y0.sum + y0.new
                     y0.last = y0.new
-                    
                 }
-                
                 ## Updating similarity matix parameter
                 ywU =  if(distOnly) U0[i,]  else  y0.new[i]*(w0.new*U0[i,])
-                new.eta = rEta.EB.local.multi(peta.last,
-                                              pdist[i,],
-                                              if(length(pdist0)) pdist0[[i]] else NULL,
-                                              i,
-                                              sparseZ,
-                                              Z,
-                                              ywU,
-                                              eta_sd,
-                                              sparse,
-                                              dist.original,
-                                              t.max,
-                                              num.dist,
-                                              dist.weights.last,
-                                              dist.list.inv)
-                
+                new.eta = rEta.multi(peta.last,
+                                     pdist[i,],
+                                     if(length(pdist0)) pdist0[[i]] else NULL,
+                                     i,
+                                     sparseZ,
+                                     Z,
+                                     ywU,
+                                     eta_sd,
+                                     sparse,
+                                     dist.original,
+                                     num.dist,
+                                     dist.weights.last,
+                                     dist.list.inv)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new
                 peta.last = peta.new
-
+                
                 ## if(new.eta$change){
                 ##     pdist[i,] = new.eta$dist # very slow when using sparse assignment
                 ## }
-                #d.old = sapply(dist.list.inv, function(r) r[i,])
-                d.old = new.eta$dist
+                d.old = sapply(dist.list.inv, function(r) r[i,])
+                ## d.old = new.eta$dist
                 dist.w.new = rDist.weights(dist.weights.last,
                                            d.old,
                                            if(length(pdist0)) pdist0[[i]] else NULL,
@@ -236,23 +210,34 @@ ICM_est_multidistance <-function(Z,
                                            weights_hyper,
                                            sparse
                                            )
+                ##dist.weights.new = dist.weights.last
                 dist.weights.new = dist.w.new$weights
                 dist.weights.count = dist.weights.count + 1*(abs(dist.weights.new[1] - dist.weights.last[1]) >tol.err)
                 dist.weights.sum = dist.weights.sum + dist.weights.new
                 dist.weights.last = dist.weights.new
-                
+                ## if(i %%100 == 0 && s%%10==0){
+                ##     print(s)
+                ##     print(paste0('acceptance rate ', round(peta.count/i, 2)))
+                ##     print(paste('eta', round(new.eta$eta, 10)))
+                ##     print(paste('weights', round(dist.weights.new,4)))
+                ##     print(paste('eta_sd', round(eta_sd, 6)))
+                ## }
                 if(uncertainty){
                     g0in[i+1] = rg(Z[i,], l=U0[i,])
                 }
             }
-            
             ## MH Adaptiveness
-            # Parasite parameters (w)
+            ## Parasite parameters (w)
+            ## if(s <=burn.in){
             w_sd = w_sd*exp(beta*(w0.count/subItra-0.44)/log(1 +s))
             y_sd = y_sd*exp(beta*(y0.count/subItra-0.44)/log(1 +s))
             ## Tree scaling parameter (eta)
             eta_sd = eta_sd*exp(beta*(peta.count/subItra-0.44)/log(1 +s))
-            weights_sd = weights_sd * exp(beta*(dist.weights.count/subItra-0.44)/log(1 +s))
+            eta_sd = pmax(1e-2, eta_sd)
+            weights_sd = weights_sd *
+                exp(beta*(dist.weights.count/subItra-0.44)/log(1 +s))
+            peta.num.moves = 1
+            ##}
             
             if(!distOnly){
                 w0[,s+1] <- w0.sum/subItra
@@ -262,11 +247,10 @@ ICM_est_multidistance <-function(Z,
                 y0.new = y0.count = y0.sum=0
                 y0.last = y0[,s+1]
             }
-            
+
             peta[,s+1]<- peta.sum/subItra
             peta.new = peta.count = peta.sum =0
             peta.last = peta[,s+1]
-
             dist.weights[,s+1] <- dist.weights.sum/subItra
             dist.weights.new = dist.weights.count = dist.weights.sum =0
             dist.weights.last = dist.weights[,s+1]
@@ -281,8 +265,8 @@ ICM_est_multidistance <-function(Z,
         error =function(e)
             {print(c('error at (s,i):', c(s,i))); print(e);traceback()} ,
         finally = print("Done!"))
-
     if(burn.in==0) burn.in = 1 else burn.in = 1:(burn.in+1)
+
     if(!distOnly){
         y0 =  y0[,-burn.in]
         w0 =  w0[,-burn.in]
@@ -293,11 +277,10 @@ ICM_est_multidistance <-function(Z,
     ## plot(1:5001, peta[2,], type = 'l')
     ## mean(peta[2,])
     ## sd(peta[2,])
-
+    
     peta = peta[,-burn.in]
     dist.weights = dist.weights[, -burn.in]
     if(uncertainty)  g0 = g0[-burn.in] else g0 = NULL
-
     list(w = w0, y = y0, eta = peta, g = g0,
          burn.in = max(burn.in)-1,
          sd = list(w=if(distOnly) NULL else w_sd,
@@ -305,4 +288,5 @@ ICM_est_multidistance <-function(Z,
                    eta= eta_sd,
                    weights = weights_sd),
          dist.weights = dist.weights)
+    
 }
