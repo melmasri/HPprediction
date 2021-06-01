@@ -71,9 +71,10 @@ sample_parameter <-
                     ea = Eta[s]
                     ##ea = sign(Eta[s])*min(abs(Eta[s]), 600)
                                        
-                    distance = dist.original$kernel_func(dist = dist.original$dist,
-                                                         tmax=dist.original$t.max,
-                                                         eta=ea)
+                    distance = 1/dist.original$kernel_func(dist = dist.original$dist,
+                                                           tmax=dist.original$t.max,
+                                                           eta=ea,
+                                                           param=dist.original$param)
                     diag(distance)<-0
                     distance = distance %*% Z
                     distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1
@@ -83,10 +84,11 @@ sample_parameter <-
                         a = dist.original[[i]]$kernel_func(
                                                    dist = dist.original[[i]]$dist,
                                                    tmax = dist.original[[i]]$t.max,
-                                                   eta=ea)
+                                                   eta=ea,
+                                                   param=dist.original[[i]]$param)
                         a
                     })
-                    dist = matrix(matrix(unlist(aa), ny*ny, num.dist) %*% dist.weights[, s], ny, ny)
+                    dist = 1/matrix(matrix(unlist(aa), ny*ny, num.dist) %*% dist.weights[, s], ny, ny)
                     diag(dist)<-0
                     distance = dist %*% Z
                     distance[distance==0] <- if(grepl('dist', MODEL)) Inf else 1

@@ -14,7 +14,6 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     kernel_func =meta$kernel_func
     t.max = meta$t.max
 
-
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
@@ -67,7 +66,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     else
         dist.original = tree
     ##dist = 1/kernel_func(dist = dist.original, tmax = t.max, eta = peta[1])
-    dist = kernel_func(dist = dist.original, tmax = t.max, eta = peta[1])
+    dist = 1/kernel_func(dist = dist.original, tmax = t.max, eta = peta[1])
     diag(dist)<-0
     sparseZ = Z
     if(sparse){
@@ -93,7 +92,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
             }
             
             ## Updating the tee
-            dist = kernel_func(dist = dist.original, tmax = t.max, eta=peta[s])
+            dist = 1/kernel_func(dist = dist.original, tmax = t.max, eta=peta[s])
             diag(dist)<-0
             
             pdist = dist%*%sparseZ
@@ -138,7 +137,8 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
                                dist.original,
                                t.max,
                                kernel_func,
-                               kernel_name)
+                               kernel_name,
+                               meta)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new

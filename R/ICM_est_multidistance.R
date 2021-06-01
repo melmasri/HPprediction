@@ -84,14 +84,15 @@ ICM_est_multidistance <-function(Z,
         aa = lapply(1:num.dist, function(i){
             d[[i]]$kernel_func(dist = d[[i]]$dist,
                                eta = eta[i],
-                               tmax = d[[i]]$t.max)
+                               tmax = d[[i]]$t.max,
+                               param = d[[i]]$param)
         })
         aa
     }
 
     combine_dist<-function(d, w){
         a = matrix(unlist(d), ny*ny, num.dist)
-        b = matrix(a %*% w, ny, ny)
+        b = 1/matrix(a %*% w, ny, ny)
         b
     }
 

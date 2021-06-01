@@ -5,6 +5,6 @@ function(dist, tmax, eta, ...){
     }else{ 
         a = (2/eta)*exp(eta*tmax)*(1-exp(-eta*dist))
     }
-    1/a
+    a
     #0 * a
 }

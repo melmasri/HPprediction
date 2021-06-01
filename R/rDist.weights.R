@@ -26,10 +26,10 @@ rDist.weights <-function(weights.old,
         epsilon = weights_sd * rnorm(num.dist)
         w.prop = weights.old * exp(epsilon)/sum(weights.old * exp(epsilon))
 
-        pd.old = c(dist.list %*% weights.old)
+        pd.old = c(1/(dist.list %*% weights.old))
         pd.old[i] <-0
         pdist.old = if(sparse) (pd.old %*% sZ)@x else pd.old %*% sZ
-        pd = c(dist.list %*% w.prop)
+        pd = c(1/(dist.list %*% w.prop))
         pd[i] <-0
         pdist.new = if(sparse) (pd %*% sZ)@x else pd %*%sZ
         

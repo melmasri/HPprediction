@@ -103,7 +103,8 @@ network_est <-
                        
                 }else{
                     distances = list(dist = cleaned$distances,
-                                     kernel = cleaned$kernel)
+                                     kernel = cleaned$kernel,
+                                     param = cleaned$param)
                 ## Running the MCMC
                     print(paste0('Running ',
                                  ifelse(grepl('dist', model.type),

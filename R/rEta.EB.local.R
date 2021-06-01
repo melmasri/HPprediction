@@ -11,7 +11,8 @@ rEta <-function(eta.old,
                 dist.org,
                 tmax,
                 kernel_func,
-                kernel_name){
+                kernel_name,
+                ...){
     ## a faster version of rEta using faster cophenetic and sparse matrices
     change = FALSE
     if(length(no0) && length(no0)==sum(Z[i,])){
@@ -20,7 +21,10 @@ rEta <-function(eta.old,
         eta.prop = eta.old + eta_sd*rnorm(1)
         
         if(kernel_name =='radial' && eta.prop<=0) eta.prop = -eta.prop
-        dist0 = kernel_func(dist=dist.org[i,],tmax=tmax,eta=eta.prop)
+        dist0 = 1/kernel_func(dist=dist.org[i,],
+                              tmax=tmax,
+                              eta=eta.prop,
+                              param=...$param)
         dist0[i]<-0
         pdist.new = dist0%*%sZ
         if(sparse)
@@ -87,7 +91,12 @@ rEta.multi <-function(eta.old,
         dd = dist.org[[j]]$dist[i,]
         tmax = dist.org[[j]]$t.max
         kernel_name = dist.org[[j]]$kernel
-        a = kernel_func(dist=dd, eta = eta.prop[j], tmax = tmax)
+        param = dist.org[[j]]$param
+        a = kernel_func(dist=dd,
+                        eta=eta.prop[j],
+                        tmax=tmax,
+                        param=param
+                        )
         a
     })
     d.old = sapply(dist.list, function(r)  r[i,])
@@ -100,7 +109,7 @@ rEta.multi <-function(eta.old,
        ##  a <- d.old
         a[,j] <- d[,j]
         is_diff =sum(abs(d[,j] - d.old[,j])[-no0], na.rm = TRUE) > 1e-8
-        pd = c(a%*% weights)
+        pd = c(1/(a%*%weights))
         pd[i] <- 0
         pdist.new = if(sparse) (pd %*% sZ)@x else pd %*%sZ
         if(length(no0)){

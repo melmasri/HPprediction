@@ -38,12 +38,13 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normali
 
     if(is.list(tree) && 'kernel' %in% names(tree)){
         kernel = tree$kernel
+        param = if('param' %in% names(tree)) tree$param else NULL
         tree  = tree$dist
     }else{
         warning("no kernel is passed, assigning default kernel (EB)!, to assign a kernel pass a list(dist=tree, kernel='kernel_name'), or a list of lists of this form", immediate. = TRUE, call.= FALSE)
         kernel = 'EB'
         tree = tree
-        print('going in')
+        param = NULL
     }
     model.type= tolower(model.type[1])
 
@@ -146,7 +147,7 @@ function(Z, tree = NULL, model.type = c('full', 'distance', 'affinity'), normali
             stop('minimum distance is negative!, input must be non-negative')
         }
     }
-    list(Z = Z, distances = tree, kernel = kernel)
+    list(Z=Z, distances=tree, kernel=kernel, param=param)
 }
 
 #' A function to clean the network given multiple pairwise distance matrices or phylo tree
@@ -215,7 +216,10 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
         return(dist)
     }
     ## keeping only intersection rows/hosts and normalizing
-    distances = lapply(objs, function(r) list(distance = remove_tips(r$distance, intersect.names), kernel = r$kernel))
+    distances = lapply(objs, function(r)
+        list(distance = remove_tips(r$distance, intersect.names),
+             kernel = r$kernel,
+             param = r$param))
     
     ## keeping only species names in the intersection in Z 
     Z = objs[[1]]$Z
@@ -246,11 +250,17 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
         return(d)
     }
     ## finding a ordering
-    order.names = unlist(sapply(distances, function(r) if(is.phylo(r$dist)) rownames(cophenetic(r$dist))))
+    order.names = unlist(sapply(distances, function(r)
+        if(is.phylo(r$dist)) rownames(cophenetic(r$dist))))
     if(is.null(order.names)) order.names = intersect.names
     
-    distances.ordered = lapply(distances, function(r) list(distance = order_dist(r$dist, order.names), kernel = r$kernel))
+    distances.ordered = lapply(distances, function(r)
+        list(distance = order_dist(r$dist, order.names),
+             kernel = r$kernel,
+             param = if(!is.null(r$param)) r$param else NULL ))
     Z   = order_dist(Z, order.names, FALSE)
     
-    list(Z = Z, distances = distances.ordered, num.distances = length(distances.ordered))
+    list(Z = Z,
+         distances = distances.ordered,
+         num.distances = length(distances.ordered))
 }
