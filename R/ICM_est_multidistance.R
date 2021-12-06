@@ -11,9 +11,14 @@ ICM_est_multidistance <-function(Z,
     ## loading extra args
     el <-list(...)
 
-    SAMPLE_DISTANCE_WEIGHTS = if(!is.null(el$sample_distance_weights)) TRUE else FALSE
+
     ## number of distances
     num.dist = length(distances)
+
+    ## which distance to sample
+    SAMPLE_DISTANCE_WEIGHTS = if(!is.null(el$sample_distance_weights)) TRUE else FALSE
+    SAMPLE_DISTANCE = if(!is.null(el$sample_distance)) el$sample_distance else rep(TRUE, num.dist)
+                                                                              
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
@@ -189,7 +194,8 @@ ICM_est_multidistance <-function(Z,
                                      dist.original,
                                      num.dist,
                                      dist.weights.last,
-                                     dist.list.inv)
+                                     dist.list.inv,
+                                     SAMPLE_DISTANCE)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new

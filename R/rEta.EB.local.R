@@ -71,7 +71,8 @@ rEta.multi <-function(eta.old,
                       dist.org,
                       num.dist,
                       weights,
-                      dist.list){
+                      dist.list,
+                      SAMPLE_DISTANCE){
     ## a faster version of rEta using faster cophenetic and sparse matrices
     if(length(no0) && length(no0)==sum(Z[i,]))
         return(list (eta=eta.old,
@@ -106,24 +107,31 @@ rEta.multi <-function(eta.old,
     a <- d.old
     pdist.last = pdist.old
     for (j in ord){
-       ##  a <- d.old
-        a[,j] <- d[,j]
-        is_diff =sum(abs(d[,j] - d.old[,j])[-no0], na.rm = TRUE) > 1e-8
-        pd = c(1/(a%*%weights))
-        pd[i] <- 0
-        pdist.new = if(sparse) (pd %*% sZ)@x else pd %*%sZ
-        if(length(no0)){
-            likeli = sum(((log(pdist.new)- log(pdist.last))*Z[i,])[-no0])-
-                sum((ywU*(pdist.new - pdist.last))[-no0])
-        }else{
-            likeli = sum((log(pdist.new)- log(pdist.last))*Z[i,])-
-                sum(ywU*(pdist.new - pdist.last))
-        }
-        if(is_diff && !is.na(likeli) && runif(1)<= min(1, exp(likeli))){
-            res[[k]] <- list(eta  = eta.prop[j],
-                             dist = d[,j],
-                             change=TRUE)                             
-            pdist.last = pdist.new
+        ##  a <- d.old
+        if(SAMPLE_DISTANCE[j]){
+            a[,j] <- d[,j]
+            is_diff =sum(abs(d[,j] - d.old[,j])[-no0], na.rm = TRUE) > 1e-8
+            pd = c(1/(a%*%weights))
+            pd[i] <- 0
+            pdist.new = if(sparse) (pd %*% sZ)@x else pd %*%sZ
+            if(length(no0)){
+                likeli = sum(((log(pdist.new)- log(pdist.last))*Z[i,])[-no0])-
+                    sum((ywU*(pdist.new - pdist.last))[-no0])
+            }else{
+                likeli = sum((log(pdist.new)- log(pdist.last))*Z[i,])-
+                    sum(ywU*(pdist.new - pdist.last))
+            }
+            if(is_diff && !is.na(likeli) && runif(1)<= min(1, exp(likeli))){
+                res[[k]] <- list(eta  = eta.prop[j],
+                                 dist = d[,j],
+                                 change=TRUE)                             
+                pdist.last = pdist.new
+            }else{
+                a[,j] <-d.old[,j]
+                res[[k]]<-list(eta=eta.old[j],
+                               dist=d.old[,j],
+                               change=FALSE)
+            }
         }else{
             a[,j] <-d.old[,j]
             res[[k]]<-list(eta=eta.old[j],
