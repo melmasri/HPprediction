@@ -8,7 +8,8 @@ network_clean(
   Z,
   distances,
   model.type = c("full", "distance", "affinity"),
-  normalize = TRUE
+  normalize = TRUE,
+  ...
 )
 }
 \arguments{
