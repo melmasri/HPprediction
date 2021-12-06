@@ -14,6 +14,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     kernel_func =meta$kernel_func
     t.max = meta$t.max
 
+    
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
@@ -22,7 +23,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     b_y = if(!is.null(el$b_y)) el$b_y else 1
     y_sd = if(is.null(el$y_sd)) rep(0.2, ny) else el$y_sd
     w_sd = if(is.null(el$w_sd)) rep(0.2, nw) else el$w_sd
-    eta = if(is.null(el$eta)) 0.1 else el$eta
+    eta = if(is.null(meta$param$eta)) 0.1 else meta$param$eta
     eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.005
 
     ## Burn in set-up

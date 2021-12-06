@@ -25,6 +25,7 @@ rEta <-function(eta.old,
                               tmax=tmax,
                               eta=eta.prop,
                               param=...$param)
+        sample_eta = if(!is.null(...$param$sample_eta)) ...$param$sample_eta else TRUE
         dist0[i]<-0
         pdist.new = dist0%*%sZ
         if(sparse)
@@ -37,8 +38,8 @@ rEta <-function(eta.old,
                 sum(ywU*(pdist.new - pdist.old))
         }
     }
-    
-    if(!is.na(likeli) && runif(1)<= min(1, exp(likeli)))
+
+    if(!is.na(likeli) && runif(1)<= min(1, exp(likeli)) && sample_eta)
         { eta.old  = eta.prop; pdist.old = c(pdist.new);change=TRUE}
     
     list (eta=eta.old, dist=pdist.old, change=change)
@@ -71,8 +72,7 @@ rEta.multi <-function(eta.old,
                       dist.org,
                       num.dist,
                       weights,
-                      dist.list,
-                      SAMPLE_DISTANCE){
+                      dist.list){
     ## a faster version of rEta using faster cophenetic and sparse matrices
     if(length(no0) && length(no0)==sum(Z[i,]))
         return(list (eta=eta.old,
@@ -100,6 +100,11 @@ rEta.multi <-function(eta.old,
                         )
         a
     })
+
+    sample_dist = sapply(1:num.dist,function(j){
+        if(!is.null(dist.org[[j]]$param$sample_eta))
+            dist.org[[j]]$param$sample_eta else TRUE   
+    })
     d.old = sapply(dist.list, function(r)  r[i,])
     res = list()
     ord  = sample.int(num.dist,num.dist)
@@ -108,7 +113,7 @@ rEta.multi <-function(eta.old,
     pdist.last = pdist.old
     for (j in ord){
         ##  a <- d.old
-        if(SAMPLE_DISTANCE[j]){
+        if(sample_dist[j]){
             a[,j] <- d[,j]
             is_diff =sum(abs(d[,j] - d.old[,j])[-no0], na.rm = TRUE) > 1e-8
             pd = c(1/(a%*%weights))

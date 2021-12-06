@@ -219,7 +219,8 @@ network_clean <-function(Z, distances, model.type = c('full', 'distance', 'affin
     distances = lapply(objs, function(r)
         list(distance = remove_tips(r$distance, intersect.names),
              kernel = r$kernel,
-             param = r$param))
+             param = r$param
+             ))
     
     ## keeping only species names in the intersection in Z 
     Z = objs[[1]]$Z

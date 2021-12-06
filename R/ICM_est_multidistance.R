@@ -16,8 +16,7 @@ ICM_est_multidistance <-function(Z,
     num.dist = length(distances)
 
     ## which distance to sample
-    SAMPLE_DISTANCE_WEIGHTS = if(!is.null(el$sample_distance_weights)) TRUE else FALSE
-    SAMPLE_DISTANCE = if(!is.null(el$sample_distance)) el$sample_distance else rep(TRUE, num.dist)
+    SAMPLE_DISTANCE_WEIGHTS = if(!is.null(el$sample_distance_weights)) FALSE else TRUE
                                                                               
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
@@ -31,12 +30,16 @@ ICM_est_multidistance <-function(Z,
     b_y = if(!is.null(el$b_y)) el$b_y else 1
     y_sd = if(is.null(el$y_sd)) rep(0.2, ny) else el$y_sd
     w_sd = if(is.null(el$w_sd)) rep(0.2, nw) else el$w_sd
-    eta = if(is.null(el$eta)) rep(0.1, num.dist) else el$eta
+
     eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.1
     dist.weights  = if(!is.null(el$dist.weights)) el$dist.weights else  rep(1, num.dist)/num.dist
     weights_sd = if(is.null(el$weights_sd)) 0.2 else el$weights_sd[1]
     weights_hyper = if(is.null(el$weights_hyper)) 10*rep(1, num.dist)/num.dist else sum(el$weights_hyper)*rep(1, num.dist)/num.dist
-    
+
+    dist.original = distances_metadata(distances)
+    eta = unlist(lapply(dist.original, function(r)
+        if(!is.null(r$param$eta)) r$param$eta else 0.1))
+    print(eta)
     if(length(eta)!=num.dist) eta = rep(eta[1], num.dist)
     if(length(eta_sd) != num.dist) eta_sd = rep(eta_sd[1], num.dist)
     if(length(dist.weights)!=num.dist || sum(dist.weights)!=1){
@@ -44,7 +47,8 @@ ICM_est_multidistance <-function(Z,
                 immediate.= TRUE, call. = FALSE)
         dist.weights = rep(1, num.dist)/num.dist
     }
-
+   
+    
     ## Burn in set-up
     beta = if(!is.null(el$beta)) el$beta else 1
     burn.in = if(is.null(el$burn.in)) floor(0.5*slices) else floor(el$burn.in*slices)
@@ -78,7 +82,7 @@ ICM_est_multidistance <-function(Z,
     dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
     ## tree.ht = arrange.tree(tree)
-    dist.original = distances_metadata(distances)
+
 
     ## special variables
     Z00 = Z==0
@@ -194,8 +198,7 @@ ICM_est_multidistance <-function(Z,
                                      dist.original,
                                      num.dist,
                                      dist.weights.last,
-                                     dist.list.inv,
-                                     SAMPLE_DISTANCE)
+                                     dist.list.inv)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new
