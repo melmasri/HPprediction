@@ -10,7 +10,8 @@ ICM_est_multidistance <-function(Z,
     ## Main function for ICM, only applied is when distance input is used
     ## loading extra args
     el <-list(...)
-    
+
+    SAMPLE_DISTANCE_WEIGHTS = if(!is.null(el$sample_distance_weights)) TRUE else FALSE
     ## number of distances
     num.dist = length(distances)
     ## parameters set-up
@@ -64,8 +65,8 @@ ICM_est_multidistance <-function(Z,
     
     dist.weights.count =  dist.weights.sum = 0
     dist.weights.new = dist.weights.last = dist.weights
-    dist.weights = matrix(0, nrow = num.dist, ncol = slices +1)
-    dist.weights[,1] <-dist.weights.new
+    dist.weights = matrix(dist.weights.new, nrow = num.dist, ncol = slices +1)
+
     ## indexing the upper and lower triangular of the matrix
     lowerIndex = lower.tri.Index(ny)
     upperIndex = upper.tri.Index(ny)
@@ -199,23 +200,26 @@ ICM_est_multidistance <-function(Z,
                 ## }
                 d.old = sapply(dist.list.inv, function(r) r[i,])
                 ## d.old = new.eta$dist
-                dist.w.new = rDist.weights(dist.weights.last,
-                                           d.old,
-                                           if(length(pdist0)) pdist0[[i]] else NULL,
-                                           i,
-                                           sparseZ,
-                                           Z,
-                                           ywU,
-                                           weights_sd,
-                                           num.dist,
-                                           weights_hyper,
-                                           sparse
-                                           )
+                if(SAMPLE_DISTANCE_WEIGHTS)
+                    {
+                        dist.w.new = rDist.weights(dist.weights.last,
+                                                   d.old,
+                                                   if(length(pdist0)) pdist0[[i]] else NULL,
+                                                   i,
+                                                   sparseZ,
+                                                   Z,
+                                                   ywU,
+                                                   weights_sd,
+                                                   num.dist,
+                                                   weights_hyper,
+                                                   sparse
+                                                   )
                 ##dist.weights.new = dist.weights.last
-                dist.weights.new = dist.w.new$weights
-                dist.weights.count = dist.weights.count + 1*(abs(dist.weights.new[1] - dist.weights.last[1]) >tol.err)
-                dist.weights.sum = dist.weights.sum + dist.weights.new
-                dist.weights.last = dist.weights.new
+                        dist.weights.new = dist.w.new$weights
+                        dist.weights.count = dist.weights.count + 1*(abs(dist.weights.new[1] - dist.weights.last[1]) >tol.err)
+                        dist.weights.sum = dist.weights.sum + dist.weights.new
+                        dist.weights.last = dist.weights.new
+                    }
                 ## if(i %%100 == 0 && s%%10==0){
                 ##     print(s)
                 ##     print(paste0('acceptance rate ', round(peta.count/i, 2)))
@@ -235,8 +239,6 @@ ICM_est_multidistance <-function(Z,
             ## Tree scaling parameter (eta)
             eta_sd = eta_sd*exp(beta*(peta.count/subItra-0.44)/log(1 +s))
             eta_sd = pmax(1e-2, eta_sd)
-            weights_sd = weights_sd *
-                exp(beta*(dist.weights.count/subItra-0.44)/log(1 +s))
             peta.num.moves = 1
             ##}
             
@@ -252,9 +254,13 @@ ICM_est_multidistance <-function(Z,
             peta[,s+1]<- peta.sum/subItra
             peta.new = peta.count = peta.sum =0
             peta.last = peta[,s+1]
-            dist.weights[,s+1] <- dist.weights.sum/subItra
-            dist.weights.new = dist.weights.count = dist.weights.sum =0
-            dist.weights.last = dist.weights[,s+1]
+            if(SAMPLE_DISTANCE_WEIGHTS){
+                weights_sd = weights_sd *
+                    exp(beta*(dist.weights.count/subItra-0.44)/log(1 +s))
+                dist.weights[,s+1] <- dist.weights.sum/subItra
+                dist.weights.new = dist.weights.count = dist.weights.sum =0
+                dist.weights.last = dist.weights[,s+1]
+            }
             
             if(uncertainty){
                 g0[s+1] = sum(g0in[-1])/subItra
