@@ -1,5 +1,10 @@
 EB.distance <-
-function(dist, tmax, a){
-    if(a==0) return(2*dist)
-    (2/a)*exp(a*tmax)*(1-exp(-a*dist))
+function(dist, tmax, eta, ...){
+    if(eta==0){
+        a = 2*dist
+    }else{ 
+        a = (2/eta)*exp(eta*tmax)*(1-exp(-eta*dist))
+    }
+    a
+    #0 * a
 }

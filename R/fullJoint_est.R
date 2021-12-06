@@ -1,8 +1,8 @@
 fullJoint_est <-
-function(Z, iter = 10, uncertainty = FALSE, ...){
+function(Z, iter = 10, uncertainty = FALSE, distance = NULL, ...){
     ## loading extra args
     el <-list(...)
-
+    
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
@@ -25,8 +25,14 @@ function(Z, iter = 10, uncertainty = FALSE, ...){
     y0<-matrix(y, nrow= ny, ncol =iter+1)
     w0<-matrix(w, nrow= nw, ncol =iter+1)
     g0<-rep(0, iter+1)
-    peta = rep(0, iter+1)
-    
+
+    if(!is.null(el$constant_distance) & !is.null(distance)){
+        if(!isSymmetric(distance) & nrow(Z)!=nrow(distance))
+            stop('distance must be symmetrics with number of rows equal to the rows of Z!')
+        pdist = distance %*% Z
+    }else{
+        pdist = 1
+    }
     Z0 <-Z==0
 	mc <- colSums(Z)
 	mr <- rowSums(Z)
@@ -38,10 +44,10 @@ function(Z, iter = 10, uncertainty = FALSE, ...){
             if(s%%200==0){
                 print(sprintf('iteration %d, at %s', s, Sys.time()))
                 if(!is.null(el$backup))
-                    save(y0,w0,peta,g0, file='snapshot.RData')
+                    save(y0,w0,g0, file='snapshot.RData')
             }
             ## Updatting latent scores
-            U0 <- rExp(outer(y0[,s],w0[, s]))
+            U0 <- rExp(outer(y0[,s],w0[, s]) * pdist)
             U0[Z0] <- 1
             
             ## Updating the parasite parameters
@@ -76,6 +82,6 @@ function(Z, iter = 10, uncertainty = FALSE, ...){
     y0 =  y0[,-burn.in]
     w0 =  w0[,-burn.in]
     if(uncertainty)  g0 = g0[-burn.in] else g0 = NULL
-    list(w = w0, y = y0, g = g0, burn.in = max(burn.in)-1,
+    list(w = w0, y = y0, g = g0, burn.in = max(burn.in)-1, distance = pdist,
          sd = list(w=w_sd, y = y_sd))
 }

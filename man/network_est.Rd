@@ -6,7 +6,7 @@
 \usage{
 network_est(
   Z,
-  tree = NULL,
+  distances = NULL,
   slices = 10,
   model.type = c("full", "distance", "affinity"),
   uncertainty = FALSE,
@@ -17,7 +17,7 @@ network_est(
 \arguments{
 \item{Z}{bipartite interaction matrix}
 
-\item{tree}{'phylo' object representing rows of Z}
+\item{distances}{a 'phylo' object representing rows of Z, or a matrix of pairwise non-negative distances of rows of Z, or a list of such objects}
 
 \item{slices}{The total number of samples to take}
 
@@ -50,7 +50,7 @@ Parameter set-up
 `y_sd` is the standard deviation of the proposal distribution for the host affinity parameters (normal distribution with mean zero and standard deviation y_sd).
 `w_sd` is the standard deviation of the proposal distribution for the parasite affinity parameters (normal distribution with mean zero and standard deviation w_sd). 
 
-`eta` is the initial value for the tree scaling parameter eta ('distance' and 'full' models)
+`eta` is the initial value for the tree (or distance) scaling parameter eta ('distance' and 'full' models)
 `eta_sd` is the standard deviation of the proposal distribution for the eta parameter (normal distribution with mean zero and standard deviation eta_sd)
 
 Burn-in set-up

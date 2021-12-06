@@ -1,7 +1,7 @@
 #' A function to run an MCMC sampler based on the Iterative Conditional Modes (ICM) algorithm:
 #'
 #' @param Z bipartite interaction matrix
-#' @param tree 'phylo' object representing rows of Z
+#' @param distances a 'phylo' object representing rows of Z, or a matrix of pairwise non-negative distances of rows of Z, or a list of such objects
 #' @param slices The total number of samples to take
 #' @param model.type Indicate model to use: one of 'full', 'distance', 'affinity'
 #' @param uncertainty Indicate whether to use model variant that accounts for uncertainty in unobserved interactions.
@@ -21,7 +21,7 @@
 #' `y_sd` is the standard deviation of the proposal distribution for the host affinity parameters (normal distribution with mean zero and standard deviation y_sd).
 #' `w_sd` is the standard deviation of the proposal distribution for the parasite affinity parameters (normal distribution with mean zero and standard deviation w_sd). 
 #'
-#' `eta` is the initial value for the tree scaling parameter eta ('distance' and 'full' models)
+#' `eta` is the initial value for the tree (or distance) scaling parameter eta ('distance' and 'full' models)
 #' `eta_sd` is the standard deviation of the proposal distribution for the eta parameter (normal distribution with mean zero and standard deviation eta_sd)
 #' 
 #' Burn-in set-up
@@ -58,53 +58,79 @@
 #' @export
 #' 
 network_est <-
-    function(Z, tree = NULL, slices = 10, model.type = c('full', 'distance', 'affinity'),
+    function(Z, distances = NULL, slices = 10, model.type = c('full', 'distance', 'affinity'),
              uncertainty = FALSE,
              sparse=TRUE, ... ){
         require(geiger)
         require(phangorn)
         require(Matrix)
         require(methods)
-        
         model.type= tolower(model.type[1])
         ## General warnings are checks
         if(missing(Z)) stop('Interaction matrix is missing!')
         if(slices==0)  stop('no. of slices cannot be 0!')
-
-        cleaned = network_clean(Z, tree, model.type)
+        
+        
+        
+        cleaned = network_clean(Z, distances, model.type)
         Z = cleaned$Z
-        tree = cleaned$tree
-
+        distances = cleaned$distances
+        num.distances = cleaned$num.distances
         ## For affinity-only model 
         if(grepl('aff', model.type)){
             ## sparse option is not used for affinity
             print('Running affinity model...')
-            param = fullJoint_est(unname(Z), iter = slices, uncertainty = uncertainty, ...)
+            param = fullJoint_est(unname(Z), iter = slices, uncertainty = uncertainty, distance = distances, ...)
         }
         
         ##  Full and distance model
         el <-list(...)
-        if(is.null(el$experimental.ICM)){
-            if(grepl('(dist|full)', model.type)){
+        if(grepl('(dist|full)', model.type)){
+            if(is.null(el$experimental.ICM)){
                 ## Running the MCMC
-                print(paste0('Running ',
-                             ifelse(grepl('dist', model.type),
-                                    'distance model...', 'full model...')))
-                param  = ICM_est(unname(Z),tree,slices, distOnly = grepl('dist', model.type),
-                                 uncertainty = uncertainty, sparse=sparse, ...)
-            }
-        }else{
-            if(grepl('(dist|full)', model.type)){
+                if(num.distances  > 1){
+                       print(paste0('Running multiple distances - ',
+                                 ifelse(grepl('dist', model.type),
+                                        'distance model...', 'full model...')))
+                       
+                       param  = ICM_est_multidistance(unname(Z),
+                                                      distances,
+                                                      slices,
+                                                      distOnly = grepl('dist',
+                                                                       model.type),
+                                                      uncertainty=uncertainty,
+                                                      sparse=sparse, ...)
+                       
+                }else{
+                    distances = list(dist = cleaned$distances,
+                                     kernel = cleaned$kernel,
+                                     param = cleaned$param)
                 ## Running the MCMC
-                print(paste0('Running ',
-                             ifelse(grepl('dist', model.type),
-                                    'distance model...', 'full model...')))
+                    print(paste0('Running ',
+                                 ifelse(grepl('dist', model.type),
+                                        'distance model...', 'full model...')))
+                    param  = ICM_est(unname(Z),
+                                     distances,
+                                     slices,
+                                     distOnly = grepl('dist', model.type),
+                                     uncertainty = uncertainty,
+                                     sparse=sparse, ...)
+                }
+            }else{
                 warning('Running an experimental ICM procedure!', immediate. = TRUE, call.= FALSE)
                 param  = ICM_est_over_acc(unname(Z),
-                                          tree,slices, distOnly = grepl('dist', model.type),
-                                          uncertainty = uncertainty, sparse=sparse, ...)
+                                          distances,
+                                          slices,
+                                          distOnly = grepl('dist', model.type),
+                                          uncertainty = uncertainty,
+                                          sparse=sparse, ...)
+                
             }
-            
         }
-        list(param=param , Z = Z, tree=tree)
+        list(param=param,
+             Z = Z,
+             distances=distances,
+             slices = slices,
+             model.type = model.type,
+             num.distances = num.distances)
     }

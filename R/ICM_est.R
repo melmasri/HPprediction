@@ -6,7 +6,15 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     ## parameters set-up
     nw = ncol(Z);ny = nrow(Z)
     n = nw*ny                          
-    tol.err = 1e-4
+    tol.err = 1e-8
+
+    meta = distances_metadata(tree)
+    tree = meta$dist
+    kernel_name = meta$kernel
+    kernel_func =meta$kernel_func
+    t.max = meta$t.max
+
+    
     y = if(!is.null(el$y)) el$y else 1
     w = if(!is.null(el$w)) el$w else 1
     a_w = if(!is.null(el$a_w)) el$a_w else 1
@@ -15,7 +23,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     b_y = if(!is.null(el$b_y)) el$b_y else 1
     y_sd = if(is.null(el$y_sd)) rep(0.2, ny) else el$y_sd
     w_sd = if(is.null(el$w_sd)) rep(0.2, nw) else el$w_sd
-    eta = if(is.null(el$eta)) 0 else el$eta
+    eta = if(is.null(meta$param$eta)) 0.1 else meta$param$eta
     eta_sd = if(!is.null(el$eta_sd)) el$eta_sd else 0.005
 
     ## Burn in set-up
@@ -28,7 +36,8 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     w0<-matrix(w, nrow= nw, ncol =slices+1)
     g0<-rep(0, slices+1)
     peta = rep(eta, slices)
-
+    N = outer(rowSums(Z), colSums(Z))
+    
     ## inner loop
     subItra = ny 
     g0in = rep(0, subItra+1)
@@ -53,10 +62,12 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
     dummyMat <- matrix(0, ny, ny)
     ## Arranging the tree
     ## tree.ht = arrange.tree(tree)
-    t.max = get.max.depth(tree)
-    ## tree$tip.label = 1:length(tree$tip.label) # removing tip labels
-    dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
-    dist = 1/EB.distance(dist.original, t.max, peta[1])
+    if(is.phylo(tree))
+        dist.original = unname(cophenetic(rescale(tree, 'EB', 0)))/2
+    else
+        dist.original = tree
+    ##dist = 1/kernel_func(dist = dist.original, tmax = t.max, eta = peta[1])
+    dist = 1/kernel_func(dist = dist.original, tmax = t.max, eta = peta[1])
     diag(dist)<-0
     sparseZ = Z
     if(sparse){
@@ -82,7 +93,7 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
             }
             
             ## Updating the tee
-            dist = 1/EB.distance(dist.original, t.max, peta[s])
+            dist = 1/kernel_func(dist = dist.original, tmax = t.max, eta=peta[s])
             diag(dist)<-0
             
             pdist = dist%*%sparseZ
@@ -118,18 +129,24 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
                     y0.last = y0.new
                     
                 }## Updating similarity matix parameter
-                new.eta = rEta.EB.local(peta.last,
-                    pdist[i,],
-                    if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
-                    if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,
-                    ]), eta_sd, sparse, dist.original, t.max)
+                new.eta = rEta(peta.last,
+                               pdist[i,],
+                               if(length(pdist0)) pdist0[[i]] else NULL,i,sparseZ,Z,
+                               if(distOnly) U0[i,]else  y0.new[i]*(w0.new*U0[i,]),
+                               eta_sd,
+                               sparse,
+                               dist.original,
+                               t.max,
+                               kernel_func,
+                               kernel_name,
+                               meta)
                 peta.new = new.eta$eta
                 peta.count = peta.count + 1*(abs(peta.new - peta.last) > tol.err)
                 peta.sum = peta.sum + peta.new
                 peta.last = peta.new
-                if(new.eta$change){
-                    pdist[i,] = new.eta$dist # very slow when using sparse assignment
-                }
+                ## if(new.eta$change){
+                ##     pdist[i,] = new.eta$dist # very slow when using sparse assignment
+                ## }
                 
                 if(uncertainty){
                     g0in[i+1] = rg(Z[i,], l=U0[i,])
@@ -180,5 +197,5 @@ function(Z, tree, slices = 10, distOnly = FALSE, uncertainty = FALSE, sparse=TRU
 
     list(w = w0, y = y0, eta = peta, g = g0,
          burn.in = max(burn.in)-1,
-         sd = list(w=w_sd, y = y_sd, eta= eta_sd))
+         sd = list(w= if(distOnly) NULL else w_sd, y = if(distOnly) NULL else y_sd, eta= eta_sd))
 }
