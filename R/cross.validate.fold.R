@@ -16,6 +16,8 @@ function(Z, n= 10, min.per.col = 1, missing.pattern=c('random','prop.to.col.sums
     
     colm = pmax(colSums(Z) -min.per.col , 0)
     size = floor(sum(colm)/n)
+    if(size==0)
+        stop('Not enough pairs for the given numbre of folders, reduce n!')
     gr = rep(size, n)
     if(sum(colm) %% size!=0)
         gr[n] =  gr[n] + sum(colm) %% size
